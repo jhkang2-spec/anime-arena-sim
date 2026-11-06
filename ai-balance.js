@@ -17,4 +17,13 @@
     }
     return m;
   };
+  // 참전 기세(Fresh Tag-in): 교대로 새로 들어선 인물은 잠시 가속 — 밀린 팀의 반격 여지(아드레날린과 같은 역전 장치)
+  if (typeof teamSwap === 'function' && window.TACTICS && typeof TACTICS.apply === 'function') {
+    const _ts = teamSwap;
+    window.teamSwap = function (f, why) {
+      const r = _ts.apply(this, arguments);
+      try { setTimeout(() => { if (window.TACTICS && typeof F !== 'undefined' && F.includes(f) && !f.down && !f.away) TACTICS.apply(f, 'haste', f, 2.5); }, 350); } catch (e) { }
+      return r;
+    };
+  }
 })();
