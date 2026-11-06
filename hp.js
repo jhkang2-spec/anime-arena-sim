@@ -44,7 +44,8 @@
     if (v.air) d *= .85;                               // 공중 콤보 보정
     if (v.down) d *= .6;                               // 누운 상대 추가타 보정
     const buf = window.BUFFS && typeof BUFFS.dmgMul === 'function' ? BUFFS.dmgMul(a, v) : (window.COMBAT && typeof COMBAT.dmgMul === 'function' ? COMBAT.dmgMul(a, v) : 1); // 상태 효과(강화·경화 등) 훅
-    d = Math.max(1, Math.round(d * (buf || 1)));
+    const mul = buf == null ? 1 : buf;
+    d = mul === 0 ? 0 : Math.max(1, Math.round(d * mul)); // 무적(0배율)이면 피해 0 — 관통 금지
     rv.hp = Math.max(0, rv.hp - d); HP.st.hits++; HP.st.dmg[grade].push(d);
     if (rv.hp <= 0) ko(v, a);
   }

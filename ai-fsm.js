@@ -124,9 +124,9 @@
     for (let i = 0; i < F.length; i++) {
       const f = F[i], o = f.aiTarget; if (!o || !F.includes(o) || (f.aiState !== 'IDLE' && f.aiState !== 'DEFEND')) continue;
       const pref = PREF[(f.ch && f.ch.world) || f.team] || 20, dx = o.pos.x - f.pos.x, dz = o.pos.z - f.pos.z, d = Math.hypot(dx, dz) || 1;
-      const dm = o.fx && o.fx.domain && o.fx.domain.until > performance.now() / 1000 ? o.fx.domain : null; // 상대가 영역 전개 중 → 반지름 밖에서 기다림(먼저 걸어 들어가지 않음)
+      const dm = o.fx && o.fx.domain && o.fx.domain.until > performance.now() / 1000 ? o.fx.domain : null; // 상대가 영역 전개 중 → 영역 중심 dm.c 기준 반지름 밖으로 물러남(먼저 걸어 들어가지 않음)
       let k = d < pref * .55 ? -1 : d > pref * 2.2 ? 1 : 0;
-      if (dm && d < dm.r + 10) k = -1;
+      if (dm) { const cx = f.pos.x - dm.c.x, cz = f.pos.z - dm.c.z, cd = Math.hypot(cx, cz); if (cd < dm.r + 10) { f.pos.x += (cd > .01 ? cx / cd : 1) * 16 * dt; f.pos.z += (cd > .01 ? cz / cd : 0) * 16 * dt; k = 0; } }
       if (k) { f.pos.x += dx / d * k * 14 * dt; f.pos.z += dz / d * k * 14 * dt; }
     }
     // Rapier 가 없을 때만: 인물끼리 겹침 분리(대체)

@@ -4,7 +4,9 @@
   if (!window.TACTICS || typeof F === 'undefined' || !window.BUFFS || typeof BUFFS.dmgMul !== 'function') return;
   const _dm = BUFFS.dmgMul;
   BUFFS.dmgMul = function (a, v) {
-    let m = _dm.apply(this, arguments) || 1;
+    const m0 = _dm.apply(this, arguments);
+    let m = m0 == null ? 1 : m0;
+    if (m === 0) return 0; // 무적(0배율)은 어떤 경우에도 뚫지 않음 — 아드레날린 적용 금지
     if (window.HP && HP.on && HP.of && a && !a.down && !(a.stun > 0)) {
       const r = HP.of(a);
       if (r && !r.ko && r.max) {
