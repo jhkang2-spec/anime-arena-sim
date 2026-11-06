@@ -1501,7 +1501,7 @@ function fitRes() { /* 화면 요소의 실제 가로세로 비율로 렌더 크
   const qd = (window.getQuality && getQuality()) || 'mid', ult = qd === 'ultra' || !!(window.AAA && AAA.ultra), dprCap = qd === 'low' ? 1 : ult ? 3 : qd === 'high' ? 2 : 1.5;
   const ss = 1; /* 슈퍼샘플은 aaa.js 가 장면 전용 큰 판에서 처리(그리기 판·후처리는 1배) */ /* 울트라 슈퍼샘플링(aaa.js 가 프레임 여유로 1~2배 조절): 내부를 크게 그린 뒤 화면에서 축소 → 계단 감소 */
   let w = Math.round(Math.max(480, cw * Math.min(Math.max(dpr, 1), dprCap) * ss) * resScale), h = Math.round(w / asp); /* 표시 크기×DPR(품질별 상한)×슈퍼샘플 */
-  const budget = ult ? 30e6 : qd === 'high' ? 12e6 : qd === 'mid' ? 4.5e6 : 1.8e6; /* 화소 상한(11-07 고도화: 중간 2배·높음 3배·울트라 3.6배 — 소유자 요청 '픽셀 30배' 방향) */
+  const budget = ult ? 20e6 : qd === 'high' ? 9e6 : qd === 'mid' ? 4e6 : 1.8e6; /* 화소 상한(11-07: 중간 1.8배·높음 2.1배·울트라 2.4배 — VRAM 안전선 내 최대. 감리 권고 16~20M 준수) */
   const cap = Math.sqrt(budget / Math.max(1, w * h)); if (cap < 1) { w = Math.round(w * cap); h = Math.round(h * cap); }
   if (glCanvas.width !== w || glCanvas.height !== h) { renderer.setSize(w, h, false); const rk = Math.min(.5, 1280 / w); reflRT.setSize(Math.round(w * rk), Math.round(h * rk)); }
   if (Math.abs(camera.aspect - asp) > .001) { camera.aspect = asp; camera.updateProjectionMatrix(); }
@@ -1518,8 +1518,14 @@ function scene(now, q, extra) {
   const w0 = performance.now(), iv = now - (scene.prev || now); scene.prev = now;
   if (iv > 0 && iv < 100) ivAvg += (iv - ivAvg) * .05; // 100ms 넘는 간격(창 가림·탭 숨김)은 부담으로 치지 않음
   ftAvg = ivAvg > 17.5 ? ivAvg : Math.min(ivAvg, wkAvg * 1.6 + 2);
-  /* 해상도는 내리지 않음(2인 기준 유지). 버거울 때 윤곽선만 끄고, 여유가 생기면 다시 켬 */
-  if (frame % 30 === 0) { if (resScale !== 1) { resScale = 1; fitRes(); } if (ftAvg > (window.AAA && AAA.ultra ? 34 : 17.2) && OUT.visible) OUT.visible = false; /* 울트라는 30fps 아래로 떨어질 때만 윤곽선 생략 */ /* 60fps 유지: 해상도를 다 내려도 버거우면 윤곽선 생략 */ else if (ftAvg < (window.AAA && AAA.ultra ? 28 : 13) && !OUT.visible) OUT.visible = true; else if (ftAvg < 14.5 && resScale < 1) { resScale = Math.min(1, resScale * 1.05); fitRes(); } }
+  /* 해상도 환류(11-07 감리): 평소엔 화소를 안 내림(소유자 규칙). 다만 24fps(울트라 24) 아래로 무너지면 72%까지 단계적 하강, 여유 회복 시 100% 복원 — 저사양 기본 사용자 방어 */
+  if (frame % 30 === 0) {
+    const u = window.AAA && AAA.ultra, hot = u ? 42 : 24, cool = u ? 26 : 13.5;
+    if (ftAvg > hot && resScale > .72) { resScale = Math.max(.72, resScale * .93); fitRes(); }
+    else if (ftAvg < cool && resScale < 1) { resScale = Math.min(1, resScale * 1.04); fitRes(); }
+    if (ftAvg > (u ? 34 : 17.2) && OUT.visible) OUT.visible = false;
+    else if (ftAvg < (u ? 28 : 13) && !OUT.visible) OUT.visible = true;
+  }
   const idle = !q;
   if (!idle) update(dt * SPEED, t);
   else { F.forEach((f, i) => { f.c = { ...POSE.seal, legF: .3, legB: -.3, kneeF: .2, kneeB: .2 }; f.breath = Math.sin(t * 2 + i) * .7; }); updateEffects(dt, t); }
