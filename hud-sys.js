@@ -31,7 +31,7 @@
   SYS.stats = () => { SYS.statsOn = !SYS.statsOn; panel.classList.toggle('show', SYS.statsOn); };
   setInterval(() => { if (SYS.statsOn) { try { panel.innerHTML = statsText(); } catch (e) { panel.textContent = '통계 오류: ' + e.message; } } }, 1000);
   const bar = document.getElementById('viewBar');
-  function syncBtns() { if (!bar) return; let lsOff = false; try { lsOff = localStorage.getItem('arenaLightFx') === '0'; } catch (e) { } bar.querySelectorAll('button[data-k]').forEach(b => { const k = b.dataset.k; const st = k === 'f' ? on(window.LIGHTFX) : k === 'g' ? (on(window.FXDANGER) && !lsOff) : k === 'r' ? on(window.SFXREAL) : on(window.HP); b.className = st ? 'on' : ''; }); }
+  function syncBtns() { if (!bar) return; let lsOff = false; try { lsOff = localStorage.getItem('arenaLightFx') === '0'; } catch (e) { } const sfxAssetsLive = (window.SFX && (SFX.decN || 0) >= Math.max(6, (SFX.total || 0) * .15)); bar.querySelectorAll('button[data-k]').forEach(b => { const k = b.dataset.k; const st = k === 'f' ? on(window.LIGHTFX) : k === 'g' ? (on(window.FXDANGER) && !lsOff) : k === 'r' ? (on(window.SFXREAL) && !sfxAssetsLive) : on(window.HP); b.className = st ? 'on' : ''; }); }
   if (bar) {
     const sep = document.createElement('span'); sep.className = 'vt'; sep.textContent = '연출'; bar.appendChild(sep);
     if (window.LIGHTFX && typeof LIGHTFX.set === 'function') { const b = document.createElement('button'); b.type = 'button'; b.textContent = '빛'; b.title = '화면 빛·플래시 효과 켜기/끄기 (F)'; b.dataset.k = 'f'; b.onclick = () => { try { LIGHTFX.set(!LIGHTFX.on); } catch (e) { } syncBtns(); }; bar.appendChild(b); }
