@@ -118,7 +118,7 @@
   const stage = document.getElementById('stage'); if (stage) stage.appendChild(hud);
   let sig = '';
   function draw() {
-    if (!HP.on || typeof F === 'undefined') { hud.innerHTML = ''; return; }
+    if (!HP.on || typeof F === 'undefined') { hud.innerHTML = ''; sig = ''; return; } // sig 도 함께 비움 — off→on 복귀 시 로스터 그대로여도 바를 다시 만듦
     const teams = []; F.forEach(f => { if (f.team && !teams.includes(f.team)) teams.push(f.team); });
     if (teams.length < 2) { if (sig !== 'none') { hud.innerHTML = ''; sig = 'none'; } return; } // 혼자 몸풀기 땐 숨김
     const s = teams.map(t => t + ':' + F.filter(f => f.team === t).map(f => f.ch.key).join(',')).join('|');

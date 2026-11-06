@@ -16,7 +16,7 @@
   const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '-';
   function statsText() {
     const L = window.LIGHTFX && LIGHTFX.st, A = window.AIFSM && AIFSM.st, T = window.TACTICS && TACTICS.st, H = window.HP && HP.st, D = window.FXDANGER && FXDANGER.st, B = window.BUFFS;
-    const def = T && T.st && T.st.def;
+    const def = T && T.def;
     const rows = [];
     if (A) rows.push(`<b>AI</b> 재계획:${A.watchdog || 0} 표적변경:${A.retarget || 0} 시야회피:${A.losRepos || 0} 겹침분리:${A.sepFix || 0} AI평균:${Math.round((window.AIFSM.ms || 0) * 10) / 10}ms`);
     if (T && def) { const att = T.def.attempts || 0; rows.push(`<b>전술</b> 방어시도:${att} 회피:${def.evade} 가드:${def.guard} 쳐내기:${def.parry} 탈출:${def.escape} 반사:${def.reflect} | 성공률 ${pct((def.evade || 0) + (def.guard || 0) + (def.parry || 0) + (def.escape || 0), att)}`);
@@ -31,7 +31,7 @@
   SYS.stats = () => { SYS.statsOn = !SYS.statsOn; panel.classList.toggle('show', SYS.statsOn); };
   setInterval(() => { if (SYS.statsOn) { try { panel.innerHTML = statsText(); } catch (e) { panel.textContent = '통계 오류: ' + e.message; } } }, 1000);
   const bar = document.getElementById('viewBar');
-  function syncBtns() { if (!bar) return; bar.querySelectorAll('button[data-k]').forEach(b => { const k = b.dataset.k; const st = k === 'f' ? on(window.LIGHTFX) : k === 'g' ? on(window.FXDANGER) : on(window.HP); b.className = st ? 'on' : ''; }); }
+  function syncBtns() { if (!bar) return; let lsOff = false; try { lsOff = localStorage.getItem('arenaLightFx') === '0'; } catch (e) { } bar.querySelectorAll('button[data-k]').forEach(b => { const k = b.dataset.k; const st = k === 'f' ? on(window.LIGHTFX) : k === 'g' ? (on(window.FXDANGER) && !lsOff) : on(window.HP); b.className = st ? 'on' : ''; }); }
   if (bar) {
     const sep = document.createElement('span'); sep.className = 'vt'; sep.textContent = '연출'; bar.appendChild(sep);
     if (window.LIGHTFX && typeof LIGHTFX.set === 'function') { const b = document.createElement('button'); b.type = 'button'; b.textContent = '빛'; b.title = '화면 빛·플래시 효과 켜기/끄기 (F)'; b.dataset.k = 'f'; b.onclick = () => { try { LIGHTFX.set(!LIGHTFX.on); } catch (e) { } syncBtns(); }; bar.appendChild(b); }
@@ -41,6 +41,7 @@
   }
   // ── 키보드 단축키(입력상·선택 상의 입력은 무시) ──
   addEventListener('keydown', e => {
+    if (e.repeat) return; // 길누르기 자동반복 → 연출 점멸 방지
     if (e.ctrlKey || e.altKey || e.metaKey) return;
     const t = e.target && e.target.tagName; if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
     const k = (e.key || '').toLowerCase();
