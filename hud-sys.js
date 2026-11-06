@@ -31,12 +31,13 @@
   SYS.stats = () => { SYS.statsOn = !SYS.statsOn; panel.classList.toggle('show', SYS.statsOn); };
   setInterval(() => { if (SYS.statsOn) { try { panel.innerHTML = statsText(); } catch (e) { panel.textContent = '통계 오류: ' + e.message; } } }, 1000);
   const bar = document.getElementById('viewBar');
-  function syncBtns() { if (!bar) return; let lsOff = false; try { lsOff = localStorage.getItem('arenaLightFx') === '0'; } catch (e) { } bar.querySelectorAll('button[data-k]').forEach(b => { const k = b.dataset.k; const st = k === 'f' ? on(window.LIGHTFX) : k === 'g' ? (on(window.FXDANGER) && !lsOff) : on(window.HP); b.className = st ? 'on' : ''; }); }
+  function syncBtns() { if (!bar) return; let lsOff = false; try { lsOff = localStorage.getItem('arenaLightFx') === '0'; } catch (e) { } bar.querySelectorAll('button[data-k]').forEach(b => { const k = b.dataset.k; const st = k === 'f' ? on(window.LIGHTFX) : k === 'g' ? (on(window.FXDANGER) && !lsOff) : k === 'r' ? on(window.SFXREAL) : on(window.HP); b.className = st ? 'on' : ''; }); }
   if (bar) {
     const sep = document.createElement('span'); sep.className = 'vt'; sep.textContent = '연출'; bar.appendChild(sep);
     if (window.LIGHTFX && typeof LIGHTFX.set === 'function') { const b = document.createElement('button'); b.type = 'button'; b.textContent = '빛'; b.title = '화면 빛·플래시 효과 켜기/끄기 (F)'; b.dataset.k = 'f'; b.onclick = () => { try { LIGHTFX.set(!LIGHTFX.on); } catch (e) { } syncBtns(); }; bar.appendChild(b); }
     if (window.FXDANGER && typeof FXDANGER.set === 'function') { const b = document.createElement('button'); b.type = 'button'; b.textContent = '오라'; b.title = '위험 국면 붉은 오라·비네트 켜기/끄기 (G)'; b.dataset.k = 'g'; b.onclick = () => { try { FXDANGER.set(!FXDANGER.on); } catch (e) { } syncBtns(); }; bar.appendChild(b); }
     if (window.HP) { const b = document.createElement('button'); b.type = 'button'; b.textContent = '체력'; b.title = '위 체력바 켜기/끄기 (H)'; b.dataset.k = 'h'; b.onclick = () => { try { HP.on = !HP.on; if (!HP.on && HP.draw) HP.draw(); } catch (e) { } syncBtns(); }; bar.appendChild(b); }
+    if (window.SFXREAL && typeof SFXREAL.set === 'function') { const b = document.createElement('button'); b.type = 'button'; b.textContent = '실감음'; b.title = '합성 타격음(녹음 자산 없을 때 자동) 켜기/끄기 (R)'; b.dataset.k = 'r'; b.onclick = () => { try { SFXREAL.set(!SFXREAL.on); } catch (e) { } syncBtns(); }; bar.appendChild(b); }
     syncBtns();
   }
   // ── 키보드 단축키(입력상·선택 상의 입력은 무시) ──
@@ -49,6 +50,7 @@
     else if (k === 'f' && window.LIGHTFX && typeof LIGHTFX.set === 'function') { LIGHTFX.set(!LIGHTFX.on); }
     else if (k === 'g' && window.FXDANGER && typeof FXDANGER.set === 'function') { FXDANGER.set(!FXDANGER.on); }
     else if (k === 'h' && window.HP) { HP.on = !HP.on; if (!HP.on && HP.draw) HP.draw(); }
+    else if (k === 'r' && window.SFXREAL && typeof SFXREAL.set === 'function') { SFXREAL.set(!SFXREAL.on); }
     else return;
     e.preventDefault();
     syncBtns();

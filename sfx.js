@@ -142,7 +142,8 @@
     verb = ctx.createConvolver(); verb.normalize = true; verb.buffer = makeIR(); const vOut = ctx.createGain(); vOut.gain.value = .55;
     verbIn.connect(pre); pre.connect(verb); verb.connect(vOut); vOut.connect(sfxMaster);
     musicBus = ctx.createGain(); musicBus.gain.value = SFX.music ? SFX.musicVol : 0; musicBus.connect(glue);
-    DECODE.forEach(p => fetch(B + p).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then(a => ctx.decodeAudioData(a)).then(d => { buf[p] = d; measure(p, d); SFX.loaded++; if (SFX.loaded === SFX.total) ambStart(); }).catch(() => { SFX.errors++; SFX.loaded++; if (SFX.loaded === SFX.total) ambStart(); }));
+    SFX.rbus = normal; // 실감 합성 레이어(sfx-real.js)가 공용 버스(덕킹·볼륨·압축 공유)로 연결할 수 있게 노출
+    DECODE.forEach(p => fetch(B + p).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then(a => ctx.decodeAudioData(a)).then(d => { buf[p] = d; SFX.decN = (SFX.decN || 0) + 1; measure(p, d); SFX.loaded++; if (SFX.loaded === SFX.total) ambStart(); }).catch(() => { SFX.errors++; SFX.loaded++; if (SFX.loaded === SFX.total) ambStart(); }));
     musicStart();
     if (hint.remove) hint.remove();
   }
