@@ -97,6 +97,11 @@
           if (o === f || (f.team && o.team === f.team)) continue;
           const d = Math.hypot(o.pos.x - f.pos.x, o.pos.z - f.pos.z);
           let sc = ((f.threat && f.threat.get(o)) || 0) + 40 / (d + 10) * 10 + (o.stun > 0 ? 8 : 0) + (o.down ? 6 : 0) + ((o.tire || 0) / Math.max(1, o.tireLim || 10)) * 6;
+          // 집중 화력(Execute): 체력이 낮아 마무리 가능한 적을 강하게 우선 겨냥 — 팀이 피해를 나눠 죽이지 않고 한 명을 먼저 떨어뜨림
+          const hr = window.HP && HP.on && HP.of ? HP.of(o) : null;
+          if (hr && !hr.ko && hr.max) { const hpf = hr.hp / hr.max; if (hpf < .3) sc += 14 + (.3 - hpf) * 46; else if (hpf < .55) sc += (1 - hpf) * 8; }
+          // 위협 우대(Threat Priority): 강화·거대화·변신 상태의 적은 더 위험하므로 우선 처리
+          if (o.fx && (o.fx.power || o.fx.giant || o.fx.domain) || o.mode > 0) sc += 5;
           if (window.PHYS && PHYS.ready && !PHYS.los(f, o)) sc -= 8;
           if (sc > bs) { bs = sc; best = o; }
         }
