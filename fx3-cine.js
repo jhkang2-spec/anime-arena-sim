@@ -115,7 +115,7 @@
   // ── 3) 속도선(필살기·큰 타격·초고속 돌진) — 2D 화면 위, 가볍게 ──
   const _hud = drawHud; drawHud = function (q, extra) { const r = _hud.apply(this, arguments);
     try { let k = Math.max(0, Math.min(1, st.linesT / .5)); if (typeof F !== 'undefined') F.forEach(f => { const v = f.vel ? Math.hypot(f.vel.x, f.vel.z) : 0; if (v > 380) k = Math.max(k, Math.min(.45, (v - 380) / 500)); });
-      if (k > .02 && Q() !== 'low') { const W = hud.width, H = hud.height, cx = W / 2, cy = H / 2, n = Q() === 'high' ? 46 : 30; hc.save(); hc.globalCompositeOperation = 'lighter';
+      if (k > .02 && Q() !== 'low') { const W = (window.HUD && HUD.LW) || hud.width, H = (window.HUD && HUD.LH) || hud.height, cx = W / 2, cy = H / 2, n = Q() === 'high' ? ((window.AAA && AAA.ultra) ? 72 : 46) : 30; hc.save(); hc.globalCompositeOperation = 'lighter';
         for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, r0 = Math.max(W, H) * (.36 + Math.random() * .12), r1 = r0 + Math.max(W, H) * (.25 + Math.random() * .3), w = 1 + Math.random() * 2.5;
           hc.strokeStyle = `rgba(255,255,255,${(.12 + Math.random() * .22) * k})`; hc.lineWidth = w; hc.beginPath(); hc.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0 * .62); hc.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1 * .62); hc.stroke(); }
         hc.restore(); } } catch (e) { console.error(e); } return r; };

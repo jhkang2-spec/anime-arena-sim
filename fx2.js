@@ -194,7 +194,7 @@
   const SHOW_ALL_LABELS = (() => { try { return localStorage.getItem('arenaAllLabels') === '1'; } catch (e) { return false; } })();
   drawHud = function (q, extra) {
     hazePass();
-    const HW = hud.width, HH = hud.height, HX = HW / 2;
+    const HW = (window.HUD && HUD.LW) || hud.width, HH = (window.HUD && HUD.LH) || hud.height, HX = HW / 2;
     hc.clearRect(0, 0, HW, HH);
     if (whiteout > .01) { hc.fillStyle = `rgba(${flashC},${Math.min(whiteout, FLASH_MAX)})`; hc.fillRect(0, 0, HW, HH); whiteout *= .8; }
     // 충격 프레임(1~3프레임): 어두운 테두리 + 타격점에서 뻗는 속도선 — 화면을 하얗게 덮지 않음

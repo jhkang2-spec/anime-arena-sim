@@ -474,7 +474,7 @@
         D[i * 4] = T5.value; D[i * 4 + 1] = life; D[i * 4 + 2] = size; D[i * 4 + 3] = k; C[i * 4] = col.r; C[i * 4 + 1] = col.g; C[i * 4 + 2] = col.b; C[i * 4 + 3] = grav; Rr[i * 2] = rot === undefined ? Math.random() * 6.283 : rot; Rr[i * 2 + 1] = spin * (Math.random() < .5 ? -1 : 1); dirty = true; },
       flush() { if (!dirty) return; dirty = false; for (const k of ['position', 'aV', 'aD', 'aC', 'aR']) g.attributes[k].needsUpdate = true; } }; }
   const KA = KSys(3600, true), KN = KSys(2600, false);
-  const kq = () => { const q = typeof getQuality === 'function' ? getQuality() : 'mid'; return busy() * (q === 'ultra' ? 3 : q === 'high' ? 1.25 : 1); }; /* 울트라: 높음의 2~4배 */
+  const kq = () => { const q = typeof getQuality === 'function' ? getQuality() : 'mid'; return busy() * ((q === 'ultra' || (window.AAA && AAA.ultra)) ? 5 : q === 'high' ? 1.25 : 1); }; /* 울트라: 높음의 4배(11-07 도트 증량) */
   /* 속성별 실사 프리셋: 타격·폭발·필살 적중이 모두 자동으로 씀(크기 k: 1 보통 ~ 3 필살) — 밝기는 낮춘 기준(섬광 작게·짧게) */
   const KP = {
     fire(p, k = 1, c = '#ff7a20') { for (let i = 0; i < 7 * k * kq(); i++) KA.emit(i % 3 ? 1 : 2, p.clone().add(rnd(3 * k)), V3(rr(-30, 30) * k, rr(20, 70) * k, rr(-30, 30) * k), rr(.45, .8), rr(10, 18) * k, i % 4 ? c : '#ffd27a', -30, 1.5); for (let i = 0; i < 4 * k * kq(); i++) KN.emit(3 + (i % 2), p.clone().add(rnd(4 * k)), V3(rr(-14, 14), rr(18, 40), rr(-14, 14)), rr(1.1, 1.8), rr(14, 22) * k, '#3a302a', -6, .6); KP.spark(p, k * .7, '#ffb050'); },
@@ -513,7 +513,7 @@
   let lastDet = 0;
   function detail(p, ek, k) { if (!p) return; const now = T5.value; if (k < 1.2 && now - lastDet < .06) return; lastDet = now; const E = (typeof ELEM !== 'undefined' && ELEM[ek]) || { c: '#ffffff' }, c = E.c, hot = KFIRE.has(ek), dk = KDARK.has(ek);
     grains(p, k, c, hot); smokeLayers(p, k * .8, hot ? '#3a322c' : dk ? '#1a1020' : ek === 'sand' || ek === 'earth' ? '#9a8a74' : '#a8a4a0', dk || hot); if (k >= 1) airRing(p, k);
-    const s = SEC_OF(ek); if (s) SECOND[s](p, k, c); const ULT5 = typeof getQuality === 'function' && getQuality() === 'ultra'; if (k >= 1.2 && lingerQ.length < (ULT5 ? 30 : 12)) lingerQ.push({ t: 0, dur: (2 + Math.min(2, k)) * (ULT5 ? 1.6 : 1), p: p.clone(), hot, c, k }); }
+    const s = SEC_OF(ek); if (s) SECOND[s](p, k, c); const ULT5 = typeof getQuality === 'function' && getQuality() === 'ultra' || (window.AAA && AAA.ultra); if (k >= 1.2 && lingerQ.length < (ULT5 ? 44 : 12)) lingerQ.push({ t: 0, dur: (2 + Math.min(2, k)) * (ULT5 ? 1.6 : 1), p: p.clone(), hot, c, k }); }
   function lingerTick(dt) { for (let i = lingerQ.length - 1; i >= 0; i--) { const L = lingerQ[i]; L.t += dt; if (L.t > L.dur) { lingerQ.splice(i, 1); continue; } if (Math.random() > .35 * busy()) continue; const fade = 1 - L.t / L.dur, g = V3(L.p.x + rr(-10, 10) * L.k, rr(0, 3), L.p.z + rr(-10, 10) * L.k);
       if (L.hot) { KA.emit(5, g, V3(rr(-6, 6), rr(10, 30), rr(-6, 6)), rr(.8, 1.4), rr(1.5, 3) * fade + 1, '#ff9a40', -8, 2); if (Math.random() < .4) KN.emit(3, g, V3(rr(-4, 4), rr(8, 16), rr(-4, 4)), 1.6, rr(10, 16), '#4a4038', -2, .4); }
       else { KN.emit(4, g, V3(rr(-6, 6), rr(3, 9), rr(-6, 6)), 1.8, rr(12, 20) * L.k, '#a89a88', -1, .3); if (Math.random() < .3) KA.emit(5, g.clone().add(V3(0, rr(2, 10), 0)), V3(rr(-3, 3), rr(2, 6), rr(-3, 3)), 1.2, 1.6, L.c, -2, 1); } } }
@@ -538,7 +538,7 @@
   try { const _mk5 = makeFx; makeFx = function (o) { const g = _mk5.apply(this, arguments); try { const f = o && REPL5[o.k]; if (f && g) { g.children.forEach(c => { c.visible = false; }); f(o); st.repl = (st.repl || 0) + 1; } } catch (e) { } return g; }; } catch (e) { }
   /* 주변 효과(세기·속성별): 공간 균열 선(빛 테 금) · 충격파 여러 겹 · 공기 압력 구 · 바닥 튄 자국 · 돌풍 먼지 벽 · 큰 필살은 하늘 구름 소용돌이 */
   let lastAmb = 0;
-  const _det6 = detail; detail = function (p, ek, k) { _det6(p, ek, k); try { const now = T5.value; if (k < 1.8 || now - lastAmb < (typeof getQuality === 'function' && getQuality() === 'ultra' ? .1 : .3)) return; lastAmb = now; const E = (typeof ELEM !== 'undefined' && ELEM[ek]) || { c: '#ffffff' }, c = E.c;
+  const _det6 = detail; detail = function (p, ek, k) { _det6(p, ek, k); try { const now = T5.value; if (k < 1.8 || now - lastAmb < (typeof getQuality === 'function' && getQuality() === 'ultra' || (window.AAA && AAA.ultra) ? .1 : .3)) return; lastAmb = now; const E = (typeof ELEM !== 'undefined' && ELEM[ek]) || { c: '#ffffff' }, c = E.c;
       if (p.distanceTo(camera.position) > 70) { const cs = Math.min(30, 14 * k); sil('crack', { at: () => p, size: [cs, cs * 1.3], ang: rr(0, 6.28), dur: .28, sty: 0, c: '#ffffff', c2: c, inT: .03, outT: .18, op: .8 }); }
       for (let i = 0; i < Math.min(3, Math.floor(k)); i++) shock(p.clone(), rnd(1).normalize(), (24 + i * 18) * k, i ? c : '#ffffff', .3 + i * .1, i * .05);
       if (X.distort) X.distort(p.clone(), 40 * k, .3, 0); if (p.y < 30) { const g = V3(p.x, 0, p.z); crack(g, 6 + 5 * k, ek, { grow: .06, dur: 5 }); for (let i = 0; i < 10 * busy(); i++) { const a = rr(0, 6.28), s = rr(30, 90) * k; KA.emit(5, V3(g.x, 1, g.z), V3(Math.cos(a) * s, rr(10, 40), Math.sin(a) * s), rr(.4, .8), rr(2, 4), c, 200, 2); } }
@@ -582,7 +582,7 @@
         B.puff.emit(p.clone().add(V3(Math.cos(a) * 4 * k, y - 4, Math.sin(a) * 4 * k)), V3(Math.cos(a) * sp, rr(10, 24) + L * 4, Math.sin(a) * sp), rr(1.6, 2.6) + L * .15, rr(24, 36) * k * (1 + L * .08), col, 8); } }
     KA.emit(15, p, V3(), .1, 70 * k, '#ffffff', 0, 0); KA.emit(7, p, V3(), .12, 50 * k, E.c, 0, 0);
     try { if (window.__fx2 && __fx2.imp && typeof scr === 'function') { const s = scr(p); if (!s.back) __fx2.imp.push({ x: s.x, y: s.y, n: k >= 1.8 ? 3 : 2, big: k >= 1.8, c: E.c }); } } catch (e) { } }
-  let lastVB = 0; const _det7 = detail; detail = function (p, ek, k) { _det7(p, ek, k); try { const now = T5.value; if (k >= 1.5 && now - lastVB > (typeof getQuality === 'function' && getQuality() === 'ultra' ? .05 : .12)) { lastVB = now; volBoom(p, ek, Math.min(2.6, k)); } } catch (e) { console.error(e); } };
+  let lastVB = 0; const _det7 = detail; detail = function (p, ek, k) { _det7(p, ek, k); try { const now = T5.value; if (k >= 1.5 && now - lastVB > (typeof getQuality === 'function' && getQuality() === 'ultra' || (window.AAA && AAA.ultra) ? .05 : .12)) { lastVB = now; volBoom(p, ek, Math.min(2.6, k)); } } catch (e) { console.error(e); } };
   /* 기술 시그니처 실루엣은 더 크게·또렷하게(1.35배, 불투명도↑) */
   const _sil5 = sil; sil = function (key, o) { if (!/^(crack|spark|tiger|asura|pillar|icecol)$/.test(key)) { const s0 = o.size; o.size = typeof s0 === 'function' ? t => { const z = s0(t); return [z[0] * 1.35, z[1] * 1.35]; } : [s0[0] * 1.35, s0[1] * 1.35]; o.op = Math.min(1, (o.op || 1) * 1.1); } return _sil5(key, o); };
   X.KP = KP; X.kImpact = kImpact; X.skyHole = skyHole; X.T5 = T5;

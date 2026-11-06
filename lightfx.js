@@ -59,7 +59,8 @@
 
   let lastFilter = '';
   function drawOverlay(dt) {
-    const W = Math.max(64, (stage ? stage.clientWidth : 640) >> 1), H = Math.max(40, (stage ? stage.clientHeight : 380) >> 1);
+    const sh = Q() === 'low' ? 2 : (window.AAA && AAA.ultra) ? 0 : 1; // 11-07: 울트라는 화면 겹도 1:1 해상도(도트 수 증량)
+    const W = Math.max(64, (stage ? stage.clientWidth : 640) >> sh), H = Math.max(40, (stage ? stage.clientHeight : 380) >> sh);
     if (ov.width !== W || ov.height !== H) { ov.width = W; ov.height = H; }
     oc.clearRect(0, 0, W, H);
     const cx = W / 2, cy = H / 2, R = Math.hypot(cx, cy), day = isDay();

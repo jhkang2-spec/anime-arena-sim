@@ -1,6 +1,7 @@
 // 3자 대난투 — 나루토·원피스·블리치·원펀맨 오마주 (개인 진행판 전용, 외부 공개 금지)
 // 발판 없이 강물 위에서 전 방향 이동, 세 명이 동시에 싸운다. 좌표는 three.js 월드 단위 그대로 쓴다.
 const RW = 1920, RH = 1140, PI = Math.PI, SPEED = 1.5, GRAV = 420, ARENA = 110, MS = .55, FLASH_MAX = .035;
+const ULTRA0 = (() => { try { return localStorage.getItem('arenaUltra') === '1'; } catch (e) { return false; } })(); // 환경 밀도(삼각형) 배율 — 로드 시점에는 getQuality 없음(모카프 뒤)이라 저장값으로 판단
 const R = (a, b) => a + Math.random() * (b - a);
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const clampv = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -72,16 +73,16 @@ const MOON = V3(170, 250, -560);
   for (let i = 0; i < 2600; i++) { dg.fillStyle = pick(['#4a3a28', '#6a5438', '#54422e', '#73603f', '#3e3022']); const s2 = R(1, 6); dg.globalAlpha = R(.25, .7); dg.fillRect(R(0, 256), R(0, 256), s2, s2 * R(.5, 1.5)); }
   dg.globalAlpha = 1; for (let i = 0; i < 260; i++) { dg.fillStyle = pick(['#8a7a68', '#9a8a74', '#6e6254']); dg.beginPath(); dg.arc(R(0, 256), R(0, 256), R(.8, 2.2), 0, 7); dg.fill(); }
   const dirtTex = new THREE.CanvasTexture(dc); dirtTex.wrapS = dirtTex.wrapT = THREE.RepeatWrapping; dirtTex.repeat.set(10, 7);
-  const bed = new THREE.Mesh(new THREE.PlaneGeometry(1400, 1000), new THREE.MeshToonMaterial({ color: '#b8a088', map: dirtTex, gradientMap: gm })); bed.rotation.x = -PI / 2; bed.position.y = .05; bed.receiveShadow = true; scene3.add(bed);
-  for (let i = 0; i < 260; i++) { const x = R(-320, 320), z = R(-150, 180); if (Math.hypot(x, z * 1.3) < 150) continue; const r = new THREE.Mesh(new THREE.ConeGeometry(R(.4, .9), R(2, 6), 4), toon(pick(['#2a4a2a', '#3a5a30', '#22402a', '#4a5a2a']))); r.position.set(x, 1.4 + R(.5, 2), z); scene3.add(r); } // 가장자리 풀
-  for (let i = 0; i < 90; i++) { const r = new THREE.Mesh(new THREE.DodecahedronGeometry(R(.6, 2), 0), toon(pick(['#5a5048', '#6a6054', '#4a4038']))); r.position.set(R(-260, 260), .3, R(-150, 160)); r.scale.y = .5; scene3.add(r); } // 자갈
+  const bed = new THREE.Mesh(new THREE.PlaneGeometry(1400, 1000, ULTRA0 ? 72 : 1, ULTRA0 ? 52 : 1), new THREE.MeshToonMaterial({ color: '#b8a088', map: dirtTex, gradientMap: gm })); bed.rotation.x = -PI / 2; bed.position.y = .05; bed.receiveShadow = true; scene3.add(bed);
+  for (let i = 0; i < (ULTRA0 ? 430 : 260); i++) { const x = R(-320, 320), z = R(-150, 180); if (Math.hypot(x, z * 1.3) < 150) continue; const r = new THREE.Mesh(new THREE.ConeGeometry(R(.4, .9), R(2, 6), ULTRA0 ? 9 : 4), toon(pick(['#2a4a2a', '#3a5a30', '#22402a', '#4a5a2a']))); r.position.set(x, 1.4 + R(.5, 2), z); scene3.add(r); } // 가장자리 풀
+  for (let i = 0; i < (ULTRA0 ? 150 : 90); i++) { const r = new THREE.Mesh(new THREE.DodecahedronGeometry(R(.6, 2), ULTRA0 ? 1 : 0), toon(pick(['#5a5048', '#6a6054', '#4a4038']))); r.position.set(R(-260, 260), .3, R(-150, 160)); r.scale.y = .5; scene3.add(r); } // 자갈
   // 보름달 + 달무리 + 별
-  const moon = new THREE.Mesh(new THREE.SphereGeometry(46, 32, 20), new THREE.MeshBasicMaterial({ color: '#fff6dc', fog: false })); moon.position.copy(MOON); scene3.add(moon);
+  const moon = new THREE.Mesh(new THREE.SphereGeometry(46, ULTRA0 ? 96 : 32, ULTRA0 ? 64 : 20), new THREE.MeshBasicMaterial({ color: '#fff6dc', fog: false })); moon.position.copy(MOON); scene3.add(moon);
   [[330, .55, '#fff0c8'], [620, .22, '#c8d8ff']].forEach(([sz, op, c]) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: c, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); sp.position.copy(MOON); sp.scale.set(sz, sz, 1); scene3.add(sp); });
-  { const g = new THREE.BufferGeometry(), p = new Float32Array(900 * 3); for (let i = 0; i < 900; i++) { const a = R(0, PI * 2), el = R(.08, 1.2), d = 900; p.set([Math.cos(a) * Math.cos(el) * d, Math.sin(el) * d * .7 + 60, Math.sin(a) * Math.cos(el) * d - 200], i * 3); } g.setAttribute('position', new THREE.BufferAttribute(p, 3)); scene3.add(new THREE.Points(g, new THREE.PointsMaterial({ color: '#dfe8ff', size: 2.2, map: glowTex, transparent: true, depthWrite: false, fog: false }))); }
+  { const g = new THREE.BufferGeometry(), N = ULTRA0 ? 2400 : 900, p = new Float32Array(N * 3); for (let i = 0; i < N; i++) { const a = R(0, PI * 2), el = R(.08, 1.2), d = 900; p.set([Math.cos(a) * Math.cos(el) * d, Math.sin(el) * d * .7 + 60, Math.sin(a) * Math.cos(el) * d - 200], i * 3); } g.setAttribute('position', new THREE.BufferAttribute(p, 3)); scene3.add(new THREE.Points(g, new THREE.PointsMaterial({ color: '#dfe8ff', size: ULTRA0 ? 1.6 : 2.2, map: glowTex, transparent: true, depthWrite: false, fog: false }))); }
   // 먼 산·숲 실루엣
-  for (let i = 0; i < 14; i++) { const m = new THREE.Mesh(new THREE.ConeGeometry(R(90, 180), R(80, 170), 5), toon(pick(['#101a24', '#141f2a', '#0e1620']))); m.position.set(-700 + i * 105 + R(-30, 30), 30, R(-620, -520)); scene3.add(m); }
-  for (let i = 0; i < 60; i++) { const tr = new THREE.Group(), h = R(30, 60); box(tr, 2, h * .3, 2, 0, h * .15, 0, toon('#1a140e')); const c = new THREE.Mesh(new THREE.ConeGeometry(h * .22, h * .8, 6), toon(pick(['#0f2418', '#12291c', '#0c1e14']))); c.position.y = h * .6; tr.add(c); tr.position.set(R(-420, 420), 0, R(-330, -240)); scene3.add(tr); }
+  for (let i = 0; i < (ULTRA0 ? 22 : 14); i++) { const m = new THREE.Mesh(new THREE.ConeGeometry(R(90, 180), R(80, 170), ULTRA0 ? 12 : 5), toon(pick(['#101a24', '#141f2a', '#0e1620']))); m.position.set(-760 + i * 70 + R(-30, 30), 30, R(-620, -520)); scene3.add(m); }
+  for (let i = 0; i < (ULTRA0 ? 110 : 60); i++) { const tr = new THREE.Group(), h = R(30, 60); box(tr, 2, h * .3, 2, 0, h * .15, 0, toon('#1a140e')); const c = new THREE.Mesh(new THREE.ConeGeometry(h * .22, h * .8, ULTRA0 ? 14 : 6), toon(pick(['#0f2418', '#12291c', '#0c1e14']))); c.position.y = h * .6; tr.add(c); tr.position.set(R(-420, 420), 0, R(-330, -240)); scene3.add(tr); }
   // 철둑·선로
   const TZ = -175; box(scene3, 1200, 10, 46, 0, 5, TZ, toon('#2e2a26'));
   for (let x = -580; x < 580; x += 7) box(scene3, 3, 1.2, 22, x, 10.6, TZ, toon('#3a2a1e'));
@@ -89,20 +90,20 @@ const MOON = V3(170, 250, -560);
   // 무한열차: 검은 증기기관차 + 객차 4량 (창문 불빛)
   const train = new THREE.Group(); train.position.set(60, 12.5, TZ); train.rotation.y = -.12; scene3.add(train);
   const blk = toon('#16161c'), blk2 = toon('#24242c'), red = toon('#8a1a1a'), brass = toon('#c8a050'), car = toon('#2a1c18'), roof = toon('#1a1414');
-  const boiler = new THREE.Mesh(new THREE.CylinderGeometry(11, 11, 70, 24), blk); boiler.rotation.z = PI / 2; boiler.position.set(55, 18, 0); boiler.castShadow = true; train.add(boiler);
-  const face = new THREE.Mesh(new THREE.CylinderGeometry(11.5, 11.5, 2, 24), blk2); face.rotation.z = PI / 2; face.position.set(91, 18, 0); train.add(face);
-  const plate = new THREE.Mesh(new THREE.CircleGeometry(5, 20), brass); plate.rotation.y = PI / 2; plate.position.set(92.2, 18, 0); train.add(plate);
+  const boiler = new THREE.Mesh(new THREE.CylinderGeometry(11, 11, 70, ULTRA0 ? 64 : 24), blk); boiler.rotation.z = PI / 2; boiler.position.set(55, 18, 0); boiler.castShadow = true; train.add(boiler);
+  const face = new THREE.Mesh(new THREE.CylinderGeometry(11.5, 11.5, 2, ULTRA0 ? 64 : 24), blk2); face.rotation.z = PI / 2; face.position.set(91, 18, 0); train.add(face);
+  const plate = new THREE.Mesh(new THREE.CircleGeometry(5, ULTRA0 ? 48 : 20), brass); plate.rotation.y = PI / 2; plate.position.set(92.2, 18, 0); train.add(plate);
   box(train, 30, 30, 26, 8, 22, 0, blk); box(train, 34, 3, 30, 8, 38.5, 0, roof); box(train, 10, 9, 1, 8, 26, 13.2, toon('#ffcf80'));
-  const chim = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 3.2, 16, 14), blk2); chim.position.set(78, 34, 0); train.add(chim);
-  const dome2 = new THREE.Mesh(new THREE.SphereGeometry(4.5, 14, 10), brass); dome2.position.set(58, 29, 0); train.add(dome2);
-  const cow = new THREE.Mesh(new THREE.ConeGeometry(12, 12, 4), red); cow.rotation.set(0, PI / 4, -PI / 2); cow.position.set(98, 5, 0); cow.scale.set(1, .5, 1); train.add(cow);
+  const chim = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 3.2, 16, ULTRA0 ? 40 : 14), blk2); chim.position.set(78, 34, 0); train.add(chim);
+  const dome2 = new THREE.Mesh(new THREE.SphereGeometry(4.5, ULTRA0 ? 40 : 14, ULTRA0 ? 26 : 10), brass); dome2.position.set(58, 29, 0); train.add(dome2);
+  const cow = new THREE.Mesh(new THREE.ConeGeometry(12, 12, ULTRA0 ? 12 : 4), red); cow.rotation.set(0, PI / 4, -PI / 2); cow.position.set(98, 5, 0); cow.scale.set(1, .5, 1); train.add(cow);
   box(train, 120, 4, 24, 40, 5, 0, red);
-  for (let i = 0; i < 6; i++) [-1, 1].forEach(z => { const w = new THREE.Mesh(new THREE.CylinderGeometry(i < 2 ? 5 : 7, i < 2 ? 5 : 7, 2.4, 18), red); w.rotation.x = PI / 2; w.position.set(88 - i * 14, i < 2 ? 4 : 6, z * 12.5); train.add(w); });
-  const lamp = new THREE.Mesh(new THREE.SphereGeometry(3, 14, 10), new THREE.MeshBasicMaterial({ color: '#fff4c0' })); lamp.position.set(93, 28, 0); train.add(lamp);
+  for (let i = 0; i < 6; i++) [-1, 1].forEach(z => { const w = new THREE.Mesh(new THREE.CylinderGeometry(i < 2 ? 5 : 7, i < 2 ? 5 : 7, 2.4, ULTRA0 ? 44 : 18), red); w.rotation.x = PI / 2; w.position.set(88 - i * 14, i < 2 ? 4 : 6, z * 12.5); train.add(w); });
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(3, ULTRA0 ? 40 : 14, ULTRA0 ? 26 : 10), new THREE.MeshBasicMaterial({ color: '#fff4c0' })); lamp.position.set(93, 28, 0); train.add(lamp);
   lampSpr = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#ffe8a0', transparent: true, opacity: .85, blending: THREE.AdditiveBlending, depthWrite: false })); lampSpr.position.set(95, 28, 0); lampSpr.scale.set(60, 60, 1); train.add(lampSpr);
-  for (let c = 0; c < 4; c++) { const cx = -40 - c * 92; box(train, 86, 26, 24, cx, 19, 0, car); const rf = new THREE.Mesh(new THREE.CylinderGeometry(13, 13, 86, 16, 1, false, 0, PI), roof); rf.rotation.z = PI / 2; rf.rotation.x = -PI / 2; rf.position.set(cx, 31, 0); train.add(rf);
+  for (let c = 0; c < 4; c++) { const cx = -40 - c * 92; box(train, 86, 26, 24, cx, 19, 0, car); const rf = new THREE.Mesh(new THREE.CylinderGeometry(13, 13, 86, ULTRA0 ? 48 : 16, 1, false, 0, PI), roof); rf.rotation.z = PI / 2; rf.rotation.x = -PI / 2; rf.position.set(cx, 31, 0); train.add(rf);
     for (let w = 0; w < 7; w++) [-1, 1].forEach(z => { const win = new THREE.Mesh(new THREE.PlaneGeometry(7, 8), new THREE.MeshBasicMaterial({ color: pick(['#ffcf80', '#ffd890', '#f0b860']) })); win.position.set(cx - 36 + w * 12, 22, z * 12.2); if (z < 0) win.rotation.y = PI; train.add(win); });
-    for (let w = 0; w < 2; w++) [-1, 1].forEach(z => { const wh = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 2, 14), blk2); wh.rotation.x = PI / 2; wh.position.set(cx - 28 + w * 56, 4, z * 11); train.add(wh); }); }
+    for (let w = 0; w < 2; w++) [-1, 1].forEach(z => { const wh = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 2, ULTRA0 ? 36 : 14), blk2); wh.rotation.x = PI / 2; wh.position.set(cx - 28 + w * 56, 4, z * 11); train.add(wh); }); }
   train.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   smokeP = new THREE.Vector3(); chim.getWorldPosition(smokeP); smokeP.y += 8;
   // 선로 옆 전봇대
@@ -1455,9 +1456,10 @@ function camUpdate(dt, idle) {
 }
 
 // ═══ 화면 위 글자 ═══
-const scr = p => { const v = p.clone().project(camera); return { x: (v.x + 1) / 2 * hud.width, y: (1 - v.y) / 2 * hud.height, back: v.z > 1 }; };
+const scr = p => { const v = p.clone().project(camera); return { x: (v.x + 1) / 2 * HUD.LW, y: (1 - v.y) / 2 * HUD.LH, back: v.z > 1 }; };
+const HUD = window.HUD = { LW: 640, LH: 380 }; // 2D 그림의 논리 좌표 공간(비트맵은 품질배율로 커져도 그림 코드는 이 공간만 씀 — 선명도만 상승)
 function drawHud(q, extra) {
-  const HW = hud.width, HH = hud.height, HX = HW / 2;
+  const HW = HUD.LW, HH = HUD.LH, HX = HW / 2;
   hc.clearRect(0, 0, HW, HH);
   if (whiteout > .01) { hc.fillStyle = `rgba(${flashC},${whiteout})`; hc.fillRect(0, 0, HW, HH); whiteout *= .8; }
   const txt = (s, x, y, font, color, w = 3, stroke = '#000') => { hc.font = font; hc.lineJoin = 'round'; hc.lineWidth = w; hc.strokeStyle = stroke; hc.strokeText(s, x, y); hc.fillStyle = color; hc.fillText(s, x, y); };
@@ -1490,19 +1492,22 @@ let resScale = 1, ftAvg = 16, ivAvg = 16, wkAvg = 6, tickAcc = 0, tickN = 0;
 let baseTop = null;
 function fxBudget() {
   if (!baseTop) { if (frame < 2) return; baseTop = new Set(scene3.children); }
-  const cap = ftAvg > 18 ? 28 : ftAvg > 16.2 ? 48 : 1e9; let k = 0; const ch = scene3.children;
+  const u = window.AAA && AAA.ultra; // 울트라는 이펙트 객체 상한도 함께 올려야 입자(도트)가 잘리지 않는다
+  const cap = u ? (ftAvg > 20 ? 64 : ftAvg > 16.2 ? 140 : 1e9) : ftAvg > 18 ? 28 : ftAvg > 16.2 ? 48 : 1e9; let k = 0; const ch = scene3.children;
   for (let i = ch.length - 1; i >= 0; i--) { const o = ch[i]; if (baseTop.has(o)) continue; if (o.userData.fxHid) { o.visible = true; o.userData.fxHid = false; } if (!o.visible) continue; if (++k > cap) { o.visible = false; o.userData.fxHid = true; } }
 }
 function fitRes() { /* 화면 요소의 실제 가로세로 비율로 렌더 크기·카메라 비율·HUD 캔버스를 맞춘다(휴대폰 세로·가로 모두) */
   const cw = glCanvas.clientWidth || 640, chh = glCanvas.clientHeight || Math.round(cw * RH / RW), asp = Math.max(.42, Math.min(3.2, cw / Math.max(1, chh))), dpr = window.devicePixelRatio || 1;
-  const qd = (window.getQuality && getQuality()) || 'mid', ult = qd === 'ultra' || !!(window.AAA && AAA.ultra), dprCap = qd === 'low' ? 1 : ult ? 2 : qd === 'high' ? 1.75 : 1.25;
+  const qd = (window.getQuality && getQuality()) || 'mid', ult = qd === 'ultra' || !!(window.AAA && AAA.ultra), dprCap = qd === 'low' ? 1 : ult ? 3 : qd === 'high' ? 2 : 1.5;
   const ss = 1; /* 슈퍼샘플은 aaa.js 가 장면 전용 큰 판에서 처리(그리기 판·후처리는 1배) */ /* 울트라 슈퍼샘플링(aaa.js 가 프레임 여유로 1~2배 조절): 내부를 크게 그린 뒤 화면에서 축소 → 계단 감소 */
   let w = Math.round(Math.max(480, cw * Math.min(Math.max(dpr, 1), dprCap) * ss) * resScale), h = Math.round(w / asp); /* 표시 크기×DPR(품질별 상한)×슈퍼샘플 */
-  const budget = ult ? 8.3e6 : qd === 'high' ? 4.2e6 : qd === 'mid' ? 2.2e6 : 1.3e6; /* 화소 상한(이전엔 1920×1140 고정 → 큰 화면에서 확대 흐림·계단) */
+  const budget = ult ? 30e6 : qd === 'high' ? 12e6 : qd === 'mid' ? 4.5e6 : 1.8e6; /* 화소 상한(11-07 고도화: 중간 2배·높음 3배·울트라 3.6배 — 소유자 요청 '픽셀 30배' 방향) */
   const cap = Math.sqrt(budget / Math.max(1, w * h)); if (cap < 1) { w = Math.round(w * cap); h = Math.round(h * cap); }
   if (glCanvas.width !== w || glCanvas.height !== h) { renderer.setSize(w, h, false); const rk = Math.min(.5, 1280 / w); reflRT.setSize(Math.round(w * rk), Math.round(h * rk)); }
   if (Math.abs(camera.aspect - asp) > .001) { camera.aspect = asp; camera.updateProjectionMatrix(); }
-  const hh = Math.round(640 / asp); if (hud.width !== 640 || hud.height !== hh) { hud.width = 640; hud.height = hh; }
+  const hk = ult ? 3 : qd === 'high' ? 2 : qd === 'mid' ? 1.5 : 1, hw = Math.round(640 * hk), hh = Math.round(hw / asp); // HUD 2D 겹 비트맵 배율(글자·입자 선명도), 그림은 논리 640 공간 유지
+  if (hud.width !== hw || hud.height !== hh) { hud.width = hw; hud.height = hh; hc.setTransform(hw / 640, 0, 0, hw / 640, 0, 0); }
+  HUD.LW = 640; HUD.LH = Math.round(640 / asp);
 }
 try { new ResizeObserver(fitRes).observe(glCanvas); } catch (e) { }
 fitRes();

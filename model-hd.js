@@ -12,12 +12,13 @@
   const PROP = HD.prop = { armK: .74, headK: .83, shoulderZ: 4.05 };
 
   // ═══ 1. 몸: 분할 수를 늘린 도형으로 한 번 더 짓기 ═══
-  const KS = 2.4, KR = 2.7; // 구: 가로·세로 각 2.4배, 원기둥·회전체·고리: 둘레 2.7배 × 길이 2배 → 모형 전체 삼각형 약 5배
+  const ULTRA = (() => { try { const q = typeof getQuality === 'function' ? getQuality() : null; return q === 'ultra' || (!q && localStorage.getItem('arenaUltra') === '1'); } catch (e) { return false; } })(); // 11-07: 울트라는 분할 배율·상한 추가 상승(소유자 '삼각형 30배' 요청)
+  const KS = ULTRA ? 3.6 : 2.4, KR = ULTRA ? 4.2 : 2.7; // 구: 가로·세로 각 배, 원기둥·회전체·고리: 둘레 배 × 길이 2배 → 모형 전체 삼각형 약 5배(울트라 약 11배)
   const G0 = { S: THREE.SphereGeometry, C: THREE.CylinderGeometry, L: THREE.LatheGeometry, T: THREE.TorusGeometry, K: THREE.ConeGeometry };
-  class HS extends G0.S { constructor(r = 1, w = 8, h = 6, ...a) { super(r, Math.min(72, Math.round(w * KS)), Math.min(48, Math.round(h * KS)), ...a); } }
-  class HC extends G0.C { constructor(t = 1, b = 1, h = 1, rs = 8, hs = 1, ...a) { super(t, b, h, Math.min(64, Math.round(rs * KR)), hs * 2, ...a); } }
-  class HK extends G0.K { constructor(r = 1, h = 1, rs = 8, hs = 1, ...a) { super(r, h, Math.min(48, Math.round(rs * KR)), hs * 2, ...a); } }
-  class HT extends G0.T { constructor(r = 1, t = .4, rs = 8, ts = 6, ...a) { super(r, t, Math.min(32, Math.round(rs * 2.2)), Math.min(96, Math.round(ts * 2.3)), ...a); } }
+  class HS extends G0.S { constructor(r = 1, w = 8, h = 6, ...a) { super(r, Math.min(ULTRA ? 112 : 72, Math.round(w * KS)), Math.min(ULTRA ? 80 : 48, Math.round(h * KS)), ...a); } }
+  class HC extends G0.C { constructor(t = 1, b = 1, h = 1, rs = 8, hs = 1, ...a) { super(t, b, h, Math.min(ULTRA ? 96 : 64, Math.round(rs * KR)), hs * 2, ...a); } }
+  class HK extends G0.K { constructor(r = 1, h = 1, rs = 8, hs = 1, ...a) { super(r, h, Math.min(ULTRA ? 96 : 48, Math.round(rs * KR)), hs * 2, ...a); } }
+  class HT extends G0.T { constructor(r = 1, t = .4, rs = 8, ts = 6, ...a) { super(r, t, Math.min(ULTRA ? 64 : 32, Math.round(rs * 2.2)), Math.min(ULTRA ? 156 : 96, Math.round(ts * (ULTRA ? 3.2 : 2.3))), ...a); } }
   class HL extends G0.L { // 회전체: 둘레 2.5배 + 윤곽 점을 곡선으로 두 배(근육 굴곡·어깨·허리 곡선이 매끈하게)
     constructor(pts = [], seg = 12, ...a) {
       let P = pts;
@@ -85,8 +86,8 @@
   }
   function handGeo(s, hi) {
     const R = rig(s); R.root.updateMatrixWorld(true);
-    const rs = hi ? 14 : 5, hs = hi ? 3 : 1, list = [];
-    palmGeo(hi ? 16 : 6).forEach(g => list.push([g, 0]));
+    const rs = hi ? (ULTRA ? 20 : 14) : 5, hs = hi ? (ULTRA ? 5 : 3) : 1, list = [];
+    palmGeo(hi ? (ULTRA ? 22 : 16) : 6).forEach(g => list.push([g, 0]));
     R.fj.forEach((js, fi) => js.forEach((b, j) => seg(FING[fi].L[j], FING[fi].r * (1 - j * .1), FING[fi].r * (1 - (j + 1) * .1), rs, hs, j === 0).forEach(g => list.push([g.applyMatrix4(b.matrixWorld), R.B.indexOf(b)]))));
     R.th.forEach((b, j) => seg(TH.L[j], TH.r * (1 - j * .1), TH.r * (1 - (j + 1) * .1), rs, hs, j === 0).forEach(g => list.push([g.applyMatrix4(b.matrixWorld), R.B.indexOf(b)])));
     const cat = (push) => { // 합치기(+ 윤곽선용은 법선 방향으로 부풀림)
@@ -194,7 +195,7 @@
     const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1, 3); return (TEX[h] = t);
   }
   function bladeHi(L, W, curve, wave, jag) {
-    const N = 40, off = y => -curve * Math.pow(y / L, 2) * 2 + (wave ? Math.sin(y / L * PI * 5) * wave : 0), s = new THREE.Shape();
+    const N = ULTRA ? 88 : 40, off = y => -curve * Math.pow(y / L, 2) * 2 + (wave ? Math.sin(y / L * PI * 5) * wave : 0), s = new THREE.Shape();
     s.moveTo(W / 2 + off(0), 0);
     for (let i = 1; i <= N; i++) { const y = L * i / N * .92, j = jag && i % 4 < 2 ? -jag * W * 2 : 0; s.lineTo(W / 2 + off(y) + j, y); }
     s.lineTo(off(L) - W * .15, L + W * .7);
@@ -208,11 +209,11 @@
     if (grp) grp.scale.setScalar(1 / PROP.armK); // 팔을 줄여도 검 길이는 원작 그대로
     if (!grp || grp._hd || sp.axe) return; grp._hd = { lo: grp.children.slice(), hi: [] };
     const add = (geo, mat, y) => { const o = new THREE.Mesh(geo, mat); o.position.y = y; o.visible = false; grp.add(o); grp._hd.hi.push(o); return o; };
-    const Lh = sp.cleaver ? 4.5 : 5;
-    add(new G0.C(.34, .34, Lh, 18, 6), new THREE.MeshToonMaterial({ color: '#ffffff', map: itoTex(sp.h), gradientMap: gm }), 1 - Lh / 2);
-    add(new G0.S(.38, 16, 10), phong('#c8a040'), 1 - Lh).scale.set(1, .5, 1); // 손잡이 끝 마개
-    if (sp.g) { add(new G0.C(sp.cleaver ? 1.4 : 1.05, sp.cleaver ? 1.4 : 1.05, .26, 36, 1), phong(sp.g), 1.15); add(new G0.T(sp.cleaver ? 1.4 : 1.05, .07, 6, 40), phong('#f0d890'), 1.15).rotation.x = PI / 2; }
-    add(new G0.C(.42, .42, .5, 16, 1), phong('#c8a040'), 1.35).scale.set(.7, 1, 1.25); // 칼집 쪽 고정쇠(하바키)
+    const Lh = sp.cleaver ? 4.5 : 5, U2 = ULTRA ? 2.4 : 1;
+    add(new G0.C(.34, .34, Lh, Math.round(18 * U2), 6), new THREE.MeshToonMaterial({ color: '#ffffff', map: itoTex(sp.h), gradientMap: gm }), 1 - Lh / 2);
+    add(new G0.S(.38, Math.round(16 * U2), 10), phong('#c8a040'), 1 - Lh).scale.set(1, .5, 1); // 손잡이 끝 마개
+    if (sp.g) { add(new G0.C(sp.cleaver ? 1.4 : 1.05, sp.cleaver ? 1.4 : 1.05, .26, Math.round(36 * U2), 1), phong(sp.g), 1.15); add(new G0.T(sp.cleaver ? 1.4 : 1.05, .07, Math.round(6 * U2), Math.round(40 * U2)), phong('#f0d890'), 1.15).rotation.x = PI / 2; }
+    add(new G0.C(.42, .42, .5, Math.round(16 * U2), 1), phong('#c8a040'), 1.35).scale.set(.7, 1, 1.25); // 칼집 쪽 고정쇠(하바키)
     add(bladeHi(sp.L, sp.W, sp.curve || 0, sp.wave || 0, sp.jag || 0), phong(sp.c, sp.glow), 1.3);
   }
   function setSwordLod(grp, hi) { if (!grp || !grp._hd || grp._hdOn === hi) return; grp._hdOn = hi; grp._hd.lo.forEach(o => { o.visible = !hi; }); grp._hd.hi.forEach(o => { o.visible = hi; }); }
@@ -227,7 +228,7 @@
     const s = new Set(); if (typeof F === 'undefined' || !F.length) return s;
     const cv = window.getCamView ? window.getCamView() : null;
     if (cv && cv.mode !== 'act' && cv.key) F.forEach(f => { if (f.ch.key === cv.key) s.add(f); });
-    const room = ft < 15 ? 2 : ft < 17.5 ? 1 : 0;
+    const room = ULTRA ? 4 : ft < 15 ? 2 : ft < 17.5 ? 1 : 0;
     F.filter(f => !s.has(f)).map(f => [f, camera.position.distanceTo(f.pos)]).filter(x => x[1] < 120).sort((a, b) => a[1] - b[1]).slice(0, room).forEach(x => s.add(x[0]));
     return s;
   }
