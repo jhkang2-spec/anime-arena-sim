@@ -101,6 +101,9 @@
           if (o === f || (f.team && o.team === f.team)) continue;
           const d = Math.hypot(o.pos.x - f.pos.x, o.pos.z - f.pos.z);
           let sc = ((f.threat && f.threat.get(o)) || 0) + 40 / (d + 10) * 10 + (o.stun > 0 ? 8 : 0) + (o.down ? 6 : 0) + ((o.tire || 0) / Math.max(1, o.tireLim || 10)) * 6;
+          if (o === f.aiTarget) sc += 5; // 목표 유지(Hysteresis): 지금 목표를 조금 우대 — 매 0.5초마다 표적이 흔들리는 것 방지
+          if (f.team && F.some(x => x !== f && x.team === f.team && x.aiTarget === o)) sc += 5; // 협응 집중(Focus Coordination): 아군이 이미 겨냥한 적을 함께 노림
+          if (window.TACTICS && TACTICS.has && TACTICS.has(o, 'intang')) sc -= 12; // 무적 상태: 때려도 안 닿음 → 다른 표적 우선
           // 집중 화력(Execute): 체력이 낮아 마무리 가능한 적을 강하게 우선 겨냥 — 팀이 피해를 나눠 죽이지 않고 한 명을 먼저 떨어뜨림
           const hr = window.HP && HP.on && HP.of ? HP.of(o) : null;
           if (hr && !hr.ko && hr.max) { const hpf = hr.hp / hr.max; if (hpf < .3) sc += 14 + (.3 - hpf) * 46; else if (hpf < .55) sc += (1 - hpf) * 8; }
@@ -121,7 +124,10 @@
     for (let i = 0; i < F.length; i++) {
       const f = F[i], o = f.aiTarget; if (!o || !F.includes(o) || (f.aiState !== 'IDLE' && f.aiState !== 'DEFEND')) continue;
       const pref = PREF[(f.ch && f.ch.world) || f.team] || 20, dx = o.pos.x - f.pos.x, dz = o.pos.z - f.pos.z, d = Math.hypot(dx, dz) || 1;
-      const k = d < pref * .55 ? -1 : d > pref * 2.2 ? 1 : 0; if (k) { f.pos.x += dx / d * k * 14 * dt; f.pos.z += dz / d * k * 14 * dt; }
+      const dm = o.fx && o.fx.domain && o.fx.domain.until > performance.now() / 1000 ? o.fx.domain : null; // 상대가 영역 전개 중 → 반지름 밖에서 기다림(먼저 걸어 들어가지 않음)
+      let k = d < pref * .55 ? -1 : d > pref * 2.2 ? 1 : 0;
+      if (dm && d < dm.r + 10) k = -1;
+      if (k) { f.pos.x += dx / d * k * 14 * dt; f.pos.z += dz / d * k * 14 * dt; }
     }
     // Rapier 가 없을 때만: 인물끼리 겹침 분리(대체)
     if (!(window.PHYS && PHYS.ready && PHYS.on)) for (let i = 0; i < F.length; i++) for (let j = i + 1; j < F.length; j++) {
