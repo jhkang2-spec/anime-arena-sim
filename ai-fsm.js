@@ -93,6 +93,10 @@
       F.forEach(f => {
         if (f.threat) f.threat.forEach((v, k) => { const n = v * .6; if (n < .5 || !F.includes(k)) f.threat.delete(k); else f.threat.set(k, n); });
         let best = null, bs = -1e9;
+        // 내 체력(내가 위험하면: 강화된 적은 피하고, 붙어서 한 명이라도 끌어안는 상쇄 본능)
+        const fr = window.HP && HP.on && HP.of ? HP.of(f) : null;
+        const myHp = fr && fr.max ? fr.hp / fr.max : 1;
+        const cornered = myHp < .25;
         for (const o of F) {
           if (o === f || (f.team && o.team === f.team)) continue;
           const d = Math.hypot(o.pos.x - f.pos.x, o.pos.z - f.pos.z);
@@ -101,7 +105,10 @@
           const hr = window.HP && HP.on && HP.of ? HP.of(o) : null;
           if (hr && !hr.ko && hr.max) { const hpf = hr.hp / hr.max; if (hpf < .3) sc += 14 + (.3 - hpf) * 46; else if (hpf < .55) sc += (1 - hpf) * 8; }
           // 위협 우대(Threat Priority): 강화·거대화·변신 상태의 적은 더 위험하므로 우선 처리
-          if (o.fx && (o.fx.power || o.fx.giant || o.fx.domain) || o.mode > 0) sc += 5;
+          const buffed = !!(o.fx && (o.fx.power || o.fx.giant || o.fx.domain)) || o.mode > 0;
+          if (buffed && !cornered) sc += 5;          // 정상: 위협부터 제거
+          else if (buffed && cornered) sc -= 6;      // 코너에 몰리면 강화된 적은 일부러 피움(상대 안 됨)
+          if (cornered && hr && !hr.ko && hr.max && hr.hp / hr.max < .4) sc += 10; // 마무리당할 각오: 약한 적에게 매달려 상쇄
           if (window.PHYS && PHYS.ready && !PHYS.los(f, o)) sc -= 8;
           if (sc > bs) { bs = sc; best = o; }
         }
