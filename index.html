@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>애니 대전 시뮬레이터</title>
+<script>/* PC 앱(WebView2) 안이면 표시하고, 처음 실행은 울트라 화질로 시작(이후 사용자가 고른 값 존중) */ (function () { var app = !!(window.chrome && window.chrome.webview); window.ARENA_PC_APP = app; if (app) { document.documentElement.className += ' pc-app'; try { if (localStorage.getItem('arenaUltra') === null) localStorage.setItem('arenaUltra', '1'); } catch (e) { } } })();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Noto+Serif+KR:wght@700;900&display=swap">
+<style>
+  :root { --gold:#e8b84a; --gold2:#8a6420; --bg:#120d0a; --panel:#1f1712; --text:#efe3cf; --dim:#9c8b74; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; }
+  body { background:radial-gradient(circle at 50% 0,#2b1b12,var(--bg) 70%); color:var(--text); font-family:'Noto Sans KR','Malgun Gothic',sans-serif; font-size:13px; overflow:hidden;
+    height:100vh; height:100dvh; display:flex; flex-direction:column; padding:calc(6px + env(safe-area-inset-top)) calc(6px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(6px + env(safe-area-inset-left)); }
+  h1 { margin:0 0 4px; font-size:15px; color:var(--gold); text-shadow:2px 2px 0 #000; letter-spacing:1px; text-align:center; flex:none; }
+  .frame { border:3px solid var(--gold2); outline:2px solid #000; background:var(--panel); padding:4px; max-width:100%; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; position:relative; }
+  #teamBar { margin-top:4px; display:flex; flex-wrap:wrap; gap:3px; align-items:stretch; }
+  #teamBar button { font:inherit; font-size:11px; line-height:1.25; color:var(--dim); background:#000a; border:1px solid #4a3418; border-radius:4px; padding:3px 6px; cursor:pointer; text-align:left; min-width:0; }
+  #teamBar button.on { color:#fff; border-color:var(--wc,#e8b84a); box-shadow:inset 0 -3px 0 var(--wc,#e8b84a); background:#2a1c10; }
+  #teamBar button b { font-weight:bold; } #teamBar button.on b { color:var(--gold); }
+  #teamBar button small { display:block; font-size:10px; color:#ffd27a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px; }
+  #teamBar button small i { font-style:normal; color:var(--dim); }
+  #teamInfo { flex:1 1 140px; align-self:center; font-size:10px; color:var(--dim); min-width:0; }
+  #emptyMsg { position:absolute; left:50%; top:45%; transform:translate(-50%,-50%); z-index:4; pointer-events:none; font-size:14px; color:#ffe9a8; text-shadow:2px 2px 0 #000; background:rgba(10,8,18,.6); border:1px solid #c8a050; border-radius:6px; padding:6px 12px; white-space:nowrap; }
+  #emptyMsg[hidden] { display:none; }
+  #gl, #scene { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  #gl { image-rendering:auto; }
+  /* 교전 화면은 남은 공간을 꽉 채움(가로세로 비율은 화면 요소 크기에 맞춰 렌더가 따라감 — arena.js fitRes) */
+  #stage { position:relative; width:100%; flex:1 1 auto; min-height:180px; border:2px solid #000; background:#0a0712; }
+  #teamBar, #viewBar { flex:none; }
+  #teamBar button, body #viewBar button, body #viewBar select { min-height:36px; }
+  .credit { color:var(--dim); font-size:10px; text-align:center; margin-top:4px; flex:none; }
+  /* PC 앱 받기: Windows 웹에서만 보임(앱 안·휴대폰은 숨김) */
+  #pcDl { position:fixed; right:calc(8px + env(safe-area-inset-right)); top:calc(6px + env(safe-area-inset-top)); z-index:20; font-size:12px; font-weight:700; color:#1b1208; background:linear-gradient(#f3cf6e,#c8952f); border:1px solid #000; border-radius:6px; padding:3px 9px; text-decoration:none; box-shadow:0 1px 0 #000; }
+  #pcDl:hover { filter:brightness(1.1); }
+  #pcTip { position:fixed; right:8px; top:34px; z-index:20; max-width:300px; background:#1f1712; border:2px solid var(--gold2); color:var(--text); font-size:12px; line-height:1.6; padding:8px 10px; border-radius:6px; }
+  html.pc-app #pcDl, html.pc-app #pcTip { display:none !important; }
+  #barToggle { position:absolute; right:10px; top:10px; z-index:6; display:none; min-width:36px; min-height:36px; border-radius:8px; border:1px solid #c8a050; background:rgba(10,8,18,.7); color:#ffe9a8; font-size:16px; }
+  /* 휴대폰 세로: 단추 줄은 가로로 밀어 보기(한 줄) */
+  @media (max-width:600px) { body { font-size:12px; } h1 { font-size:13px; } #teamBar { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; } #teamBar button { flex:none; } #teamInfo { display:none; } .credit { display:none; } }
+  /* 휴대폰 가로: 교전 화면이 화면 전체, 단추 줄은 화면 아래에 반투명으로 겹침(⚙ 로 숨기기) */
+  @media (orientation:landscape) and (max-height:520px) {
+    h1, .credit { display:none; }
+    .frame { border:0; outline:0; padding:0; background:none; }
+    #stage { border:0; }
+    body #teamBar, body #viewBar { position:absolute; left:6px; right:56px; z-index:5; background:rgba(10,8,18,.55); border-radius:8px; padding:3px; flex-wrap:nowrap; overflow-x:auto; }
+    body #teamBar { bottom:48px; } body #viewBar { bottom:4px; margin:0; }
+    #teamInfo { display:none; }
+    #barToggle { display:block; }
+    body.bars-off #teamBar, body.bars-off #viewBar { display:none; }
+  }
+</style>
+</head>
+<body>
+<h1>⚔ 애니 대전 시뮬레이터</h1>
+<a id="pcDl" href="download/AnimeArena-PC.exe" download hidden title="Windows 10/11 64비트 · 게임 파일을 PC에 받아 두고 내 PC 성능으로 실행">⬇ PC 앱 받기</a><div id="pcTip" hidden></div>
+<script>/* PC 앱 받기 단추: Windows 데스크톱 웹에서만, 버전·크기는 download/pc-version.json */ (function () { if (window.ARENA_PC_APP || !/Windows NT/.test(navigator.userAgent) || /Mobile|Touch/.test(navigator.userAgent)) return; var a = document.getElementById('pcDl'), tip = document.getElementById('pcTip'); fetch('download/pc-version.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) { if (!v) return; a.hidden = false; a.textContent = '⬇ PC 앱 받기 (' + (v.size / 1048576).toFixed(1) + 'MB)'; a.title += ' · 버전 ' + v.version + ' · SHA256 ' + v.sha256; a.onclick = function () { tip.hidden = false; tip.innerHTML = '받은 <b>AnimeArena-PC.exe</b> 를 실행하세요.<br>파란 <b>“Windows의 PC 보호”</b> 창이 뜨면 <b>추가 정보 → 실행</b> (코드 서명 인증서는 유료라 쓰지 않음).<br>첫 실행 때 게임 파일(약 ' + Math.round((v.gameSize || 290e6) / 1048576) + 'MB)을 한 번 받고, 다음부터는 바뀐 파일만 받습니다.'; setTimeout(function () { tip.hidden = true; }, 15000); }; }).catch(function () { }); })();</script>
+<div class="frame"><button id="barToggle" type="button" title="단추 줄 숨기기/보이기" onclick="document.body.classList.toggle('bars-off')">⚙</button><div id="stage"><canvas id="gl"></canvas><canvas id="scene" width="640" height="380"></canvas></div>
+<div id="teamBar" title="켠 세계관만 출전"></div></div>
+<div class="credit">개인 비공개 관람용 팬 시뮬레이터 · 캐릭터 이름·디자인의 권리는 각 원작 권리자에게 있음 · 3D 기본 자료 CC0(Quaternius·MakeHuman)</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="arena.js"></script><script src="model-hd.js"></script><script src="looks-core.js"></script><script src="looks-a.js"></script><script src="looks-b.js"></script><script src="skills-extra.js"></script><script src="moves.js"></script><script src="brain.js"></script><script src="fxstyle.js"></script><script src="canon.js"></script><script src="canon-naruto.js"></script><script src="canon-onepiece-opm.js"></script><script src="canon-bleach.js"></script><script src="canon-kimetsu.js"></script><script src="env.js"></script><script src="fx2.js"></script><script src="fx3.js"></script><script src="fx3-skills.js"></script><script src="fx3-mocap.js"></script><script src="fx3-cine.js"></script><script src="fx3-plus.js"></script><script src="fx3-plus2.js"></script><script src="motions2.js"></script><script src="camview.js"></script><script src="teams.js"></script><script src="collide.js"></script><script src="mocap.js"></script><script src="physics.js"></script><script src="combat.js"></script><script src="ai-fsm.js"></script><script src="tactics.js"></script><script src="storm-combat.js"></script><script src="attack-moves.js"></script><script src="world-cliff.js"></script><script src="ground2.js"></script><script src="ground-gen.js"></script><script src="world-new.js"></script><script src="world-aot.js"></script><script src="world-jjk.js"></script><script src="world-summon.js"></script><script src="skills-more.js"></script><script src="skills-more2.js"></script><script src="env-assets.js"></script><script src="materials.js"></script><script src="hp.js"></script><script src="knock.js"></script><script src="storm-epic.js"></script><script src="susanoo.js"></script><script src="lightfx.js"></script><script src="aaa.js"></script><script src="camclamp.js"></script><script src="sfx.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+// 교전 화면은 '진행 중 의뢰'가 있어야 돌므로, 게임판에서는 이름 없는 의뢰 하나를 늘 진행 중으로 둔다(화면 글자 없음)
+const GAME_STATE = { quests: [{ id: 'game', status: 'run', name: '', step: ' ', progress: 0 }] };
+startScene(() => GAME_STATE);
+(function () {
+  if (!window.setTeams) return;
+  const bar = $('teamBar'), ws = Object.keys(TEAMS).filter(w => WORLD[w]), empty = document.createElement('div');
+  empty.id = 'emptyMsg'; empty.textContent = '세계관을 눌러 출전시키세요'; $('stage').appendChild(empty);
+  const draw = () => {
+    const st = teamState(), sel = st.sel;
+    bar.innerHTML = ws.map(w => { const on = sel.includes(w), fs = st.fighters.filter(x => x.team === w), f = fs.length ? { name: fs.map(x => x.name).join(' vs '), next: fs[0].next } : null;
+      return `<button data-w="${w}" class="${on ? 'on' : ''}" style="--wc:${WORLD[w].stroke}"><b>${esc(WORLD[w].name)}</b>${f ? `<small>▶ ${esc(f.name)} <i>· 다음 ${esc(f.next || '')}</i></small>` : ''}</button>`; }).join('')
+      + `<span id="teamInfo">${sel.length >= 2 ? '팀 태그 대전 중 · 지치거나 쓰러지면 다음 인물 교대' : sel.length === 1 ? '혼자 몸풀기 중 · 상대 세계관을 하나 더 켜면 교전' : '세계관을 눌러 출전시키세요'}</span>`;
+    empty.hidden = sel.length > 0;
+  };
+  let sig = '';
+  bar.onclick = e => { const b = e.target.closest('button'); if (!b) return; const w = b.dataset.w, sel = getTeams();
+    setTeams(sel.includes(w) ? sel.filter(x => x !== w) : sel.concat(w)); sig = ''; draw(); };
+  setInterval(() => { const st = teamState(), s = JSON.stringify([st.sel, st.fighters.map(f => f.name + '>' + f.next)]); if (s !== sig) { sig = s; draw(); } }, 500); // 인물·교대 순서가 바뀔 때만 다시 그림(누르는 중 단추가 바뀌지 않게)
+  draw();
+})();
+</script>
+</body>
+</html>
