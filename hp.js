@@ -4,7 +4,7 @@
 // arena.js 의 wound·clash·callout 과 teams.js 의 teamSwap(공개)·COMBAT.knockDown 을 감싸거나 부르기만 한다.
 (function () {
   if (typeof CH === 'undefined' || typeof wound !== 'function') return;
-  const HP = window.HP = { on: true, rec: {}, st: { hits: 0, dmg: { basic: [], mid: [], ult: [] }, chip: 0, counter: 0, ko: 0, swaps: 0, defeat: 0, revive: 0, heal: 0 } };
+  const HP = window.HP = { on: true, rec: {}, st: { hits: 0, dmg: { basic: [], mid: [], ult: [] }, chip: 0, counter: 0, ko: 0, swaps: 0, defeat: 0, revive: 0, heal: 0, byTeam: {} } };
   const now = () => performance.now() / 1000;
   // 인물별 최대 체력: 원작 체급(덩치·키) 반영 소폭 차이
   function maxOf(ch) { const b = ch.bulk || 1, h = ch.bodyScale || 1; return Math.round(1000 * Math.max(.88, Math.min(1.2, .55 + .3 * b + .15 * h))); }
@@ -70,7 +70,7 @@
       const alive = list.filter(k => !HP.isKO(team, k) && !F.some(x => x !== v && x.team === team && x.ch.key === k));
       if (alive.length && window.teamSwap) { HP.st.swaps++; teamSwap(v, 'K.O.'); return; }
       // 팀 패배
-      HP.st.defeat++; try { label(headP(v).add(V3(0, 16, 0)), (WORLD[team] ? WORLD[team].name : '') + ' 패배', '#ff8080', { big: true }); } catch (e) { }
+      HP.st.defeat++; HP.st.byTeam[team] = (HP.st.byTeam[team] || 0) + 1; try { label(headP(v).add(V3(0, 16, 0)), (WORLD[team] ? WORLD[team].name : '') + ' 패배', '#ff8080', { big: true }); } catch (e) { }
       setTimeout(() => { revive(team); if (F.includes(v) && v.team === team) { if (window.teamSwap && list.length > 1 && list[0] !== v.ch.key) teamSwap(v, '재출전!'); else { v.stun = 0; v.tire = 0; v.down = null; if (window.mocapForce) mocapForce(v.ch.key, 'Idle'); try { label(headP(v).add(V3(0, 10, 0)), '재출전!', '#ffd84a', { big: true }); } catch (e) { } } } }, 2400);
     }, 1600);
   }

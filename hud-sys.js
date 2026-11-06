@@ -21,7 +21,7 @@
     if (A) rows.push(`<b>AI</b> 재계획:${A.watchdog || 0} 표적변경:${A.retarget || 0} 시야회피:${A.losRepos || 0} 겹침분리:${A.sepFix || 0} AI평균:${Math.round((window.AIFSM.ms || 0) * 10) / 10}ms`);
     if (T && def) { const att = T.def.attempts || 0; rows.push(`<b>전술</b> 방어시도:${att} 회피:${def.evade} 가드:${def.guard} 쳐내기:${def.parry} 탈출:${def.escape} 반사:${def.reflect} | 성공률 ${pct((def.evade || 0) + (def.guard || 0) + (def.parry || 0) + (def.escape || 0), att)}`);
       rows.push(`<b>필살</b> 맞받아치기:${T.ult.counter} 끊기:${T.ult.interrupt} 상쇄승:${T.clash.win} 무승부:${T.clash.draw} 시전차단:${T.castDrop || 0}`); }
-    if (H) rows.push(`<b>체력</b> 적중:${H.hits} 카운터:${H.counter} 가드천:${H.chip} K.O.:${H.ko} 교대:${H.swaps} 회복:${H.heal}${B && B._adr ? ' 아드레날린:' + B._adr : ''}`);
+    if (H) rows.push(`<b>체력</b> 적중:${H.hits} 카운터:${H.counter} 가드천:${H.chip} K.O.:${H.ko} 교대:${H.swaps} 회복:${H.heal}${B && B._adr ? ' 아드레날린:' + B._adr : ''}${H.byTeam ? '\n패배누적: ' + (Object.entries(H.byTeam).map(([t, n]) => t + ' ' + n).join(' · ') || '없음') : ''}`);
     if (L) rows.push(`<b>연출</b> 광원:${L.light} 화면:${L.edge} 강한번쩍임:${L.strong} 차단:${L.blocked} 대시흐림:${L.dash}`);
     if (D) rows.push(`<b>위험</b> 위험오라활성:${D.active}`);
     rows.push(`<b>운영</b> F:빛 G:오라 H:체력바 K:통계`);

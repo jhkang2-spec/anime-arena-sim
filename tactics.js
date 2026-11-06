@@ -35,7 +35,7 @@
     [/화둔|불꽃|화염|염|불|태양|히노카미|연옥|아마테라스/, ['burn']], [/베기|참|검|칼|도|일도|이도|삼도/, ['bleed']], [/수둔|물|파도|수룡|폭포|물의\s*호흡/, ['wet']],
     [/혁|인력|천애|만상천인|당기|흡인|끌어/, ['pull']], [/자\b|허식|신라천정|척력|밀어|폭풍|충격파|풍둔|진공/, ['push']], [/어퍼|띄|승룡|상승|올려|천본/, ['launch']] ];
   TX.TAGS = TAGS;
-  const ELEMTAG = [[/fire|flame|blaze|sun|heat|burn/i, 'burn'], [/ice|frost|snow|cold/i, 'freeze'], [/light|thunder|spark|elec|bolt/i, 'stun'], [/water|wave|mist|rain/i, 'wet'], [/wind|gust|air/i, 'push'], [/shadow|dark/i, 'slow'], [/slash|blade|sword/i, 'bleed']];
+  const ELEMTAG = [[/fire|flame|blaze|sun|heat|burn/i, 'burn'], [/ice|frost|snow|cold/i, 'freeze'], [/light|thunder|spark|elec|bolt/i, 'stun'], [/water|wave|mist|rain/i, 'wet'], [/wind|gust|air/i, 'push'], [/shadow|dark/i, 'slow'], [/slash|blade|sword/i, 'bleed'], [/poison|venom|insect/i, 'slow']];
   const tagsOf = (name, ek) => { const s = new Set(); if (name) for (const [re, ks] of TAGS) if (re.test(name)) ks.forEach(k => s.add(k)); if (ek) for (const [re, k] of ELEMTAG) if (re.test(ek)) { s.add(k); break; } return [...s]; };
   TX.tagsOf = tagsOf;
   const has = (f, k) => f && f.fx && f.fx[k] && f.fx[k].until > now();
