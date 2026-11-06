@@ -333,7 +333,7 @@
     g.computeVertexNormals(); return g;
   }
   function drawFace(key, P, FP, MK, H, eyeOver) {
-    const S = FACE_TEX, cv = document.createElement('canvas'); cv.width = cv.height = S; const x = cv.getContext('2d'), skin = P.skin || '#f0c8a0', hair = P.hair || '#222';
+    const S = PX() > 1 && window.AAA && AAA.ultra ? 768 : FACE_TEX, cv = document.createElement('canvas'); cv.width = cv.height = S; const x = cv.getContext('2d'), skin = P.skin || '#f0c8a0', hair = P.hair || '#222'; // 11-07: 울트라 얼굴 텍스처 768(잔상 세밀화)
     x.fillStyle = skin; x.fillRect(0, 0, S, S);
     const U = u => u * S, V = v => (1 - v) * S, zU = z => U(.5 - z / 1.9), yV = y => V(.52 + y / 2.1);   // 얼굴 좌표(R 단위) → 그림 좌표
     const fs = FACE[key] || 'round', es = FP.es, ec0 = eyeOver || P.eye || '#3a2a1a';
@@ -397,7 +397,7 @@
     return cv;
   }
   function animeFace(key, P, R, FP, MK, H, rig) {
-    MC._fk = key; const cv = drawFace(key, P, FP, MK, H), tex = new THREE.CanvasTexture(cv); tex.anisotropy = 4;
+    MC._fk = key; const cv = drawFace(key, P, FP, MK, H), tex = new THREE.CanvasTexture(cv); tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); tex.generateMipmaps = true; tex.minFilter = THREE.LinearMipmapLinearFilter;
     const skin = P.skin || '#f0c8a0', m = new THREE.MeshToonMaterial({ map: tex, color: new THREE.Color(.42, .42, .42), gradientMap: typeof gm !== 'undefined' ? gm : null }); m.userData.matUp = 1; // 재질 담당 덧칠 제외(얼굴 그림 선이 흐려지지 않게)
     m.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance = diffuseColor.rgb * 1.45;'); }; // 그림 색이 달빛에 바래지 않게(얼굴 그림 자체 발광)
     const mesh = new THREE.Mesh(faceGeo(R, FP), m);
@@ -1098,7 +1098,7 @@
     // 몸 색도 달빛에 회색으로 바래지 않게: 정점 색의 일부를 자체 발광으로(받는 빛은 줄임) — 얼굴 피부와 같은 원리
     mat.color.setScalar(.66); mat.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += vColor.rgb * 0.34;'); };
     const rig = { ch, holder, inner, root, mat, meshes: [], outs: [], bones: {}, pairs: [], cur: null, act: null, moRef: null, swd: [], tick: 0, r: 0, combo: 0, state: null, v: new THREE.Vector3(), last: new THREE.Vector3(), spd: 0, alt: 0, body: MB ? (/^f_/.test(preset) ? 'f' : preset === 'm_muscle' ? 'm' : 'n') : bodyOf(key), preset: MB ? preset : null };
-    if (PX() > 1 && MC.weave === true) { const wv = MC._weave || (MC._weave = (() => { const S = 128, cv = document.createElement('canvas'); cv.width = cv.height = S; const x = cv.getContext('2d'), im = x.createImageData(S, S);
+    if (PX() > 1 && (MC.weave === true || (window.AAA && AAA.ultra))) { const wv = MC._weave || (MC._weave = (() => { const S = 128, cv = document.createElement('canvas'); cv.width = cv.height = S; const x = cv.getContext('2d'), im = x.createImageData(S, S); // 11-07: 울트라는 직물결(weave) 자동 켬 — 옷감 실감
         for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) { const u = (i % 8) / 8, v = (j % 8) / 8, over = ((i >> 3) + (j >> 3)) & 1, nx = over ? Math.sin(u * Math.PI * 2) * .5 : 0, ny = over ? 0 : Math.sin(v * Math.PI * 2) * .5, k = (j * S + i) * 4; im.data[k] = 128 + nx * 100; im.data[k + 1] = 128 + ny * 100; im.data[k + 2] = 255; im.data[k + 3] = 255; }
         x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(24, 24); return t; })());
       mat.normalMap = wv; mat.normalScale = new THREE.Vector2(.35, .35); } // 옷감 결(평직 법선)
