@@ -7,7 +7,7 @@
   const AI = window.AIFSM = { on: true, ms: 0, msMax: 0, st: { blockedActs: 0, trans: 0, losRepos: 0, retarget: 0, camTrack: 0, shakeCut: 0, sepFix: 0, time: {} }, reset() { const s = AI.st; s.blockedActs = s.trans = s.losRepos = s.retarget = s.camTrack = s.shakeCut = s.sepFix = 0; s.watchdog = s.rockJump = s.rockShot = s.rockPull = 0; s.time = {}; AI.msMax = 0; } };
   const ATK = /^(punch|punchL|palm|elbow|uppercut|shoulder|kick|highKick|axe|jumpKnee|sweep|slash|k_kesa|k_yoko|k_upCut|k_tsuki|spreadSlash|twoHandSword|swordDown|k_iaiCut|iaiEnd|k_dualOpen|cast|seal|iai|punchPrep|kickPrep|slashPrep)$/;
   const RUN = /^(run|crouchRun|k_run|k_lowRun)$/, DEF = /^(block|k_uke)$/;
-  const PREF = { naruto: 26, onepiece: 15, bleach: 22, opm: 14, kimetsu: 18 }; // 세계관별 선호 교전 거리(나루토 거리 두고 술법, 원피스·원펀맨 붙어서 타격)
+  const PREF = { naruto: 26, onepiece: 15, bleach: 22, opm: 14, kimetsu: 18, jjk: 20, aot: 16 }; // 세계관별 선호 교전 거리(나루토 거리 두고 술법, 원피스·원펀맨 붙어서 타격, 주술회전 중간, 진격의 거인은 입체기동으로 붙고 떨어지며)
 
   // ── 상태 판정(우선순위: 다운 > 피격 > 교대 > 공격 > 방어 > 후퇴/추적 > 대기) ──
   function stateOf(f) {

@@ -28,14 +28,14 @@
   // 기술 이름(일부 글자) → 효과 — 다른 일꾼의 기술 파일(skills-more.js·world-aot·world-jjk 등)은 건드리지 않고 이 표로만 붙인다
   const TAGS = [
     [/무량공처|복마어주자|영역\s*전개|영역전개|결계|자폐원돈과/, ['domain']], [/무하한|무한|투명|신기루/, ['intang']], [/분신/, ['clone']], [/대타|바꿔치기/, ['intang']],
-    [/수사노오|스사노오|거인|거대|대불|구미|미수옥|오오노코/, ['giant', 'power']], [/기어\s*2|순보|비뢰신|벽력|섬광|신속|가속|질풍|음속|팔문|생문|경문/, ['haste']],
-    [/기어\s*(3|4|5)|진지한|만해|반카이|선인|패기|무장색|흑섬|강화|폭주|연옥|귀인화/, ['power']], [/경화|철괴|철벽|강철|모래\s*방패|방패|수호|갑옷/, ['armor']],
+    [/수사노오|스사노오|거인|거대|대불|구미|미수옥|오오노코/, ['giant', 'power']],     [/기어\s*2|기어 세컨|순보|비뢰신|벽력|섬광|신속|가속|질풍|음속|팔문|생문|경문|입체기동/, ['haste']],
+    [/기어\s*(3|4|5)|진지한|만해|반카이|선인|패기|무장색|흑섬|강화|폭주|연옥|귀인화|허화|괴인화/, ['power']], [/경화|철괴|철벽|강철|모래\s*방패|방패|수호|갑옷/, ['armor']],
     [/반사|쳐내|되받|백제|흡수/, ['reflect']], [/회복|치유|재생|반전술식/, ['heal']],
     [/빙|얼음|동결|빙결|천상의\s*무지개|빙천/, ['freeze']], [/그림자|묶|구속|속박|봉인|거미|실/, ['slow']], [/번개|뇌|치도리|기린|전격|雷|벽력|일섬/, ['stun']],
     [/화둔|불꽃|화염|염|불|태양|히노카미|연옥|아마테라스/, ['burn']], [/베기|참|검|칼|도|일도|이도|삼도/, ['bleed']], [/수둔|물|파도|수룡|폭포|물의\s*호흡/, ['wet']],
     [/혁|인력|천애|만상천인|당기|흡인|끌어/, ['pull']], [/자\b|허식|신라천정|척력|밀어|폭풍|충격파|풍둔|진공/, ['push']], [/어퍼|띄|승룡|상승|올려|천본/, ['launch']] ];
   TX.TAGS = TAGS;
-  const ELEMTAG = [[/fire|flame|blaze|sun|heat|burn/i, 'burn'], [/ice|frost|snow|cold/i, 'freeze'], [/light|thunder|spark|elec|bolt/i, 'stun'], [/water|wave|mist|rain/i, 'wet'], [/wind|gust|air/i, 'push'], [/shadow|dark/i, 'slow']];
+  const ELEMTAG = [[/fire|flame|blaze|sun|heat|burn/i, 'burn'], [/ice|frost|snow|cold/i, 'freeze'], [/light|thunder|spark|elec|bolt/i, 'stun'], [/water|wave|mist|rain/i, 'wet'], [/wind|gust|air/i, 'push'], [/shadow|dark/i, 'slow'], [/slash|blade|sword/i, 'bleed']];
   const tagsOf = (name, ek) => { const s = new Set(); if (name) for (const [re, ks] of TAGS) if (re.test(name)) ks.forEach(k => s.add(k)); if (ek) for (const [re, k] of ELEMTAG) if (re.test(ek)) { s.add(k); break; } return [...s]; };
   TX.tagsOf = tagsOf;
   const has = (f, k) => f && f.fx && f.fx[k] && f.fx[k].until > now();
