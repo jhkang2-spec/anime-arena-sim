@@ -121,7 +121,7 @@
   }
   function shootS(a) { if (!a) return; if (!cd('shoot' + (a.ch && a.ch.key || ''), 160)) return; const t0 = ctx.currentTime, sp = spatial(posOf(a)); to(sp, nz(t0, .22, { type: 'bandpass', f0: 640, f1: 1650, q: .8, g: .3 })); track(sp, t0 + .3); }
 
-  const wrap = (name, fn) => { const o = window[name]; if (typeof o !== 'function') return; window[name] = function () { const r = o.apply(this, arguments); try { if (ready() && voices < 140) fn.apply(this, arguments); } catch (e) { console.warn('sfx-real', name, e); } return r; }; };
+  const wrap = (name, fn) => { const o = window[name]; if (typeof o !== 'function') return; window[name] = function () { const r = o.apply(this, arguments); if (ready() && voices < 140) { const L0 = _lay; try { fn.apply(this, arguments); } catch (e) { console.warn('sfx-real', name, e); _lay = L0; } } return r; }; };
   wrap('wound', (v, a, text, ek) => hitS(v, a, text, ek));
   wrap('clash', (a, b, text, big) => clashS(a, b, text, big));
   wrap('explode', (p, ek, pw) => expS(p, ek, pw, false));

@@ -51,7 +51,7 @@
   Object.values(CH).forEach(c => c.model && c.model.root.traverse(o => { if (o.isMesh && o.material && o.material !== OUT && o.material.type === 'MeshToonMaterial' && o.visible) o.castShadow = true; }));
   if (typeof blobMat !== 'undefined') blobMat.opacity = .2; // 발밑 원형 그림자는 접지감만 살짝
   let shadowLvl = 2; // 2=2048 매 장면, 1=1024 매 장면, 0=1024 두 장면에 한 번
-  function setShadow(l) { if (l === shadowLvl) return; shadowLvl = l; const sz = l === 2 ? 2048 : 1024; if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } } renderer.shadowMap.autoUpdate = l > 0; }
+  function setShadow(l) { if (l === shadowLvl) return; shadowLvl = l; const sz = l === 2 ? ((window.AAA && AAA.ultra) ? 4096 : 2048) : 1024; if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } } renderer.shadowMap.autoUpdate = l > 0; }
 
   // ── 3) 지형 파괴 ──
   const C = c => new THREE.Color(c), up = new THREE.Vector3(0, 1, 0), M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), E3 = new THREE.Euler(), S3 = new THREE.Vector3();

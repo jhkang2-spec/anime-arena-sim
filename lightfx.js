@@ -18,9 +18,9 @@
   const rgba = (c, a) => { const [r, g, b] = cHex(c); return `rgba(${r},${g},${b},${Math.max(0, Math.min(1, a))})`; };
 
   // ═══ 1) 점광원 풀 ═══
-  const NPOOL = 6, POOL = [];
+  const NPOOL = 8, POOL = [];
   for (let i = 0; i < NPOOL; i++) { const l = new THREE.PointLight('#ffffff', 0, 120, 2); scene3.add(l); POOL.push({ l, t: 9, dur: 0, peak: 0, kind: 'other', rise: 0, p: new THREE.Vector3() }); }
-  const capN = () => { const q = Q(); return q === 'low' ? 2 : q === 'mid' ? 4 : 6; };
+  const capN = () => { const q = Q(); return q === 'low' ? 2 : q === 'mid' ? 4 : (window.AAA && AAA.ultra) ? 8 : 6; };
   function light(p, col, peak, dur, rad, kind, rise) {
     if (!LF.on || !p) return;
     const cap = capN(); let best = null;
@@ -52,7 +52,7 @@
   const strongT = [];
   function allowStrong() { const t = nowS(); while (strongT.length && t - strongT[0] > 1) strongT.shift(); if (strongT.length >= 3) { LF.st.blocked++; return false; } strongT.push(t); LF.st.strong++; return true; }
   let frameEdges = 0;
-  function edge(col, a, dur) { if (frameEdges >= 2) return; frameEdges++; S.edges.push({ col, a: Math.min(.42, a * (isDay() ? 1.25 : 1)), t: 0, dur }); if (S.edges.length > 6) S.edges.shift(); LF.st.edge++; }
+  function edge(col, a, dur) { if (frameEdges >= ((window.AAA && AAA.ultra) ? 3 : 2)) return; frameEdges++; S.edges.push({ col, a: Math.min(.42, a * (isDay() ? 1.25 : 1)), t: 0, dur }); if (S.edges.length > 6) S.edges.shift(); LF.st.edge++; }
   function ray(p3, col, dur, n) { if (Q() === 'low') return; S.rays.push({ p3: p3.clone(), col, t: 0, dur, n: n || 9, seed: Math.random() * 6.28 }); if (S.rays.length > 3) S.rays.shift(); LF.st.rays++; }
   function tint(kind, col, dur) { S.tintK = kind; S.tintC = col; S.tintT = dur; }
   const scr = p => { const v = p.clone().project(camera); return { x: (v.x + 1) / 2 * ov.width, y: (1 - v.y) / 2 * ov.height, back: v.z > 1 || v.z < -1 }; };

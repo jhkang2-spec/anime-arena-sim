@@ -474,7 +474,7 @@
         D[i * 4] = T5.value; D[i * 4 + 1] = life; D[i * 4 + 2] = size; D[i * 4 + 3] = k; C[i * 4] = col.r; C[i * 4 + 1] = col.g; C[i * 4 + 2] = col.b; C[i * 4 + 3] = grav; Rr[i * 2] = rot === undefined ? Math.random() * 6.283 : rot; Rr[i * 2 + 1] = spin * (Math.random() < .5 ? -1 : 1); dirty = true; },
       flush() { if (!dirty) return; dirty = false; for (const k of ['position', 'aV', 'aD', 'aC', 'aR']) g.attributes[k].needsUpdate = true; } }; }
   const KA = KSys(3600, true), KN = KSys(2600, false);
-  const kq = () => { const q = typeof getQuality === 'function' ? getQuality() : 'mid'; return busy() * ((q === 'ultra' || (window.AAA && AAA.ultra)) ? 5 : q === 'high' ? 1.25 : 1); }; /* 울트라: 높음의 4배(11-07 도트 증량) */
+  const kq = () => { const q = typeof getQuality === 'function' ? getQuality() : 'mid'; return busy() * ((q === 'ultra' || (window.AAA && AAA.ultra)) ? 7 : q === 'high' ? 1.25 : 1); }; /* 울트라: 높음의 6~7배(11-07 도트 증량) */
   /* 속성별 실사 프리셋: 타격·폭발·필살 적중이 모두 자동으로 씀(크기 k: 1 보통 ~ 3 필살) — 밝기는 낮춘 기준(섬광 작게·짧게) */
   const KP = {
     fire(p, k = 1, c = '#ff7a20') { for (let i = 0; i < 7 * k * kq(); i++) KA.emit(i % 3 ? 1 : 2, p.clone().add(rnd(3 * k)), V3(rr(-30, 30) * k, rr(20, 70) * k, rr(-30, 30) * k), rr(.45, .8), rr(10, 18) * k, i % 4 ? c : '#ffd27a', -30, 1.5); for (let i = 0; i < 4 * k * kq(); i++) KN.emit(3 + (i % 2), p.clone().add(rnd(4 * k)), V3(rr(-14, 14), rr(18, 40), rr(-14, 14)), rr(1.1, 1.8), rr(14, 22) * k, '#3a302a', -6, .6); KP.spark(p, k * .7, '#ffb050'); },
@@ -513,7 +513,7 @@
   let lastDet = 0;
   function detail(p, ek, k) { if (!p) return; const now = T5.value; if (k < 1.2 && now - lastDet < .06) return; lastDet = now; const E = (typeof ELEM !== 'undefined' && ELEM[ek]) || { c: '#ffffff' }, c = E.c, hot = KFIRE.has(ek), dk = KDARK.has(ek);
     grains(p, k, c, hot); smokeLayers(p, k * .8, hot ? '#3a322c' : dk ? '#1a1020' : ek === 'sand' || ek === 'earth' ? '#9a8a74' : '#a8a4a0', dk || hot); if (k >= 1) airRing(p, k);
-    const s = SEC_OF(ek); if (s) SECOND[s](p, k, c); const ULT5 = typeof getQuality === 'function' && getQuality() === 'ultra' || (window.AAA && AAA.ultra); if (k >= 1.2 && lingerQ.length < (ULT5 ? 44 : 12)) lingerQ.push({ t: 0, dur: (2 + Math.min(2, k)) * (ULT5 ? 1.6 : 1), p: p.clone(), hot, c, k }); }
+    const s = SEC_OF(ek); if (s) SECOND[s](p, k, c); const ULT5 = typeof getQuality === 'function' && getQuality() === 'ultra' || (window.AAA && AAA.ultra); if (k >= 1.2 && lingerQ.length < (ULT5 ? 64 : 12)) lingerQ.push({ t: 0, dur: (2 + Math.min(2, k)) * (ULT5 ? 1.6 : 1), p: p.clone(), hot, c, k }); }
   function lingerTick(dt) { for (let i = lingerQ.length - 1; i >= 0; i--) { const L = lingerQ[i]; L.t += dt; if (L.t > L.dur) { lingerQ.splice(i, 1); continue; } if (Math.random() > .35 * busy()) continue; const fade = 1 - L.t / L.dur, g = V3(L.p.x + rr(-10, 10) * L.k, rr(0, 3), L.p.z + rr(-10, 10) * L.k);
       if (L.hot) { KA.emit(5, g, V3(rr(-6, 6), rr(10, 30), rr(-6, 6)), rr(.8, 1.4), rr(1.5, 3) * fade + 1, '#ff9a40', -8, 2); if (Math.random() < .4) KN.emit(3, g, V3(rr(-4, 4), rr(8, 16), rr(-4, 4)), 1.6, rr(10, 16), '#4a4038', -2, .4); }
       else { KN.emit(4, g, V3(rr(-6, 6), rr(3, 9), rr(-6, 6)), 1.8, rr(12, 20) * L.k, '#a89a88', -1, .3); if (Math.random() < .3) KA.emit(5, g.clone().add(V3(0, rr(2, 10), 0)), V3(rr(-3, 3), rr(2, 6), rr(-3, 3)), 1.2, 1.6, L.c, -2, 1); } } }

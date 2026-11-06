@@ -12,7 +12,7 @@
   const rr = (a, b) => a + Math.random() * (b - a);
   const col3 = h => { const c = new THREE.Color(h); return c; };
   const st = window.__fx3 = { emits: 0, ms: 0, sty: 0, styUntil: 0, recipes: 0, hits: 0 };
-  const QF = () => { const q = typeof getQuality === 'function' ? getQuality() : 'mid'; return q === 'low' ? .4 : q === 'mid' ? .65 : (window.AAA && AAA.ultra) ? 1.6 : 1; }; // 품질별 이펙트 양(11-07: 울트라는 높음의 1.6배 — 도트 수 증량)
+  const QF = () => { const q = typeof getQuality === 'function' ? getQuality() : 'mid'; return q === 'low' ? .4 : q === 'mid' ? .65 : (window.AAA && AAA.ultra) ? 2.2 : 1; }; // 품질별 이펙트 양(11-07: 울트라는 높음의 2.2배 — 도트 수 증량)
   const busy = () => (typeof ftAvg === 'undefined' ? 1 : ftAvg > 24 ? .25 : ftAvg > 17.2 ? .5 : 1) * QF() * (window.FX3 && FX3.sigT && performance.now() - FX3.sigT < 400 ? .55 : 1); // 버거우면 줄임 · 형상 메시가 보일 땐 입자 줄임
   const root = new THREE.Group(); root.name = 'fx3'; scene3.add(root);
   const keepRoot = () => { try { if (typeof baseTop !== 'undefined' && baseTop && !baseTop.has(root)) baseTop.add(root); } catch (e) { } };

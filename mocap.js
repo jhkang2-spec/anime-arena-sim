@@ -224,7 +224,7 @@
   }
   // 옷자락(하오리·긴 옷·치마): 허리 → len 까지 벌어지는 원통(앞 트임), 무늬는 정점 색
   function skirtGeo(cs, h, top, bot, rx, rz, open) {
-    const PXk = PX() > 1 ? 3 : 1, seg = (cs.pleat ? 84 : 40) * PXk, rows = (cs.pleat ? 14 : 10) * PXk, gap = open ? .55 : 0, pos = [], col = [], idx = [], c = new THREE.Color();
+    const PXk = PX() > 1 ? ((window.AAA && AAA.ultra) ? 4.5 : 3) : 1, seg = (cs.pleat ? 84 : 40) * PXk, rows = (cs.pleat ? 14 : 10) * PXk, gap = open ? .55 : 0, pos = [], col = [], idx = [], c = new THREE.Color();
     for (let r = 0; r <= rows; r++) {
       const v = r / rows, y = top + (bot - top) * v, fl = 1 + v * (open ? .35 : .22);
       for (let s = 0; s <= seg; s++) {
@@ -306,7 +306,7 @@
   const flat = c => basicC[c] || (basicC[c] = new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
   const vToon = (() => { let m = null; return () => m || (m = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: typeof gm !== 'undefined' ? gm : null })); })();
   function gradCone(r, L, c1, c2) { // 머리카락 한 갈래(뿌리 c1 → 끝 c2), 뿌리가 원점·+y 로 뻗음
-    const g = new THREE.ConeGeometry(r, L, PX() > 1 ? 18 : 7, PX() > 1 ? 22 : 6); g.scale(1, 1, .58); g.translate(0, L / 2, 0); g.userData.lock = L; /* 납작한 머리 갈래(리본형) */ const p = g.attributes.position, col = [], a = C(c1), b = C(c2), t = new THREE.Color();
+    const g = new THREE.ConeGeometry(r, L, PX() > 1 ? ((window.AAA && AAA.ultra) ? 28 : 18) : 7, PX() > 1 ? ((window.AAA && AAA.ultra) ? 34 : 22) : 6); g.scale(1, 1, .58); g.translate(0, L / 2, 0); g.userData.lock = L; /* 납작한 머리 갈래(리본형) */ const p = g.attributes.position, col = [], a = C(c1), b = C(c2), t = new THREE.Color();
     for (let i = 0; i < p.count; i++) { t.copy(a).lerp(b, Math.max(0, p.getY(i) / L - .35) / .65); col.push(t.r, t.g, t.b); }
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); return g;
   }
@@ -316,10 +316,10 @@
   //  얼굴 메시: 구를 깎아 아래로 좁아지는 턱선·앞이 납작한 얼굴·작은 코 돌기. 정면 투영 UV 로 얼굴 그림(눈·눈썹·입·표식)을 입힘(뒤·옆은 피부색)
   //  눈 그림: 흰자 → 홍채(위 짙고 아래 밝은 그라데이션)·동공·하이라이트 2개 → 굵은 윗속눈썹 선(눈꼬리 날개)·가는 아랫선. 눈매(둥근·날카로운·졸린·점) · 사륜안/윤회안/불꽃 눈/맹인/검은 흰자 지원
   const FACE_TEX = 512;
-  const SG = n => Math.round(n * (PX() > 1 ? 4 : 1)); /* 울트라: 모자·탈 분할 4배 */
+  const SG = n => Math.round(n * ((window.AAA && AAA.ultra) ? 5.5 : (PX() > 1 ? 4 : 1))); /* 울트라: 모자·탈 분할 4배→5.5배 */
   const FACE_X = new Set(['saitama', 'inosuke', 'law', 'luffy', 'kizaru', 'himejima', 'aizen', 'nanami']); /* 머리카락이 적은 인물: 울트라 얼굴 분할 더 */
   function faceGeo(R, FP) {
-    const g = new THREE.SphereGeometry(R, PX() > 1 ? (FACE_X.has(MC._fk) ? 300 : 180) : 56, PX() > 1 ? (FACE_X.has(MC._fk) ? 210 : 130) : 40), p = g.attributes.position, uv = g.attributes.uv;
+    const g = new THREE.SphereGeometry(R, PX() > 1 ? ((window.AAA && AAA.ultra) ? (FACE_X.has(MC._fk) ? 380 : 240) : (FACE_X.has(MC._fk) ? 300 : 180)) : 56, PX() > 1 ? ((window.AAA && AAA.ultra) ? (FACE_X.has(MC._fk) ? 266 : 170) : (FACE_X.has(MC._fk) ? 210 : 130)) : 40), p = g.attributes.position, uv = g.attributes.uv;
     for (let i = 0; i < p.count; i++) {
       let x = p.getX(i) / R, y = p.getY(i) / R, z = p.getZ(i) / R;
       x *= .95; y *= 1.04; z *= .9;
@@ -470,7 +470,7 @@
       const dome = new THREE.Mesh(new THREE.SphereGeometry(R * 1.05, 28, 12, 0, Math.PI * 2, 0, H.s === 'bowl' ? 1.25 : 1.02), toon(hair)); dome.scale.set(.98, 1.04, .94); g.add(dome);
       const down = { short: 1.95, slick: 2.0, spiky: 2.0, back: 2.05, messy: 2.05, flame: 2.05, bowl: 2.0, bob: 2.35, curly: 2.35, long: 2.5, pony: 2.15, braids: 2.2 }[H.s] || 2.0, win = H.s === 'bob' || H.s === 'curly' || H.s === 'long' ? 1.05 : .95;
       const back = new THREE.Mesh(new THREE.SphereGeometry(R * 1.055, 28, 14, Math.PI + win, Math.PI * 2 - 2 * win, .9, down - .9), toon(hair, THREE.DoubleSide)); back.scale.set(.98, 1.04, .95); g.add(back);
-      const n = Math.round((H.n || 20) * (PX() > 1 ? 3.4 : 1)), L = (H.L || .7) * R * .88, rr = R * (PX() > 1 ? .62 : 1) * (H.s === 'short' ? .19 : .24); // 머리카락 부피 줄임(11-05)
+      const n = Math.round((H.n || 20) * (PX() > 1 ? ((window.AAA && AAA.ultra) ? 4.4 : 3.4) : 1)), L = (H.L || .7) * R * .88, rr = R * (PX() > 1 ? .62 : 1) * (H.s === 'short' ? .19 : .24); // 머리카락 부피 줄임(11-05)
       for (let i = 0; i < n; i++) {
         const k = i / n, az = k * Math.PI * 2 * 1.618 % (Math.PI * 2), pol = .25 + (i % 7) * .2; // 위에서 0 ~ 뒤통수 아래 1.45
         const nx = Math.sin(pol) * Math.cos(az), ny = Math.cos(pol), nz = Math.sin(pol) * Math.sin(az); // 뿌리 방향(앞 +x)
@@ -936,7 +936,7 @@
   // ═══ 옷자락 물리(스프링 뼈 체인): 하오리·코트·치마·망토가 관성·중력·바람으로 흩날리고, 다리 캡슐에 막혀 몸을 뚫지 않음 ═══
   // 옷자락 정점을 '세로 줄(기둥)'마다 3마디 뼈에 나눠 붙이고, 매 화면 입자(Verlet)로 흔든 뒤 뼈 방향을 맞춘다.
   // 좌표는 holder 기준(덩치 배율 비틀림 없이). 비용: 인물당 기둥 8×3마디 ≈ 0.05ms
-  function clothSkirt(g, body, waist, bot, rx, cols = PX() > 1 ? 12 : 8, opt = {}) {
+  function clothSkirt(g, body, waist, bot, rx, cols = PX() > 1 ? ((window.AAA && AAA.ultra) ? 18 : 12) : 8, opt = {}) {
     const th0 = opt.th0 || 0, thL = opt.thL || Math.PI * 2, full = thL >= Math.PI * 2 - 1e-3, rz = opt.rz || .8;
     const sk = body.skeleton, BN = sk.bones, bi = n => BN.findIndex(b => b.name.toLowerCase() === n), ip = bi(opt.root || 'pelvis'); if (ip < 0) return null;
     const pelvis = BN[ip], segs = 3;
@@ -1010,7 +1010,7 @@
   const katC = {}; const katMat = () => katC.m || (katC.m = (() => { const m = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: typeof gm !== 'undefined' ? gm : null, side: THREE.DoubleSide }); m.userData.matUp = 1; return m; })());
   function colGeo(g, fn) { const p = g.attributes.position, c = [], t = new THREE.Color(); for (let i = 0; i < p.count; i++) { fn(p.getX(i), p.getY(i), p.getZ(i), t); c.push(t.r, t.g, t.b); } g.setAttribute('color', new THREE.Float32BufferAttribute(c, 3)); return g; }
   function katanaHD(len, w, th, col, big) {
-    const G = new THREE.Group(), add = g => { const m = new THREE.Mesh(g, katMat()); G.add(m); return m; }, steel = new THREE.Color(col || '#e8eef5'), N = PX() > 1 ? 48 : 24;
+    const G = new THREE.Group(), add = g => { const m = new THREE.Mesh(g, katMat()); G.add(m); return m; }, steel = new THREE.Color(col || '#e8eef5'), N = PX() > 1 ? ((window.AAA && AAA.ultra) ? 72 : 48) : 24;
     // 칼날: 길이 방향 N 마디 × 단면 6점(칼등 2·능선 2·날끝 1·반대 능선) — y 는 -0.5 → -0.5-len, z 가 날 쪽
     const P = [], I = [], C2 = [], cc = new THREE.Color(), W = big ? w : Math.max(w, .5), T = big ? th : Math.max(th, .16);
     for (let i = 0; i <= N; i++) { const t = i / N, y = -.5 - t * len, sori = Math.sin(t * Math.PI * .9) * len * (big ? 0 : .025), tip = t > .9 ? (1 - t) / .1 : 1, ww = W * (big ? 1 : (1 - t * .25)) * (big ? (t > .94 ? (1 - t) / .06 * .7 + .3 : 1) : Math.max(.05, tip)), tt = T * (1 - t * .3);
