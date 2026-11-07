@@ -1,0 +1,15 @@
+assets/cc0 — 3D 캐릭터/애니메이션 오픈소스 자산 출처
+====================================================
+ual1.glb — Quaternius "Universal Animation Library" (Standard) — CC0 1.0
+  원작: https://quaternius.com/packs/universalanimationlibrary.html
+  glTF 변환 미러: https://github.com/J-Ponzo/gltf-universal-animation-library (CC0-1.0)
+  본 파일은 위 glTF(.gltf+.bin)를 단일 GLB로 재포장하고,
+  Blender뼈대 이름(DEF-hips, DEF-spine.003, DEF-f_index.01.L …)을
+  UE4/Mixamo류 이름(pelvis, spine_03, index_01_l …)으로 재명명한 것입니다(스킨/클립 불변).
+  내용: 스케이네디드 인체 메쉬(MAIN 조인트 머티리얼) + 46개 애니메이션 클립
+  (Sword_Attack, Punch_Jab, Spell_Simple_Shoot, Hit_Chest, Death01, Walk/Sprint/Idle 루프 등).
+  mocap.js가 이 파일을 기본 몸(TPL.n)과 동작 클립(CLIPS)으로 사용합니다.
+
+추가 예정(선택, 없으면 자동 대체):
+  ubc_male/ubc_female — Quaternius "Universal Base Characters"(CC0) — 저장소 내 직접 미러를 아직 못 찾음(itch.io만).
+  assets/mpfb/* — MPFB(MakeHuman) 몸 — CC0이지만 GitHub 미러 없음(선택 경로, 없으면 절차적 몸 사용).
