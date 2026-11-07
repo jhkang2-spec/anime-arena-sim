@@ -245,15 +245,16 @@ const ELEM = {
 
 // ═══ 효과 ═══
 let parts = [], labels = [], fx = [], projs = [], drops = [], emitters = [];
+const FXM = () => (window.AAA && AAA.ultra) ? 3.2 : 1; // 라운드C(11-07): 울트라 전투 이펙트 개수 배율 — fx3 층의 QF(9배)와 독립 중첩
 let shake = 0, whiteout = 0, flashC = '255,255,255', clashes = 0, frame = 0, tempo = 1, counterBy = null;
 const hexRgb = c => { const n = parseInt(c.slice(1), 16); return `${n >> 16 & 255},${n >> 8 & 255},${n & 255}`; };
 function flashScreen(a, rgb = '255,255,255') { a = Math.min(a, FLASH_MAX); if (a > whiteout) { whiteout = a; flashC = rgb; } }
 function burst(p, n, colors, spd, g = 80, s = 1, normal = false) {
-  for (let i = 0; i < n * 3.5; i++) { const d = V3(R(-1, 1), R(-1, 1), R(-1, 1)).normalize().multiplyScalar((0.4 + Math.random()) * spd * 40); parts.push({ p: p.clone(), v: d, life: 1, c: colors[i % colors.length], g, s, n: normal }); }
+  for (let i = 0; i < n * 3.5 * FXM(); i++) { const d = V3(R(-1, 1), R(-1, 1), R(-1, 1)).normalize().multiplyScalar((0.4 + Math.random()) * spd * 40); parts.push({ p: p.clone(), v: d, life: 1, c: colors[i % colors.length], g, s, n: normal }); }
 }
 function light(p, c, power) { const l = lights.reduce((a, b) => a.intensity < b.intensity ? a : b); l.position.copy(p).add(V3(0, 4, 6)); l.color.set(c); l.intensity = Math.max(l.intensity, power); }
 function label(p, text, color, opts = {}) { if (text) labels.push({ p: p.clone(), rise: opts.rise || 0, text, color, life: opts.life || 1, skill: opts.skill, big: opts.big, stroke: opts.stroke, keep: opts.keep }); }
-const add = (o) => { fx.push(o); const cap = ftAvg > 17 ? 45 : 70; if (fx.length > cap) for (let i = 0, n2 = fx.length - cap; i < fx.length && n2 > 0; i++) if (fx[i].life > .05) { fx[i].life = .05; n2--; } return o; }; // 60fps: 동시 이펙트 상한(버거우면 오래된 것부터 빨리 사라짐)
+const add = (o) => { fx.push(o); const cap = (window.AAA && AAA.ultra) ? 420 : ftAvg > 17 ? 45 : 70; if (fx.length > cap) for (let i = 0, n2 = fx.length - cap; i < fx.length && n2 > 0; i++) if (fx[i].life > .05) { fx[i].life = .05; n2--; } return o; }; // 60fps: 동시 이펙트 상한(버거우면 오래된 것부터 빨리 사라짐)
 const ring = (p, r, c, flat, life = 1, grow = 1.4) => add({ k: 'ring', p: p.clone(), r, c, flat, life, grow });
 const dome = (p, max, c, c2 = '#ffffff') => add({ k: 'dome', p: p.clone(), r: 1, max, c, c2, life: 1 });
 const pillar = (p, w, c, life = 1) => add({ k: 'pillar', p: p.clone(), w, c, life });
@@ -266,10 +267,10 @@ const arc = (f, a0, a1, r, c, w = 4, life = 1) => add({ k: 'arc', f, a0, a1, r: 
 const vortex = (p, ek, life, pw = 1) => emitters.push({ k: 'vortex', p: p.clone(), ek, life, pw });
 const flames = (p, life, fire) => emitters.push({ k: 'flames', p: p.clone(), life, fire });
 function explode(p, ek, pw = 1) {
-  pw *= 1.45; const E = ELEM[ek] || ELEM.wind, n = Math.round(22 * pw);
-  for (let i = 0; i < 3 + 2 * pw; i++) parts.push({ p: p.clone().add(V3(R(-4, 4), R(-2, 4), R(-4, 4)).multiplyScalar(pw * .6)), v: V3(R(-8, 8), R(12, 30), R(-8, 8)), life: R(1.6, 2.4), c: pick(['#2a2630', '#3a3440', '#4a4450']), g: -4, s: 3, n: true });
+  pw *= 1.45; const E = ELEM[ek] || ELEM.wind, n = Math.round(22 * pw * FXM());
+  for (let i = 0; i < 3 + 2 * pw * FXM(); i++) parts.push({ p: p.clone().add(V3(R(-4, 4), R(-2, 4), R(-4, 4)).multiplyScalar(pw * .6)), v: V3(R(-8, 8), R(12, 30), R(-8, 8)), life: R(1.6, 2.4), c: pick(['#2a2630', '#3a3440', '#4a4450']), g: -4, s: 3, n: true });
   if (pw > 2) scorch(p, 6 * pw);
-  for (let i = 0; i < 14 * pw; i++) { const d = V3(R(-1, 1), R(-.3, 1), R(-1, 1)).normalize(); parts.push({ p: p.clone(), v: d.multiplyScalar(R(120, 260) * Math.sqrt(pw)), life: R(.4, .8), c: pick(['#ffffff', E.parts[0], E.parts[1]]), g: 120, s: 1 }); }
+  for (let i = 0; i < 14 * pw * FXM(); i++) { const d = V3(R(-1, 1), R(-.3, 1), R(-1, 1)).normalize(); parts.push({ p: p.clone(), v: d.multiplyScalar(R(120, 260) * Math.sqrt(pw)), life: R(.4, .8), c: pick(['#ffffff', E.parts[0], E.parts[1]]), g: 120, s: 1 }); }
   for (let i = 0; i < 3 + 2 * pw; i++) parts.push({ p: p.clone().add(V3(R(-3, 3), R(-3, 3), R(-3, 3)).multiplyScalar(pw)), v: V3(R(-30, 30), R(-10, 50), R(-30, 30)).multiplyScalar(pw * .6), life: R(.5, .9), c: pick(E.parts), g: 0, s: 3 });
   switch (ek) { // 속성마다 다른 모양
     case 'fire': case 'kurama': case 'sun': case 'blood': for (let i = 0; i < 5; i++) pillar(V3(p.x + R(-8, 8), WATER_H, p.z + R(-8, 8)), R(2, 4.5), E.c, .6); break;
@@ -625,7 +626,7 @@ function resolve(a, b, ek, o, nm, pw = 1, at) {
 // 필살기 광역 폭발: 겹 돔 + 땅을 가르는 충격파 + 빛기둥 + 파편 + 주변 모두 휘말림
 function ultBlast(p, ek, rad, owner, nm) {
   const E = ELEM[ek] || ELEM.power, g = V3(p.x, WATER_H + .1, p.z);
-  moses(g, g, rad * .45, 3); ripple(p.x, p.z, 3.2); for (let i = 0; i < 70; i++) { const a = R(0, PI * 2), sp = R(40, 160); parts.push({ p: g.clone().add(V3(Math.cos(a) * rad * .4, 1, Math.sin(a) * rad * .4)), v: V3(Math.cos(a) * sp, R(80, 260), Math.sin(a) * sp), life: 1.8, c: pick(['#8a6a4a', '#6a5038', '#a08060']), g: 260, s: 2 }); }
+  moses(g, g, rad * .45, 3); ripple(p.x, p.z, 3.2); for (let i = 0; i < Math.round(70 * FXM()); i++) { const a = R(0, PI * 2), sp = R(40, 160); parts.push({ p: g.clone().add(V3(Math.cos(a) * rad * .4, 1, Math.sin(a) * rad * .4)), v: V3(Math.cos(a) * sp, R(80, 260), Math.sin(a) * sp), life: 1.8, c: pick(['#8a6a4a', '#6a5038', '#a08060']), g: 260, s: 2 }); }
   dome(p, rad * .55, E.c); dome(p, rad * .38, '#ffffff', E.c); dome(p, rad * .75, E.parts[2] || E.c);
   for (let i = 0; i < 6; i++) pending.push({ t: i * .08, fn: () => ring(g, 4 + i * 3, i % 2 ? E.c : '#ffffff', true, 1.6, 2.6 + i * .5) });
   for (let i = 0; i < 3; i++) pending.push({ t: .05 + i * .1, fn: () => ring(p, 4, i % 2 ? '#ffffff' : E.c, false, 1.2, 2.4) });

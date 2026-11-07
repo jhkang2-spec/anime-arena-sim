@@ -12,7 +12,7 @@
   const rr = (a, b) => a + Math.random() * (b - a);
   const col3 = h => { const c = new THREE.Color(h); return c; };
   const st = window.__fx3 = { emits: 0, ms: 0, sty: 0, styUntil: 0, recipes: 0, hits: 0 };
-  const QF = () => { const q = typeof getQuality === 'function' ? getQuality() : 'mid'; return q === 'low' ? .4 : q === 'mid' ? .65 : (window.AAA && AAA.ultra) ? 2.2 : 1; }; // 품질별 이펙트 양(11-07: 울트라는 높음의 2.2배 — 도트 수 증량)
+  const   QF = () => { const q = typeof getQuality === 'function' ? getQuality() : 'mid'; return q === 'low' ? .3 : q === 'mid' ? .8 : (window.AAA && AAA.ultra) ? 9 : 1.8; }; // 품질별 이펙트 양(11-07 라운드C: 울트라 폭발적 증량 — busy()의 fps 가드가 자동 감쇠)
   const busy = () => (typeof ftAvg === 'undefined' ? 1 : ftAvg > 24 ? .25 : ftAvg > 17.2 ? .5 : 1) * QF() * (window.FX3 && FX3.sigT && performance.now() - FX3.sigT < 400 ? .55 : 1); // 버거우면 줄임 · 형상 메시가 보일 땐 입자 줄임
   const root = new THREE.Group(); root.name = 'fx3'; scene3.add(root);
   const keepRoot = () => { try { if (typeof baseTop !== 'undefined' && baseTop && !baseTop.has(root)) baseTop.add(root); } catch (e) { } };
@@ -173,7 +173,7 @@
       c.xy += nr * aE.y * w / uRes * c.w * 2.; gl_Position = c; vC = aC.rgb; vA = (1. - age) * (aE.x > .5 ? 1. : 0.); vS = aE.y; }`;
   const SFS = `uniform float uDay; varying vec3 vC; varying float vA; varying float vS;
     void main() { float e = abs(vS); gl_FragColor = vec4(mix(vC, vec3(1.), smoothstep(.55, 0., e) * vA * (1. - uDay * .6)), min(1., vA * smoothstep(1., .1, e) * (1. + uDay * .9))); }`;
-  const Streaks = (() => { const cap = 1800, g = new THREE.BufferGeometry(), n = cap * 4;
+  const Streaks = (() => { const UL0 = (() => { try { return localStorage.getItem('arenaUltra') === '1'; } catch (e) { return false; } })(); const cap = UL0 ? 7000 : 1800, g = new THREE.BufferGeometry(), n = cap * 4;
     const P = new Float32Array(n * 3), V = new Float32Array(n * 3), D = new Float32Array(n * 4), C = new Float32Array(n * 4), E = new Float32Array(n * 2), I = new Uint32Array(cap * 6);
     for (let i = 0; i < cap; i++) { for (let k = 0; k < 4; k++) { const j = i * 4 + k; D[j * 4] = -1e5; D[j * 4 + 1] = 1; E[j * 2] = k < 2 ? 0 : 1; E[j * 2 + 1] = k % 2 ? 1 : -1; } I.set([i * 4, i * 4 + 1, i * 4 + 2, i * 4 + 1, i * 4 + 3, i * 4 + 2], i * 6); }
     const at = (a, k) => new THREE.BufferAttribute(a, k).setUsage(THREE.DynamicDrawUsage);
@@ -194,7 +194,7 @@
       float w = aE.z * clamp(150. / max(ca.w, 1.), .5, 3.); ca.xy += nr * aE.y * w / uRes * ca.w * 2.; gl_Position = ca; vS = aE.y; vW = aE.z; }`;
   const BFS = `uniform float uDay; uniform vec3 uC; uniform float uOp; varying float vS; varying float vW;
     void main() { float e = abs(vS); float core = smoothstep(.32, 0., e), glow = pow(1. - e, 2.2); gl_FragColor = vec4(mix(uC, vec3(1.), core * (1. - uDay * .5)), min(1., (core + glow * .75) * uOp * (1. + uDay * .8))); }`;
-  const bolts = Array.from({ length: 10 }, () => { const cap = 220, g = new THREE.BufferGeometry(), n = cap * 4;
+  const bolts = Array.from({ length: (() => { try { return localStorage.getItem('arenaUltra') === '1'; } catch (e) { return false; } })() ? 28 : 10 }, () => { const cap = (() => { try { return localStorage.getItem('arenaUltra') === '1'; } catch (e) { return false; } })() ? 420 : 220, g = new THREE.BufferGeometry(), n = cap * 4;
     const A = new Float32Array(n * 3), B = new Float32Array(n * 3), E = new Float32Array(n * 3), I = new Uint32Array(cap * 6);
     for (let i = 0; i < cap; i++) I.set([i * 4, i * 4 + 1, i * 4 + 2, i * 4 + 1, i * 4 + 3, i * 4 + 2], i * 6);
     g.setAttribute('position', new THREE.BufferAttribute(A, 3).setUsage(THREE.DynamicDrawUsage)); g.setAttribute('aB', new THREE.BufferAttribute(B, 3).setUsage(THREE.DynamicDrawUsage)); g.setAttribute('aE', new THREE.BufferAttribute(E, 3).setUsage(THREE.DynamicDrawUsage)); g.setIndex(new THREE.BufferAttribute(I, 1));

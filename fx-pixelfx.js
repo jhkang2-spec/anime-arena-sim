@@ -6,7 +6,7 @@
   const L = window.PIXELFX_LIB, PX = window.PIXFX = { on: true, st: { spawns: 0, culled: 0, skipped: 0 }, lib: L };
   try { if (localStorage.getItem('arenaPixFx') === '0') PX.on = false; } catch (e) { }
   const Q = () => { try { return (window.getQuality && getQuality()) || 'mid'; } catch (e) { return 'mid'; } };
-  const budget = () => Q() === 'low' ? 0 : (window.AAA && AAA.ultra) ? 16 : Q() === 'high' ? 9 : Q() === 'mid' ? 5 : 0;
+  const budget = () => Q() === 'low' ? 0 : (window.AAA && AAA.ultra) ? 46 : Q() === 'high' ? 14 : Q() === 'mid' ? 6 : 0;
   const stage = document.getElementById('stage'), glC = document.getElementById('gl'), hudC = document.getElementById('scene');
   const cv = document.createElement('canvas'); cv.id = 'pxfx';
   cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;image-rendering:pixelated;opacity:.92;';
@@ -15,7 +15,7 @@
   let frame = null, img = null, W = 0, H = 0, active = [], dirty = false;
   function size() {
     const cw = (glC && glC.clientWidth) || (stage && stage.clientWidth) || 640, chh = (glC && glC.clientHeight) || 360;
-    const bw = Q() === 'low' ? 256 : (window.AAA && AAA.ultra) ? 448 : Q() === 'high' ? 384 : 320;
+    const bw = Q() === 'low' ? 256 : (window.AAA && AAA.ultra) ? 512 : Q() === 'high' ? 384 : 320;
     const w = bw, h = Math.max(120, Math.round(bw * chh / cw));
     if (w !== W || h !== H) { W = w; H = h; frame = L.createFrame(W, H); img = new ImageData(W, H); cv.width = W; cv.height = H; }
   }
