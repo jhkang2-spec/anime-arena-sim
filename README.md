@@ -17,6 +17,8 @@ python -m http.server 8080   # 또는 npx serve .
 - `mocap.js` / `model-hd.js` — 절차적 캐릭터 리그·얼굴 텍스처·고밀도 메시
 - `fx*.js` / `lightfx.js` / `fx-danger.js` — 파티클·체적 효과·적 오라 조명
 - `sfx.js` / `sfx-real.js` — 레이어링 전투음(자산: `assets/sfx`, 전부 오픈소스) + 절차적 백업
+- `lib/pixelfx.js` / `fx-pixelfx.js` — PIXELFX(244종 픽셀 이펙트) 스크린 겹: 타격·받기·폭발·투사체, `J`/버튼 토글
+- `mocap.js` + `assets/cc0/ual1.glb` — 실제 다운로드 모델(Quaternius 스케이네디드 인체) + 46개 전투 모캡 클립, 캐릭터별 얼굴·머리·의상은 색 조합으로 덮어씀
 - `env.js` / `ground-gen.js` — 그림자·HDRI급 조명· 절차적 지형 텍스처
 
 ## 자산 라이선스 (오픈소스 활용)
@@ -24,6 +26,8 @@ python -m http.server 8080   # 또는 npx serve .
 - 사운드: Kenney(RPG Audio/Impact Sounds, CC0), rubberduck(100-CC0-SFX / 25-CC0-bang, CC0), joth(Chunky Explosion, CC0), OpenGameArt CC0 컷 — 전체 목록 `assets/sfx/LICENSE.txt`, 편집 매니페스트 `assets/sfx/use/manifest.json`
 - 배경음악: "Battle March" by [PlayOnLoop.com](https://www.playonloop.com) — CC-BY 3.0 (attribution)
 - 폰트: Noto Sans/Serif KR (Google Fonts, OFL)
+- 모델·모션: Quaternius Universal Animation Library (`assets/cc0/ual1.glb`, CC0, 뼈대 재명명 기록은 `assets/cc0/LICENSE.txt`)
+- 이펙트: PIXELFX ([patch-gg/pixelfx](https://github.com/patch-gg/pixelfx), MIT, `lib/PIXELFX-NOTICE.md`)
 - 엔진: three.js (MIT, CDN 로드)
 
 ## 공개 주소
