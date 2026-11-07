@@ -17,5 +17,4 @@ ual1.glb — Quaternius "Universal Animation Library" (Standard) — CC0 1.0
   mocap.js가 여자 캐릭터(FEMALE)와 근육형에 TPL.f/TPL.m으로 사용.
 
 추가 예정(선택, 없으면 자동 대체):
-  ubc_male/ubc_female — Quaternius "Universal Base Characters"(CC0) — 저장소 내 직접 미러를 아직 못 찾음(itch.io만).
-  assets/mpfb/* — MPFB(MakeHuman) 몸 — CC0이지만 GitHub 미러 없음(선택 경로, 없으면 절차적 몸 사용).
+  assets/mpfb/* — MPFB(MakeHuman) 몸 — CC0이지만 GitHub 미러 없음(선택 경로, 없으면 UAL 몸 사용).
