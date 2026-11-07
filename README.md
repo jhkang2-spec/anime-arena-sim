@@ -30,6 +30,14 @@ python -m http.server 8080   # 또는 npx serve .
 - 이펙트: PIXELFX ([patch-gg/pixelfx](https://github.com/patch-gg/pixelfx), MIT, `lib/PIXELFX-NOTICE.md`)
 - 엔진: three.js (MIT, CDN 로드)
 
+## CI
+
+GitHub Actions 문법 검사(*.js node --check)를 켜려면:
+
+`
+mkdir -p .github/workflows && cp ci/ci.yml .github/workflows/ && git add .github && git commit -m ci && git push
+`
+
 ## 공개 주소
 
 https://jhkang2-spec.github.io/anime-arena-sim/
