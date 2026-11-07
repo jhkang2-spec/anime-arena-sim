@@ -397,9 +397,10 @@ function taperTube(curve, r, tub = 6, rad = 4) {
   [[1, eyeR], [-1, eyeL]].forEach(([s, em]) => {
     const ry = PI / 2 - s * .72, px = 1.5, pz = s * 1.24;
     const w = part(head, new THREE.CircleGeometry(style === 'saitama' ? .32 : .56, 28), BM('#f8f8f8'), px, 2.45, pz, false); w.rotation.y = ry; w.scale.y = style === 'saitama' ? .8 : 1.2;
-    if (style !== 'saitama') { const ir = part(head, new THREE.CircleGeometry(.37, 24), em, px + .03, 2.42, pz + s * .03, false); ir.rotation.y = ry; ir.scale.y = 1.2; const hl = part(head, new THREE.CircleGeometry(.11, 10), BM('#ffffff'), px + .06, 2.58, pz + s * .06, false); hl.rotation.y = ry; }
+    if (style !== 'saitama') { const lm = part(head, new THREE.CircleGeometry(.42, 26), BM('#160f1e'), px + .02, 2.42, pz + s * .02, false); lm.rotation.y = ry; lm.scale.y = 1.25; const ir = part(head, new THREE.CircleGeometry(.36, 26), em, px + .03, 2.42, pz + s * .03, false); ir.rotation.y = ry; ir.scale.y = 1.28; const iR = part(head, new THREE.CircleGeometry(.16, 16), BM('#0c0812'), px + .04, 2.34, pz + s * .04, false); iR.rotation.y = ry; iR.scale.y = 1.25; const hl = part(head, new THREE.CircleGeometry(.15, 12), BM('#ffffff'), px + .06, 2.6, pz + s * .06, false); hl.rotation.y = ry; hl.scale.y = 1.15; const hl2 = part(head, new THREE.CircleGeometry(.07, 8), BM('#f2f7ff'), px + .055, 2.28, pz + s * .055 - s * .16, false); hl2.rotation.y = ry; }
     const pu = part(head, new THREE.CircleGeometry(style === 'saitama' ? .07 : .16, 16), BM('#0a0a0a'), px + .05, 2.42, pz + s * .05, false); pu.rotation.y = ry;
     const br = part(head, new THREE.BoxGeometry(.12, .12, .85), M('hair'), 1.55, 3.05, s * 1.15, false); br.rotation.y = ry - PI / 2; br.rotation.x = s * .15;
+    if (style !== 'saitama') { const el = part(head, new THREE.BoxGeometry(.09, .1, 1.12), BM('#1a1220'), px + .07, 2.95, pz, false); el.rotation.y = ry; el.scale.y = 1.05; }
   });
   part(head, new THREE.BoxGeometry(.08, .07, .6), BM('#8a3a2a'), 1.92, .85, 0, false);
   const tail = new THREE.Group(); tail.position.set(-1.9, 3.2, 0); head.add(tail);

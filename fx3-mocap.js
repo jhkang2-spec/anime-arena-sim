@@ -29,7 +29,7 @@
       if (!palm(r, 'r', _a)) return; const par = g.parent; if (!par) return; par.updateWorldMatrix(true, false); _m.copy(par.matrixWorld).invert(); g.position.copy(_a.applyMatrix4(_m)); g.userData.fit = true; }); }
 
   // ── 2) 검기 띠 ──
-  const N = 16;
+  const N = (() => { try { return localStorage.getItem('arenaUltra') === '1' ? 26 : 16; } catch (e) { return 16; } })();
   const TVS = `attribute float aU; attribute float aV; varying float vU; varying float vV; void main() { vU = aU; vV = aV; gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.); }`;
   const TFS = `uniform vec3 uC; uniform vec3 uC2; uniform float uOp; uniform float uSty; uniform float uT; varying float vU; varying float vV;
     float h2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
