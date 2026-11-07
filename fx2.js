@@ -230,7 +230,7 @@
         y = Math.max(74, y); placed.push({ x, y });
         card(l, x + (1 - fade) * 22, y, Math.round(base * slam), alpha, skew);
         l.rise += .22;
-      } else if (!SHOW_ALL_LABELS) { /* 소유자 요청(11-05): 일어남·막기·흘리기 등 상태 글자는 띄우지 않음 — 기술·스킬 이름만 */
+      } else if (!SHOW_ALL_LABELS && !l.keep) { /* 소유자 요청(11-05): 일어남·막기·흘리기 등 상태 글자는 띄우지 않음 — 기술·스킬 이름만. 예외: keep:true(피해수치·K.O. 등 전투 핵심 수치) */
         l.life = 0;
       } else {
         const size = l.big ? 18 : 13, pop = age < .1 ? 1.35 - age / .1 * .35 : 1;

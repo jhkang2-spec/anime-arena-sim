@@ -252,7 +252,7 @@ function burst(p, n, colors, spd, g = 80, s = 1, normal = false) {
   for (let i = 0; i < n * 3.5; i++) { const d = V3(R(-1, 1), R(-1, 1), R(-1, 1)).normalize().multiplyScalar((0.4 + Math.random()) * spd * 40); parts.push({ p: p.clone(), v: d, life: 1, c: colors[i % colors.length], g, s, n: normal }); }
 }
 function light(p, c, power) { const l = lights.reduce((a, b) => a.intensity < b.intensity ? a : b); l.position.copy(p).add(V3(0, 4, 6)); l.color.set(c); l.intensity = Math.max(l.intensity, power); }
-function label(p, text, color, opts = {}) { if (text) labels.push({ p: p.clone(), rise: opts.rise || 0, text, color, life: opts.life || 1, skill: opts.skill, big: opts.big, stroke: opts.stroke }); }
+function label(p, text, color, opts = {}) { if (text) labels.push({ p: p.clone(), rise: opts.rise || 0, text, color, life: opts.life || 1, skill: opts.skill, big: opts.big, stroke: opts.stroke, keep: opts.keep }); }
 const add = (o) => { fx.push(o); const cap = ftAvg > 17 ? 45 : 70; if (fx.length > cap) for (let i = 0, n2 = fx.length - cap; i < fx.length && n2 > 0; i++) if (fx[i].life > .05) { fx[i].life = .05; n2--; } return o; }; // 60fps: 동시 이펙트 상한(버거우면 오래된 것부터 빨리 사라짐)
 const ring = (p, r, c, flat, life = 1, grow = 1.4) => add({ k: 'ring', p: p.clone(), r, c, flat, life, grow });
 const dome = (p, max, c, c2 = '#ffffff') => add({ k: 'dome', p: p.clone(), r: 1, max, c, c2, life: 1 });

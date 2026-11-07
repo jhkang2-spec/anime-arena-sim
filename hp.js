@@ -24,7 +24,7 @@
     if (f) { f._coT = now(); f._coUlt = !!ult; if (HP.on && text && HEAL_RE.test(String(text))) heal(f, .14); }
     return _callout.apply(this, arguments);
   };
-  function heal(f, k) { const r = HP.of(f); if (!r || r.ko) return; const add = Math.round(r.max * k); r.hp = Math.min(r.max, r.hp + add); HP.st.heal++; try { label(headP(f).add(V3(0, 9, 0)), '+' + add.toLocaleString(), '#7cff9a'); } catch (e) { } }
+  function heal(f, k) { const r = HP.of(f); if (!r || r.ko) return; const add = Math.round(r.max * k); r.hp = Math.min(r.max, r.hp + add); HP.st.heal++; try { label(headP(f).add(V3(0, 9, 0)), '+' + add.toLocaleString(), '#7cff9a', { keep: true }); } catch (e) { } }
 
   const _wound = wound;
   wound = function (v, a) {
@@ -38,7 +38,7 @@
     const grade = recent ? (a._coUlt ? 'ult' : 'mid') : 'basic';
     const [lo, hi] = DMG[grade]; let d = lo + Math.random() * (hi - lo);
     // 상황 배율
-    if (v.atk && v.atk.ph === 'windup') { d *= 1.3; HP.st.counter++; try { label(headP(v).add(V3(0, 11, 0)), '카운터!', '#ffcf40'); } catch (e) { } }
+    if (v.atk && v.atk.ph === 'windup') { d *= 1.3; HP.st.counter++; try { label(headP(v).add(V3(0, 11, 0)), '카운터!', '#ffcf40', { keep: true }); } catch (e) { } }
     const combo = v._hpComboT && t - v._hpComboT < 1.2 ? (v._hpComboN || 0) + 1 : 0; v._hpComboN = combo; v._hpComboT = t;
     d *= Math.max(.45, 1 - .12 * combo);              // 연속기 보정(이어 맞을수록 덜 깎임)
     if (v.air) d *= .85;                               // 공중 콤보 보정
@@ -47,6 +47,14 @@
     const mul = Number.isFinite(buf) ? buf : 1;
     d = mul === 0 ? 0 : Math.max(1, Math.round(d * mul)); // 무적(0배율)이면 피해 0 — 관통 금지
     rv.hp = Math.max(0, rv.hp - d); if (d > 0) { HP.st.hits++; HP.st.dmg[grade].push(d); }
+    // 띄움 피해 수치(애니 게임 정석): 등급별 색·큰 타격은 크게, 연속기 칩
+    if (d > 0) {
+      try {
+        const cl = grade === 'ult' ? '#ff8a4a' : grade === 'mid' ? '#ffd257' : '#ffffff';
+        label(headP(v).add(V3(0, 8.4 + Math.min(3, d / 90), 0)), '-' + d.toLocaleString(), cl, { big: grade === 'ult' || d > 160, life: 1.15, rise: 1.6, keep: true });
+        if (combo >= 2) label(headP(v).add(V3(0, 12.8, 0)), (combo + 1) + '연격', '#ffb057', { life: .8, rise: 2.2, keep: true });
+      } catch (e) { }
+    }
     if (rv.hp <= 0) ko(v, a);
   }
   // 막기·튕겨냄은 깎이는 양이 아주 적음(가드 데미지)
@@ -62,7 +70,8 @@
     const r = HP.of(v); r.ko = true; r.hp = 0; HP.st.ko++;
     v.tire = v.tireLim || 99; // combat.js 의 다운 단계가 'KO'(누운 채) 로 가게
     try { const kd = new THREE.Vector3(v.pos.x - (a ? a.pos.x : v.pos.x - 1), 0, v.pos.z - (a ? a.pos.z : v.pos.z)); if (kd.lengthSq() < .01) kd.set(1, 0, 0); kd.normalize(); if (window.COMBAT && COMBAT.knockDown) COMBAT.knockDown(v, kd, 1.6); else v.stun = Math.max(v.stun || 0, 2); } catch (e) { }
-    try { label(headP(v).add(V3(0, 12, 0)), 'K.O.', '#ff4040', { big: true }); } catch (e) { }
+    try { label(headP(v).add(V3(0, 12, 0)), 'K.O.', '#ff4040', { big: true, life: 1.6, keep: true }); } catch (e) { }
+    try { if (window.PIXFX) PIXFX.spawn('explosions/big-explosion', headP(v).add(V3(0, -2, 0)), { light: 1.5 }); } catch (e) { }
     const team = v.team, key = v.ch.key;
     setTimeout(() => {
       if (!F.includes(v) || v.team !== team || v.ch.key !== key) return;
@@ -70,8 +79,8 @@
       const alive = list.filter(k => !HP.isKO(team, k) && !F.some(x => x !== v && x.team === team && x.ch.key === k));
       if (alive.length && window.teamSwap) { HP.st.swaps++; teamSwap(v, 'K.O.'); return; }
       // 팀 패배
-      HP.st.defeat++; HP.st.byTeam[team] = (HP.st.byTeam[team] || 0) + 1; try { label(headP(v).add(V3(0, 16, 0)), (WORLD[team] ? WORLD[team].name : '') + ' 패배', '#ff8080', { big: true }); } catch (e) { }
-      setTimeout(() => { revive(team); if (F.includes(v) && v.team === team) { if (window.teamSwap && list.length > 1 && list[0] !== v.ch.key) teamSwap(v, '재출전!'); else { v.stun = 0; v.tire = 0; v.down = null; if (window.mocapForce) mocapForce(v.ch.key, 'Idle'); try { label(headP(v).add(V3(0, 10, 0)), '재출전!', '#ffd84a', { big: true }); } catch (e) { } } } }, 2400);
+      HP.st.defeat++; HP.st.byTeam[team] = (HP.st.byTeam[team] || 0) + 1; try { label(headP(v).add(V3(0, 16, 0)), (WORLD[team] ? WORLD[team].name : '') + ' 패배', '#ff8080', { big: true, keep: true }); } catch (e) { }
+      setTimeout(() => { revive(team); if (F.includes(v) && v.team === team) { if (window.teamSwap && list.length > 1 && list[0] !== v.ch.key) teamSwap(v, '재출전!'); else { v.stun = 0; v.tire = 0; v.down = null; if (window.mocapForce) mocapForce(v.ch.key, 'Idle'); try { label(headP(v).add(V3(0, 10, 0)), '재출전!', '#ffd84a', { big: true, keep: true }); } catch (e) { } } } }, 2400);
     }, 1600);
   }
   function revive(team) { const T = HP.rec[team]; if (!T) return; Object.values(T).forEach(r => { r.hp = r.max; r.lag = r.max; r.ko = false; }); HP.st.revive++; }
@@ -100,7 +109,8 @@
 #hpHud .bar .lag{position:absolute;inset:0 auto 0 0;background:linear-gradient(#ff7a6a,#e81818);transition:width .9s ease-in .4s}
 #hpHud .bar .cur{position:absolute;inset:0 auto 0 0;background:linear-gradient(#b8ff9a,#3fd24a 45%,#1f8a2a);transition:width .12s}
 #hpHud .bar.mid .cur{background:linear-gradient(#fff6a0,#f2c522 45%,#b8860c)}
-#hpHud .bar.low .cur{background:linear-gradient(#ffb0a0,#ff4a2a 45%,#a8180a)}
+#hpHud .bar.low .cur{background:linear-gradient(#ffb0a0,#ff4a2a 45%,#a8180a);animation:lowPulse 1s infinite alternate}
+@keyframes lowPulse{from{filter:brightness(1)}to{filter:brightness(1.55)}}
 #hpHud .bar em{position:absolute;right:3px;top:0;bottom:0;font-style:normal;font-size:8px;line-height:10px;color:#fff;font-weight:800;text-shadow:0 0 2px #000,0 0 2px #000}
 #hpHud .tm.hit .bar{animation:hpShake .28s}#hpHud .tm.hit .bar::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.55);animation:hpFlash .28s forwards}
 @keyframes hpShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}50%{transform:translateX(2px)}75%{transform:translateX(-1px)}}
