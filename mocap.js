@@ -1,5 +1,5 @@
 // 실제 사람 동작(모션 캡처) 인물 — 소유자 승인(11-05 "내려받아 적용"). 공개 무료 자료(CC0, assets/cc0/LICENSE.txt):
-//  - Quaternius Universal Animation Library: 마네킹(보통 남자 몸) + 동작 43개 (ual1.glb)
+//  - Quaternius Universal Animation Library: 마네킹(보통 남자 몸) + 동작 46개 (ual1.glb)
 //  - Quaternius Universal Base Characters: 남자(근육형)·여자 몸 (ubc_male / ubc_female.gltf) — 같은 뼈 65개라 같은 동작을 그대로 씀
 // 소유자 요청(11-05): 남녀 체형 분리 → 원작 의상·외형으로 한눈에 구분.
 //  - 몸: 여자(사쿠라·루키아·타츠마키·네즈코·시노부·미츠리) / 근육형 남자(가이·조로·켄파치·히메지마·우즈이 등) / 보통 남자. 키·덩치는 원작 배율(bodyScale·bulk).
