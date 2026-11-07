@@ -1,0 +1,46 @@
+assets/sfx — CC0/공개 도메인 사운드 자산 출처 (11-07 재구성)
+============================================================
+모든 파일은 CC0(퍼블릭 도메인 dedication) 또는 CC-BY 라이선스이며,
+라이선스 요구에 따라 출처를 표기합니다.
+
+1) Kenney "RPG Audio" (CC0) — https://kenney.nl/assets/rpg-audio
+   사용: RPGsounds_Kenney/OGG/*(cloth*, footstep*, dropLeather) 원본 그대로,
+   use/ 컷 편집 원료: drawKnife*, knifeSlice*, clothBelt*, cloth*, creak*, bookPlace*, metalLatch, metalClick, chop
+
+2) Kenney "Impact Sounds" (CC0) — https://kenney.nl/assets/impact-sounds
+   사용: use/ 컷 편집 원료: impact_generic_light_*, impact_metal_{light,medium,heavy}_*,
+   impact_soft_medium_*, impact_plate_{light,medium,heavy}_*, impact_bell_heavy_*,
+   impact_mining_*, impact_plank_medium_*, footstep_wood_*, impact_wood_*
+
+3) "100 CC0 SFX v2" by rubberduck (CC0) — https://opengameart.org/content/100-cc0-sfx-2
+   파일: opengameart.org/sites/default/files/100-CC0-SFX_0.zip
+   사용: 100-CC0-SFX_0/{gong,bell,switch}_* 원본, use/ 원료: hit_*, glass_*, metal_*, slam_*,
+   splash_*, plop_*, weird_*, spring_*, noise_*, machine_*, dishes_*, wooden_*, explosion, shot_*(일부)
+
+4) "25 CC0 bang & firework SFX" by rubberduck (CC0) — https://opengameart.org/content/25-cc0-bang-firework-sfx
+   파일: opengameart.org/sites/default/files/25-CC0-bang-sfx.zip
+   사용: use/shot_*, use/shotBig_*(cannon_*), use/expS_*(bang_*), use/fire_*(fw_*), use/loopFire_02(fw_loop)
+
+5) "Chunky Explosion" by joth (CC0) — https://opengameart.org/content/chunky-explosion
+   사용: use/expL_01~03 컷
+
+6) "fire-1" (CC0) — https://opengameart.org/content/fire-1
+   사용: use/fire_*, use/loopFire_*
+
+7) "Rain Loop" (CC0) — https://opengameart.org/content/rain-loop-1 (amb_rain_loop_1.ogg)
+   사용: use/water_*, wind_*, loopWater_*, loopWind_*, extra/wind_a.wav
+
+8) "Thunder" (CC0) — https://opengameart.org/content/thunder (rain-thunder.ogg)
+   사용: use/thunder_*, loopElec_*
+
+9) "01-footstep" (CC0) — https://opengameart.org/content/footsteps-1 (01-footstep.ogg)
+   사용: use/stepOut_02
+
+10) extra/battle_a.ogg — "Battle March" by PlayOnLoop.com (CC-BY 3.0)
+    https://opengameart.org/content/battle-march-epic-orchestral-music-loop
+    크레딧 표기 필요: Music: "Battle March" by PlayOnLoop.com (CC-BY 3.0)
+
+11) extra/land_01~03.wav, extra/fall_04~05.ogg — 위 Kenney/CC0 팩에서 컷·재인코딩(CC0 계승)
+
+use/ 파일은 위 CC0 원료를 ffmpeg로 컷·피치(atempo)·필터 편집해 이름붙인 것입니다(manifest.json 참조).
+편집 과정에서 추가 저작권 발생 없음(CC0 → 변형도 CC0; CC-BY 항목만 표기 유지).

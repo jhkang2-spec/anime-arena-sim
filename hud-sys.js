@@ -25,6 +25,7 @@
     if (L) rows.push(`<b>연출</b> 광원:${L.light} 화면:${L.edge} 강한번쩍임:${L.strong} 차단:${L.blocked} 대시흐림:${L.dash}`);
     if (D) rows.push(`<b>위험</b> 위험오라활성:${D.active}`);
     rows.push(`<b>운영</b> F:빛 G:오라 H:체력바 K:통계`);
+    rows.push(`<b>크레딧</b> 음악 "Battle March" — PlayOnLoop.com (CC-BY 3.0) · 효과음 Kenney/OpenGameArt CC0`);
     return rows.join('\n');
   }
   SYS.statsOn = false;
