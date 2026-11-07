@@ -12,18 +12,18 @@
   const PROP = HD.prop = { armK: .74, headK: .83, shoulderZ: 4.05 };
 
   // ═══ 1. 몸: 분할 수를 늘린 도형으로 한 번 더 짓기 ═══
-  const ULTRA = (() => { try { const q = typeof getQuality === 'function' ? getQuality() : null; return q === 'ultra' || (!q && localStorage.getItem('arenaUltra') === '1'); } catch (e) { return false; } })(); // 11-07: 울트라는 분할 배율·상한 추가 상승(소유자 '삼각형 30배' 요청)
-  const KS = ULTRA ? 3.6 : 2.4, KR = ULTRA ? 4.2 : 2.7; // 구: 가로·세로 각 배, 원기둥·회전체·고리: 둘레 배 × 길이 2배 → 모형 전체 삼각형 약 5배(울트라 약 11배)
+  const ULTRA = (() => { try { const a = localStorage.getItem('arenaUltra'); if (a !== null) return a === '1'; return !/Mobi|Android|iPhone/i.test(navigator.userAgent); } catch (e) { return false; } })(); // 11-07 라운드D: AAA와 동일한 기본값(데스크톱 켬) — 저장 안 한 첫 방문에도 고해상도
+  const KS = ULTRA ? 6.2 : 3.2, KR = ULTRA ? 7 : 3.6; // 11-07 라운드D: 모델링 대폭 증량(울트라: HD 대비 ~3배·기본 모형 대비 ~40배 삼각형) — LOD(근접 인물만)가 총량 보호
   const G0 = { S: THREE.SphereGeometry, C: THREE.CylinderGeometry, L: THREE.LatheGeometry, T: THREE.TorusGeometry, K: THREE.ConeGeometry };
-  class HS extends G0.S { constructor(r = 1, w = 8, h = 6, ...a) { super(r, Math.min(ULTRA ? 112 : 72, Math.round(w * KS)), Math.min(ULTRA ? 80 : 48, Math.round(h * KS)), ...a); } }
-  class HC extends G0.C { constructor(t = 1, b = 1, h = 1, rs = 8, hs = 1, ...a) { super(t, b, h, Math.min(ULTRA ? 96 : 64, Math.round(rs * KR)), hs * 2, ...a); } }
-  class HK extends G0.K { constructor(r = 1, h = 1, rs = 8, hs = 1, ...a) { super(r, h, Math.min(ULTRA ? 96 : 48, Math.round(rs * KR)), hs * 2, ...a); } }
-  class HT extends G0.T { constructor(r = 1, t = .4, rs = 8, ts = 6, ...a) { super(r, t, Math.min(ULTRA ? 64 : 32, Math.round(rs * 2.2)), Math.min(ULTRA ? 156 : 96, Math.round(ts * (ULTRA ? 3.2 : 2.3))), ...a); } }
-  class HL extends G0.L { // 회전체: 둘레 2.5배 + 윤곽 점을 곡선으로 두 배(근육 굴곡·어깨·허리 곡선이 매끈하게)
+  class HS extends G0.S { constructor(r = 1, w = 8, h = 6, ...a) { super(r, Math.min(ULTRA ? 220 : 96, Math.round(w * KS)), Math.min(ULTRA ? 160 : 64, Math.round(h * KS)), ...a); } }
+  class HC extends G0.C { constructor(t = 1, b = 1, h = 1, rs = 8, hs = 1, ...a) { super(t, b, h, Math.min(ULTRA ? 180 : 80, Math.round(rs * KR)), hs * 2, ...a); } }
+  class HK extends G0.K { constructor(r = 1, h = 1, rs = 8, hs = 1, ...a) { super(r, h, Math.min(ULTRA ? 180 : 80, Math.round(rs * KR)), hs * 2, ...a); } }
+  class HT extends G0.T { constructor(r = 1, t = .4, rs = 8, ts = 6, ...a) { super(r, t, Math.min(ULTRA ? 110 : 40, Math.round(rs * KR)), Math.min(ULTRA ? 300 : 130, Math.round(ts * (ULTRA ? 5 : 2.3))), ...a); } }
+  class HL extends G0.L { // 회전체: 둘레 배 + 윤곽 점을 곡선으로 두 배(근육 굴곡·어깨·허리 곡선이 매끈하게)
     constructor(pts = [], seg = 12, ...a) {
       let P = pts;
-      if (pts.length >= 4) { P = new THREE.SplineCurve(pts.map(p => new THREE.Vector2(p.x, p.y))).getPoints(pts.length * 2 - 1).map(p => new THREE.Vector2(Math.max(0, p.x), p.y)); P[0].copy(pts[0]); P[P.length - 1].copy(pts[pts.length - 1]); }
-      super(P, Math.min(48, Math.round(seg * KR)), ...a);
+      if (pts.length >= 4) { P = new THREE.SplineCurve(pts.map(p => new THREE.Vector2(p.x, p.y))).getPoints(pts.length * ((ULTRA ? 4 : 2) - 1)).map(p => new THREE.Vector2(Math.max(0, p.x), p.y)); P[0].copy(pts[0]); P[P.length - 1].copy(pts[pts.length - 1]); }
+      super(P, Math.min(ULTRA ? 140 : 56, Math.round(seg * KR)), ...a);
     }
   }
   function buildHi(c) {
@@ -86,7 +86,7 @@
   }
   function handGeo(s, hi) {
     const R = rig(s); R.root.updateMatrixWorld(true);
-    const rs = hi ? (ULTRA ? 20 : 14) : 5, hs = hi ? (ULTRA ? 5 : 3) : 1, list = [];
+    const rs = hi ? (ULTRA ? 34 : 16) : 5, hs = hi ? (ULTRA ? 8 : 4) : 1, list = [];
     palmGeo(hi ? (ULTRA ? 22 : 16) : 6).forEach(g => list.push([g, 0]));
     R.fj.forEach((js, fi) => js.forEach((b, j) => seg(FING[fi].L[j], FING[fi].r * (1 - j * .1), FING[fi].r * (1 - (j + 1) * .1), rs, hs, j === 0).forEach(g => list.push([g.applyMatrix4(b.matrixWorld), R.B.indexOf(b)]))));
     R.th.forEach((b, j) => seg(TH.L[j], TH.r * (1 - j * .1), TH.r * (1 - (j + 1) * .1), rs, hs, j === 0).forEach(g => list.push([g.applyMatrix4(b.matrixWorld), R.B.indexOf(b)])));
@@ -228,7 +228,7 @@
     const s = new Set(); if (typeof F === 'undefined' || !F.length) return s;
     const cv = window.getCamView ? window.getCamView() : null;
     if (cv && cv.mode !== 'act' && cv.key) F.forEach(f => { if (f.ch.key === cv.key) s.add(f); });
-    const room = ULTRA ? 4 : ft < 15 ? 2 : ft < 17.5 ? 1 : 0;
+    const room = ULTRA ? 8 : ft < 15 ? 3 : ft < 17.5 ? 2 : 1; // 라운드D: 울트리는 출전 전원 고해상도
     F.filter(f => !s.has(f)).map(f => [f, camera.position.distanceTo(f.pos)]).filter(x => x[1] < 120).sort((a, b) => a[1] - b[1]).slice(0, room).forEach(x => s.add(x[0]));
     return s;
   }
