@@ -245,7 +245,7 @@ const ELEM = {
 
 // ═══ 효과 ═══
 let parts = [], labels = [], fx = [], projs = [], drops = [], emitters = [];
-  const FXM = () => (window.AAA && AAA.ultra ? 3.8 : 1.3) * (window.AAA && Number.isFinite(AAA.perf) ? Math.max(.4, AAA.perf) : 1); // 전투 이펙트 개수 배율 — 저FPS 시 perf 거버너가 자동 하강
+  const FXM = () => (window.AAA && AAA.ultra ? 3.8 : 1.3) * (window.AAA && Number.isFinite(AAA.perf) ? Math.max(.4, AAA.perf) : 1) * (parts.length > 640 ? .35 : parts.length > 430 ? .6 : parts.length > 270 ? .82 : 1); // 전투 이펙트 개수 배율 — 저FPS/perf 거버너 + 이미 파티클이 많은 순간(스킬·충돌)엔 방출 자동 얇게(GC 스파이크 완화)
 let shake = 0, whiteout = 0, flashC = '255,255,255', clashes = 0, frame = 0, tempo = 1, counterBy = null;
 const hexRgb = c => { const n = parseInt(c.slice(1), 16); return `${n >> 16 & 255},${n >> 8 & 255},${n & 255}`; };
 function flashScreen(a, rgb = '255,255,255') { a = Math.min(a, FLASH_MAX); if (a > whiteout) { whiteout = a; flashC = rgb; } }

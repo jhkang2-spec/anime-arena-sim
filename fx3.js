@@ -13,7 +13,7 @@
   const col3 = h => { const c = new THREE.Color(h); return c; };
   const st = window.__fx3 = { emits: 0, ms: 0, sty: 0, styUntil: 0, recipes: 0, hits: 0 };
   const   QF = () => { const q = typeof getQuality === 'function' ? getQuality() : 'mid'; return q === 'low' ? .3 : q === 'mid' ? .8 : (window.AAA && AAA.ultra) ? 9 : 1.8; }; // 품질별 이펙트 양(11-07 라운드C: 울트라 폭발적 증량 — busy()의 fps 가드가 자동 감쇠)
-  const busy = () => (typeof ftAvg === 'undefined' ? 1 : ftAvg > 24 ? .25 : ftAvg > 17.2 ? .5 : 1) * QF() * (window.FX3 && FX3.sigT && performance.now() - FX3.sigT < 400 ? .55 : 1); // 버거우면 줄임 · 형상 메시가 보일 땐 입자 줄임
+  const busy = () => (typeof ftAvg === 'undefined' ? 1 : ftAvg > 24 ? .25 : ftAvg > 17.2 ? .5 : 1) * QF() * (window.FX3 && FX3.sigT && performance.now() - FX3.sigT < 400 ? .55 : 1) * (typeof parts !== 'undefined' && parts.length > 430 ? .55 : typeof parts !== 'undefined' && parts.length > 270 ? .8 : 1); // 버거우면 줄임 · 형상 메시가 보일 땐 입자 줄임 · 이미 파티클이 몰린 순간(스킬·충돌)엔 선제 감축
   const root = new THREE.Group(); root.name = 'fx3'; scene3.add(root);
   const keepRoot = () => { try { if (typeof baseTop !== 'undefined' && baseTop && !baseTop.has(root)) baseTop.add(root); } catch (e) { } };
 

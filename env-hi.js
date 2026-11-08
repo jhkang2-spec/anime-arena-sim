@@ -47,18 +47,16 @@
     scene3.environment = skyTex; // PMREM 없으면 equirect 직접(조금은Sharp지만 동작)
   }
 
-  // ── (3) Standard 재질 부스트: envMapIntensity 전역 + 바닥 normalScale/anisotropy ──
+  // ── (3) Standard 재질 부스트: envMapIntensity 전역 + 바닥 normalScale(과하지 않게) ──
   try {
-    const maxAniso = renderer.capabilities ? renderer.capabilities.getMaxAnisotropy() : 8;
-    const bumpTex = m => ['map', 'normalMap', 'roughnessMap', 'metalnessMap'].forEach(k => { const t = m[k]; if (t && t.anisotropy < maxAniso) { t.anisotropy = maxAniso; t.needsUpdate = true; } });
     scene3.traverse(o => {
       const m = o.isMesh && o.material; if (!m) return;
       const list = Array.isArray(m) ? m : [m];
       list.forEach(mat => {
         if (!mat.isMeshStandardMaterial) return;
-        mat.envMapIntensity = Math.max(mat.envMapIntensity || 0, 1.15);
+        mat.envMapIntensity = Math.max(mat.envMapIntensity || 0, 0.9);
         const rad = o.geometry && o.geometry.boundingSphere ? o.geometry.boundingSphere.radius : 0;
-        if (rad > 500) { if (mat.normalScale && mat.normalScale.isVector2) mat.normalScale.set(Math.max(mat.normalScale.x, 2.1), Math.max(mat.normalScale.y, 2.1)); bumpTex(mat); }
+        if (rad > 500 && mat.normalScale && mat.normalScale.isVector2) mat.normalScale.set(Math.min(mat.normalScale.x, 1.9), Math.min(mat.normalScale.y, 1.9));
         mat.needsUpdate = true;
       });
     });
@@ -66,5 +64,5 @@
 
   paintSky();
   let fr = 0;
-  (function loop() { if (window.SKY && SKY.on) { if ((++fr % 240) === 0) paintSky(); } requestAnimationFrame(loop); })();
+  (function loop() { if (window.SKY && SKY.on && (typeof ftAvg === 'undefined' || ftAvg < 17)) { if ((++fr % 480) === 0) paintSky(); } requestAnimationFrame(loop); })();
 })();
