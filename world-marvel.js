@@ -33,7 +33,7 @@
     '리펄서 연사': (a, b) => [...hover(a, b, .2), ...T.ranged(a, b, '리펄서 연사', 'senbon', 'repulsor', { n: 3, size: .8, v: 340, prep: 'palm', cast: 'palm' })],
     '마이크로 미사일': (a, b) => [...hover(a, b, .25), ...T.ranged(a, b, '마이크로 미사일', 'arrow', 'repulsor', { n: 4, size: 1, v: 300, prep: 'point', cast: 'throw' })],
     '플래저': (a, b) => [...hover(a, b, .2), ...T.ranged(a, b, '플래저 산탄', 'fireball', 'repulsor', { n: 2, size: 1.2, v: 320, prep: 'palm' })],
-    '유니빔': (a, b) => [...seq(a, b, [['crossArms', .45, { aura: 1, elem: 'repulsor' }]]), ...T.ranged(a, b, '유니빔', 'orb', 'repulsor', { size: 2.4, v: 460, ult: true, prep: 'crossArms', cast: 'palm' })],
+    '유니빔': (a, b) => [...seq(a, b, [['crossArms', .45, { aura: 1, elem: 'repulsor' }]]), ...T.ranged(a, b, '유니빔', 'orb', 'repulsor', { size: 2.4, v: 460, ult: true, prep: 'crossArms', cast: 'palm' }), step(.2, [[a, { pose: 'palm', face: b, aura: 1, elem: 'repulsor' }]], () => { try { const h = handP(a), d = dirTo(a, b); bolt(h, h.clone().addScaledVector(d, 130), '#7fe3ff', .4, 4); light(h, '#7fe3ff', 12); } catch (e) { } })],
     '아크 리액터 과부하': (a, b) => [...seq(a, b, [['skyRaise', .5, { aura: 1, elem: 'repulsor' }]]), ...T.aoe(a, b, '아크 리액터 방출', 'repulsor', { prep: 'skyRaise', strike: 'palm', rad: 48, pw: 2.2, ult: true })],
     '플라이트 대시': (a, b) => [...hover(a, b, .18), ...T.dash(a, b, '플라이트 대시', null, 'repulsor', 1.4, false, { run: 'flipAir', hold: 'palm' })],
     '공중 강타': (a, b) => [...hover(a, b, .22), ...T.aoe(a, b, '공중 강타', 'repulsor', { jump: true, prep: 'flipAir', strike: 'hammerDown', rad: 30, pw: 1.8 })],
@@ -56,7 +56,7 @@
     '묠니르 투척': (a, b) => [...hover(a, b, .2), ...T.ranged(a, b, '묠니르 투척', 'arrow', 'storm', { size: 1.6, v: 380, prep: 'throw', cast: 'throw' })],
     '천둥 소환': (a, b) => [...seq(a, b, [['skyRaise', .4, { aura: 1, elem: 'storm' }]]), ...T.sky(a, b, '천둥 소환', 'storm', { ult: true, w: 26 })],
     '묠니르 일격': (a, b) => T.melee(a, b, '묠니르 일격', 'storm', { prep: 'hammerUp', strike: 'hammerDown', n: 1, pw: 2, reach: 9 }),
-    '뇌전 광역': (a, b) => T.aoe(a, b, '뇌전 방출', 'storm', { prep: 'skyRaise', strike: 'skyRaise', rad: 42, pw: 1.8, ult: true }),
+    '뇌전 광역': (a, b) => [...T.aoe(a, b, '뇌전 방출', 'storm', { prep: 'skyRaise', strike: 'skyRaise', rad: 42, pw: 1.8, ult: true }), step(.28, [[a, { pose: 'skyRaise', face: b }], [b, { pose: 'hurt' }]], () => { try { for (let i = 0; i < 8; i++) { const gx = b.pos.x + R(-34, 34), gz = b.pos.z + R(-34, 34); bolt(V3(gx, 95, gz), V3(gx, 1, gz), '#cfe8ff', .5, 2); } light(chest(b), '#cfe8ff', 12); flashScreen(.06); } catch (e) { } })],
     '플래시 돌진': (a, b) => [...hover(a, b, .15), ...T.dash(a, b, '플래시 소환 돌진', null, 'storm', 1.5, false, { run: 'flipAir' })],
     '공중 망치 강타': (a, b) => [...hover(a, b, .22), ...T.aoe(a, b, '공중 강타', 'storm', { jump: true, prep: 'flipAir', strike: 'hammerDown', rad: 32, pw: 2 })],
     '번개 연사': (a, b) => T.ranged(a, b, '번개 연사', 'senbon', 'storm', { n: 3, size: .9, v: 360, prep: 'skyRaise', cast: 'palm' }),
@@ -65,7 +65,7 @@
 
   defChar('hulk', '헐크', 'marvel', {
     '헐크 스매시': (a, b) => T.melee(a, b, '헐크 스매시', 'gamma', { prep: 'hammerUp', strike: 'hammerDown', n: 2, pw: 2.2, reach: 12 }),
-    '그라운드 펌프': (a, b) => [...seq(a, b, [['hammerUp', .4, { aura: 1, elem: 'gamma' }]]), ...T.aoe(a, b, '그라운드 펌프', 'gamma', { prep: 'hammerDown', strike: 'hammerDown', rad: 46, pw: 2.4, ult: true })],
+    '그라운드 펌프': (a, b) => [...seq(a, b, [['hammerUp', .4, { aura: 1, elem: 'gamma' }]]), ...T.aoe(a, b, '그라운드 펌프', 'gamma', { prep: 'hammerDown', strike: 'hammerDown', rad: 46, pw: 2.4, ult: true }), step(.22, [[a, { pose: 'braced', face: b }]], () => { try { const g = V3(b.pos.x, 0, b.pos.z); if (window.FX3) { if (FX3.ground) FX3.ground(g, 3.2, 'gamma'); if (FX3.crack) FX3.crack(g, 34, 'gamma', { grow: .8, dur: 6 }); if (FX3.floatRocks) FX3.floatRocks(g, 18, 40, 1.6); } } catch (e) { } })],
     '점프 스매시': (a, b) => [...jump(a, b), ...T.aoe(a, b, '점프 스매시', 'gamma', { jump: true, prep: 'flipAir', strike: 'hammerDown', rad: 38, pw: 2.1 })],
     '클래핑 핸드': (a, b) => T.aoe(a, b, '박수 충격파', 'gamma', { prep: 'crossArms', strike: 'palm', rad: 30, pw: 1.6 }),
     '집어 던지기': (a, b) => T.melee(a, b, '집어 던지기', 'gamma', { prep: 'shoulder', strike: 'palm', n: 1, pw: 2 }),
@@ -83,7 +83,7 @@
   }, { name: '웹 슈트', hand: null, elem: 'web', kind: 'senbon', fly: false });
 
   defChar('vision', '비전', 'marvel', {
-    '솔라 플레어': (a, b) => [...hover(a, b, .2), ...T.ranged(a, b, '솔라 플레어', 'orb', 'cosmic', { size: 2.2, v: 440, ult: true, prep: 'crossArms', cast: 'palm' })],
+    '솔라 플레어': (a, b) => [...hover(a, b, .2), ...T.ranged(a, b, '솔라 플레어', 'orb', 'cosmic', { size: 2.2, v: 440, ult: true, prep: 'crossArms', cast: 'palm' }), step(.2, [[a, { pose: 'palm', face: b, aura: 1, elem: 'cosmic' }]], () => { try { const h = hand(a), d = dirTo(a, b); bolt(h, h.clone().addScaledVector(d, 120), '#ff7a3a', .4, 4); light(h, '#ff7a3a', 12); } catch (e) { } })],
     '위상 관통': (a, b) => T.melee(a, b, '위상 관통', 'mystic', { prep: 'punchPrep', strike: 'punch', n: 2, pw: 1.6, reach: 8 }),
     '마인드 스톤 방출': (a, b) => [...hover(a, b, .2), ...T.aoe(a, b, '마인드 스톤 방출', 'cosmic', { prep: 'skyRaise', strike: 'palm', rad: 36, pw: 1.8 })],
     '위상 돌진': (a, b) => [...hover(a, b, .15), ...T.dash(a, b, '위상 돌진', null, 'mystic', 1.3, false, { run: 'flipAir' })],
