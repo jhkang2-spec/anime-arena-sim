@@ -1376,8 +1376,10 @@ function updateEffects(dt, t) {
   });
   // 순간 불빛
   lights.forEach(l => { l.intensity *= .82; });
-  // 알갱이
-  parts = parts.filter(p => (p.life -= dt * 1.6) > 0);
+  // 알갱이: 매 프레임 새 배열 만들지 않고 제자리 압축(filter 할당 = GC 끊김의 주범) + 상한으로 폭주 차단
+  for (let pi = parts.length - 1; pi >= 0; pi--) { const p = parts[pi]; p.life -= dt * 1.6; if (p.life <= 0) { parts[pi] = parts[parts.length - 1]; parts.pop(); } }
+  const PCAP = (window.AAA && AAA.ultra) ? 1500 : ftAvg > 18 ? 480 : 850;
+  if (parts.length > PCAP) parts.splice(0, parts.length - PCAP);
   [ptsS, ptsL, ptsN, ptsG].forEach(s => s.n = 0); sparkSys.n = 0; const spP = sparkGeo.attributes.position, spC = sparkGeo.attributes.color;
   parts.forEach(p => {
     p.p.addScaledVector(p.v, dt); p.v.y -= p.g * dt; if (p.p.y < WATER_H && p.g > 0) { if (p.v.y < -60 && Math.random() < .08) ripple(p.p.x, p.p.z, .15); p.p.y = WATER_H; p.v.y *= -.15; p.v.x *= .5; p.v.z *= .5; }
