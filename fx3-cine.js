@@ -28,16 +28,17 @@
   const blurM = new THREE.ShaderMaterial({ uniforms: { tex: { value: null }, dir: { value: new THREE.Vector2() } }, vertexShader: VS, depthTest: false, depthWrite: false,
     fragmentShader: 'uniform sampler2D tex; uniform vec2 dir; varying vec2 vUv; void main(){ vec4 c = texture2D(tex, vUv) * .2270; c += (texture2D(tex, vUv + dir * 1.3846) + texture2D(tex, vUv - dir * 1.3846)) * .3162; c += (texture2D(tex, vUv + dir * 3.2308) + texture2D(tex, vUv - dir * 3.2308)) * .0703; gl_FragColor = c; }' });
   const addM = new THREE.ShaderMaterial({ uniforms: { tex: { value: null }, k: { value: 1 } }, vertexShader: VS, transparent: true, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false,
-    fragmentShader: 'uniform sampler2D tex; uniform float k; varying vec2 vUv; void main(){ vec3 c = texture2D(tex, vUv).rgb; c = c * c * 1.4 + c * .35; gl_FragColor = vec4(min(c * k, vec3(.9)), 1.); }' });
+    fragmentShader: 'uniform sampler2D tex; uniform float k; varying vec2 vUv; void main(){ vec3 c = texture2D(tex, vUv).rgb; c = c * c * 1.4 + c * .35; gl_FragColor = vec4(min(c * k, vec3(1.25)), 1.); }' });
   const tagged = new WeakSet();
   function tag() { // 기술 이펙트 묶음(에너지 재질·fx3 알갱이·띠·번개)만 빛 번짐 층에 올림 — 새로 생긴 것만 한 번
     const ch = scene3.children; for (let i = 0; i < ch.length; i++) { const o = ch[i]; if (tagged.has(o)) continue; tagged.add(o); processNew(o);
+      if (o.userData && o.userData.epicBloom) { o.traverse(x => { if (x.material) x.layers.enable(L); }); continue; } // fx-epic: 코어 fx 도형도 빛번짐 층으로
       if (o.name === 'fx3' || o.name === 'fx3m') { o.traverse(x => { if (x.material && x.material.blending === THREE.AdditiveBlending) x.layers.enable(L); }); continue; }
       o.traverse(x => { const m = x.material; if (m && m.uniforms && m.uniforms.uSty && m.blending === THREE.AdditiveBlending) x.layers.enable(L); }); }
     if (typeof F !== 'undefined') F.forEach(f => { const g = f.model && f.model.fxg; if (g && !tagged.has(g)) { tagged.add(g); g.traverse(x => { if (x.material && x.material.uniforms && x.material.uniforms.uSty) x.layers.enable(L); }); } }); }
   let tagAcc = 0, lastEm = 0, lastAct = 0;
   function fxActive() { const t = performance.now(), em = window.__fx3 ? __fx3.emits : 0; if (em !== lastEm) { lastEm = em; lastAct = t; } if (typeof fx !== 'undefined' && fx.length) lastAct = t; if (typeof F !== 'undefined' && F.some(f => f.aura || f.hand)) lastAct = t; return t - lastAct < 600; } // 이펙트가 있을 때만 빛 번짐
-  function bloom() { const q = Q(); st.q = q; if (q === 'low') { st.bloom = 0; return; } if (!fxActive() || (q === 'mid' && performance.now() - (st.ultT || 0) > 2500)) { st.bloom = 0; return; } /* 중간: 필살기 때만 빛 번짐 */ const div = q === 'high' ? 3 : 4, cv = renderer.domElement, w = Math.max(64, cv.width / div | 0), h = Math.max(64, cv.height / div | 0);
+  function bloom() { const q = Q(); st.q = q; if (q === 'low') { st.bloom = 0; return; } const busyFx = (typeof ftAvg === 'undefined' || ftAvg < 17.5) && (typeof fx !== 'undefined' && fx.length >= 6); if (!fxActive() || (q === 'mid' && performance.now() - (st.ultT || 0) > 2500 && !busyFx)) { st.bloom = 0; return; } /* 중간: 필살기·이펙트 붐빔+프레임 여유 */ const div = q === 'high' ? 3 : 4, cv = renderer.domElement, w = Math.max(64, cv.width / div | 0), h = Math.max(64, cv.height / div | 0);
     if (!rtA || rw !== w || rh !== h) { if (rtA) { rtA.dispose(); rtB.dispose(); } rtA = qv(w, h); rtB = qv(w, h); rw = w; rh = h; }
     const mask = camera.layers.mask, bg = scene3.background, fog = scene3.fog, ac = renderer.autoClear, cc = renderer.getClearColor(new THREE.Color()), ca = renderer.getClearAlpha();
     camera.layers.set(L); scene3.background = null; scene3.fog = null; renderer.setClearColor(0x000000, 0); renderer.autoClear = true;
