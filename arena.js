@@ -1518,7 +1518,7 @@ fitRes();
 let lastNow = 0;
 initFighters();
 function scene(now, q, extra) {
-  const t = now / 1000, dt = Math.min(.05, lastNow ? (now - lastNow) / 1000 : .016); lastNow = now;
+  const t = now / 1000, dt = Math.min(.05, lastNow ? (now - lastNow) / 1000 : .016) * (window.CINE && Number.isFinite(CINE.scale) ? Math.max(.28, CINE.scale) : 1); lastNow = now;
   const w0 = performance.now(), iv = now - (scene.prev || now); scene.prev = now;
   if (iv > 0 && iv < 100) ivAvg += (iv - ivAvg) * .05; // 100ms 넘는 간격(창 가림·탭 숨김)은 부담으로 치지 않음
   ftAvg = ivAvg > 17.5 ? ivAvg : Math.min(ivAvg, wkAvg * 1.6 + 2);
