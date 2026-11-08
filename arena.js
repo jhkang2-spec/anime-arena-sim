@@ -245,7 +245,7 @@ const ELEM = {
 
 // ═══ 효과 ═══
 let parts = [], labels = [], fx = [], projs = [], drops = [], emitters = [];
-const FXM = () => (window.AAA && AAA.ultra) ? 3.2 : 1; // 라운드C(11-07): 울트라 전투 이펙트 개수 배율 — fx3 층의 QF(9배)와 독립 중첩
+  const FXM = () => (window.AAA && AAA.ultra ? 3.8 : 1.3) * (window.AAA && Number.isFinite(AAA.perf) ? Math.max(.4, AAA.perf) : 1); // 전투 이펙트 개수 배율 — 저FPS 시 perf 거버너가 자동 하강
 let shake = 0, whiteout = 0, flashC = '255,255,255', clashes = 0, frame = 0, tempo = 1, counterBy = null;
 const hexRgb = c => { const n = parseInt(c.slice(1), 16); return `${n >> 16 & 255},${n >> 8 & 255},${n & 255}`; };
 function flashScreen(a, rgb = '255,255,255') { a = Math.min(a, FLASH_MAX); if (a > whiteout) { whiteout = a; flashC = rgb; } }
@@ -268,7 +268,7 @@ const vortex = (p, ek, life, pw = 1) => emitters.push({ k: 'vortex', p: p.clone(
 const flames = (p, life, fire) => emitters.push({ k: 'flames', p: p.clone(), life, fire });
 function explode(p, ek, pw = 1) {
   pw *= 1.45; const E = ELEM[ek] || ELEM.wind, n = Math.round(22 * pw * FXM());
-  for (let i = 0; i < 3 + 2 * pw * FXM(); i++) parts.push({ p: p.clone().add(V3(R(-4, 4), R(-2, 4), R(-4, 4)).multiplyScalar(pw * .6)), v: V3(R(-8, 8), R(12, 30), R(-8, 8)), life: R(1.6, 2.4), c: pick(['#2a2630', '#3a3440', '#4a4450']), g: -4, s: 3, n: true });
+  for (let i = 0; i < 3 + 2 * pw * FXM(); i++) parts.push({ p: p.clone().add(V3(R(-4, 4), R(-2, 4), R(-4, 4)).multiplyScalar(pw * .6)), v: V3(R(-8, 8), R(12, 30), R(-8, 8)), life: R(1.6, 2.4), c: pick(['#2a2630', '#3a3440', '#4a4450', E.parts[2]]), g: -4, s: 3, n: true });
   if (pw > 2) scorch(p, 6 * pw);
   for (let i = 0; i < 14 * pw * FXM(); i++) { const d = V3(R(-1, 1), R(-.3, 1), R(-1, 1)).normalize(); parts.push({ p: p.clone(), v: d.multiplyScalar(R(120, 260) * Math.sqrt(pw)), life: R(.4, .8), c: pick(['#ffffff', E.parts[0], E.parts[1]]), g: 120, s: 1 }); }
   for (let i = 0; i < 3 + 2 * pw; i++) parts.push({ p: p.clone().add(V3(R(-3, 3), R(-3, 3), R(-3, 3)).multiplyScalar(pw)), v: V3(R(-30, 30), R(-10, 50), R(-30, 30)).multiplyScalar(pw * .6), life: R(.5, .9), c: pick(E.parts), g: 0, s: 3 });
@@ -632,9 +632,10 @@ function ultBlast(p, ek, rad, owner, nm) {
   for (let i = 0; i < 6; i++) pending.push({ t: i * .08, fn: () => ring(g, 4 + i * 3, i % 2 ? E.c : '#ffffff', true, 1.6, 2.6 + i * .5) });
   for (let i = 0; i < 3; i++) pending.push({ t: .05 + i * .1, fn: () => ring(p, 4, i % 2 ? '#ffffff' : E.c, false, 1.2, 2.4) });
   pillar(g, rad * .35, E.c, 1.4); pillar(g, rad * .12, '#ffffff', 1.4);
-  for (let i = 0; i < 60; i++) { const a = R(0, PI * 2), s = R(60, 220); parts.push({ p: g.clone().add(V3(0, 2, 0)), v: V3(Math.cos(a) * s, R(40, 200), Math.sin(a) * s), life: 1.6, c: pick(E.parts.concat(['#9fd0e8'])), g: 200, s: 2 }); }
-  for (let i = 0; i < 40; i++) { const a = R(0, PI * 2); parts.push({ p: g.clone().add(V3(Math.cos(a) * rad * .5, 1, Math.sin(a) * rad * .5)), v: V3(Math.cos(a) * 30, R(60, 160), Math.sin(a) * 30), life: 1.8, c: '#bcd8e8', g: 140, s: 2 }); }
-  explode(p, ek, 3); light(p, E.c, 12); shake = 20; flashScreen(.07, hexRgb(E.c));
+  for (let i = 0; i < 4; i++) pending.push({ t: .18 + i * .07, fn: () => ring(g, 3 + i * 4, '#ffffff', true, 1.1, 3.2) });
+  for (let i = 0; i < Math.round(50 * FXM()); i++) { const a = R(0, PI * 2), s = R(60, 220); parts.push({ p: g.clone().add(V3(0, 2, 0)), v: V3(Math.cos(a) * s, R(40, 200), Math.sin(a) * s), life: 1.6, c: pick(E.parts.concat(['#9fd0e8'])), g: 200, s: 2 }); }
+  for (let i = 0; i < Math.round(34 * FXM()); i++) { const a = R(0, PI * 2); parts.push({ p: g.clone().add(V3(Math.cos(a) * rad * .5, 1, Math.sin(a) * rad * .5)), v: V3(Math.cos(a) * 30, R(60, 160), Math.sin(a) * 30), life: 1.8, c: '#bcd8e8', g: 140, s: 2 }); }
+  explode(p, ek, 3); light(p, E.c, 12); light(p.clone().add(V3(0, 10, 0)), '#ffffff', 8); shake = 20; flashScreen(.07, hexRgb(E.c));
   if (owner) aoeHit(owner, g, rad, ek, nm, 2.2);
 }
 function aoeHit(a, center, rad, ek, nm, pw = 1) { others(a).forEach(o => { if (o.pos.distanceTo(center) < rad) { const out = pick(['hit', 'hit', 'jump', 'block', 'dodge']); if (out === 'jump') { o.vel.y = 230; o.air = true; } resolve(a, o, ek, out, nm, pw); } }); }
@@ -768,7 +769,7 @@ defChar('luffy', '루피', 'onepiece', {
   '기어 세컨드': (a, b) => [...seq(a, b, [['kneel', .35, { aura: 1, elem: 'steam' }]]), ...T.buff(a, b, '기어 세컨드', 'steam', { key: 'gear2', dur: 6, pose: 'kneel' })],
   '거인의 총': (a, b) => [...seq(a, b, [['thumbBite', .35, { aura: 1 }], ['windBack', .35, { giantArm: .6, aura: 1 }]]), ...T.stretch(a, b, '기어 서드: 거인의 총', { giant: 1, ult: true })],
   '기어 5': (a, b) => [...seq(a, b, [['laughBack', .35, { aura: 1, elem: 'power' }]]), ...T.buff(a, b, '기어 5', 'power', { key: 'gear5', giant: '#ffffff', dur: 6, pose: 'laughBack' })],
-}, { name: '고무고무 총', hand: null, elem: 'metal', kind: 'orb' });
+}, { name: '고무고무 총', hand: null, elem: 'power', kind: 'orb' });
 defChar('zoro', '조로', 'onepiece', {
   '삼도류 귀참': (a, b) => [...seq(a, b, [['xSwords', .3, { aura: 1, elem: 'slash' }]]), ...T.melee(a, b, '삼도류 귀참', 'slash', { prep: 'xSwords', strike: 'spreadSlash', arc: [-2.2, 1.0, 22], arcW: 6, reach: 10 })],
   '360 파운드 포': (a, b) => [...seq(a, b, [['windBack', .3, { aura: 1, elem: 'slash' }]]), ...T.ranged(a, b, '360 파운드 포', 'getsuga', 'slash', { n: 2, size: 1.2, v: 260, prep: 'windBack', cast: 'spreadSlash' })],
@@ -795,7 +796,7 @@ defChar('byakuya', '뱌쿠야', 'bleach', {
 defChar('rukia', '루키아', 'bleach', {
   '첫 번째 춤 · 월백': (a, b) => [...seq(a, b, [['slashPrep', .4, { spin: 14, aura: 1, elem: 'ice' }]]), ...T.at(a, b, '소데노시라유키 · 첫 번째 춤 월백', 'ice', 'ice', { pose: 'swordDown' })],
   '세 번째 춤 · 백도': (a, b) => [...seq(a, b, [['swordLevel', .3, { aura: 1, elem: 'ice' }]]), ...T.ranged(a, b, '세 번째 춤 · 백도', 'orb', 'ice', { n: 4, size: 1, v: 300, prep: 'swordLevel', cast: 'fingerPoint' })],
-}, { name: '소데노시라유키', hand: null, elem: 'ice', kind: 'orb' });
+}, { name: '소데노시라유키', hand: null, elem: 'ice', kind: 'getsuga' });
 defChar('saitama', '사이타마', 'opm', {
   '연속 보통 펀치': (a, b) => T.melee(a, b, '연속 보통 펀치', 'power', { n: 10, strike: 'punch', strike2: 'punchL', fx: (a2) => ghosts.push({ ch: a2.ch, pos: a2.pos.clone(), heading: a2.heading, c: { ...a2.c, arm: 1.57 + R(-.5, .5) }, life: 1, color: '#ffffff', dec: .14 }) }),
   '진지한 펀치': (a, b) => seriousPunch(a, b),
@@ -1253,11 +1254,11 @@ function pointsSys(size, cap, normal) {
   const p = new THREE.Points(geo, new THREE.PointsMaterial({ size, map: glowTex, alphaTest: .01, vertexColors: true, transparent: true, blending: normal ? THREE.NormalBlending : THREE.AdditiveBlending, depthWrite: false }));
   p.frustumCulled = false; scene3.add(p); p.cap = cap; p.n = 0; return p;
 }
-const sparkCap = 5000, sparkGeo = new THREE.BufferGeometry();
+  const sparkCap = 9000, sparkGeo = new THREE.BufferGeometry();
 sparkGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(sparkCap * 6), 3)); sparkGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(sparkCap * 6), 3));
 const sparkSys = new THREE.LineSegments(sparkGeo, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); sparkSys.frustumCulled = false; sparkSys.n = 0;
 scene3.add(sparkSys);
-const ptsS = pointsSys(2.4, 12000), ptsL = pointsSys(4.6, 6000), ptsN = pointsSys(6, 2500, true), ptsG = pointsSys(9, 1200);
+  const ptsS = pointsSys(2.4, 18000), ptsL = pointsSys(4.8, 9000), ptsN = pointsSys(6, 3500, true), ptsG = pointsSys(9.5, 2200);
 function kill(m) { if (!m) return; scene3.remove(m); m.traverse(o => { if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose(); if (o.material && o.material !== OUT) o.material.dispose(); }); }
 function setOp(m, a) { m.traverse(o => { if (o.material && o.material.transparent) o.material.opacity = a; }); }
 const ringGeo = (r0, r1, a0 = 0, len = PI * 2, seg = 32) => new THREE.RingGeometry(r0, r1, seg, 1, a0, len);
@@ -1380,7 +1381,7 @@ function updateEffects(dt, t) {
   [ptsS, ptsL, ptsN, ptsG].forEach(s => s.n = 0); sparkSys.n = 0; const spP = sparkGeo.attributes.position, spC = sparkGeo.attributes.color;
   parts.forEach(p => {
     p.p.addScaledVector(p.v, dt); p.v.y -= p.g * dt; if (p.p.y < WATER_H && p.g > 0) { if (p.v.y < -60 && Math.random() < .08) ripple(p.p.x, p.p.z, .15); p.p.y = WATER_H; p.v.y *= -.15; p.v.x *= .5; p.v.z *= .5; }
-    if (!p.n && p.s < 3 && sparkSys.n < sparkCap) { const sp2 = p.v.lengthSq(); if (sp2 > 3600) { const c0 = col(p.c), a3 = Math.min(1, p.life * 1.6), k = p.s >= 2 ? .05 : .035, i6 = sparkSys.n; spP.setXYZ(i6 * 2, p.p.x, p.p.y, p.p.z); spP.setXYZ(i6 * 2 + 1, p.p.x - p.v.x * k, p.p.y - p.v.y * k, p.p.z - p.v.z * k); spC.setXYZ(i6 * 2, Math.min(1, c0.r * a3 + .35 * a3), Math.min(1, c0.g * a3 + .35 * a3), Math.min(1, c0.b * a3 + .35 * a3)); spC.setXYZ(i6 * 2 + 1, 0, 0, 0); sparkSys.n++; if (p.s < 2) return; } }
+    if (!p.n && p.s < 3 && sparkSys.n < sparkCap) { const sp2 = p.v.lengthSq(); if (sp2 > 3600) { const c0 = col(p.c), a3 = Math.min(1, p.life * 1.6), k = p.s >= 2 ? .06 : .045, i6 = sparkSys.n; spP.setXYZ(i6 * 2, p.p.x, p.p.y, p.p.z); spP.setXYZ(i6 * 2 + 1, p.p.x - p.v.x * k, p.p.y - p.v.y * k, p.p.z - p.v.z * k); spC.setXYZ(i6 * 2, Math.min(1, c0.r * a3 + .55 * a3), Math.min(1, c0.g * a3 + .55 * a3), Math.min(1, c0.b * a3 + .55 * a3)); spC.setXYZ(i6 * 2 + 1, 0, 0, 0); sparkSys.n++; if (p.s < 2) return; } }
     const sys = p.n ? ptsN : p.s >= 3 ? ptsG : p.s >= 2 ? ptsL : ptsS; if (sys.n >= sys.cap) return;
     const c = col(p.c), a2 = p.n ? 1 : Math.min(1, p.life * 1.5);
     sys.geometry.attributes.position.setXYZ(sys.n, p.p.x, p.p.y, p.p.z); sys.geometry.attributes.color.setXYZ(sys.n, c.r * a2, c.g * a2, c.b * a2); sys.n++;
@@ -1528,6 +1529,8 @@ function scene(now, q, extra) {
     else if (ftAvg < cool && resScale < 1) { resScale = Math.min(1, resScale * 1.04); fitRes(); }
     if (ftAvg > (u ? 34 : 17.2) && OUT.visible) OUT.visible = false;
     else if (ftAvg < (u ? 28 : 13) && !OUT.visible) OUT.visible = true;
+    // 파티클 생성량 거버너: 저FPS 지속 시 FXM(입자 밀도)를 최대 40%까지 낮춰 끊김 완화, 여유 회복 시 복원(캐릭터·배경보다 이펙트 우선 방어)
+    if (window.AAA) { const A = window.AAA; A.perf = Number.isFinite(A.perf) ? A.perf : 1; if (ftAvg > hot && A.perf > .4) A.perf = Math.max(.4, A.perf * .82); else if (ftAvg < cool && A.perf < 1) A.perf = Math.min(1, A.perf * 1.06); }
   }
   const idle = !q;
   if (!idle) update(dt * SPEED, t);

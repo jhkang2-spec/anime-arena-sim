@@ -121,7 +121,7 @@
     const t = nowS(), recent = a && a._coT && t - a._coT < 2.6, grade = recent ? (a._coUlt ? 'ult' : 'mid') : 'basic';
     if (grade === 'basic') { light(p, col, 1.6, .2, 60, kind); edge(col, .08, .14); return; }
     if (grade === 'mid') { light(p, col, 3.2, .38, 95, kind); edge(col, .18, .22); if (Math.random() < .35) S.ca = .08; S.haze = Math.min(.5, S.haze + .05); flavor(kind, col, .45); return; }
-    light(p, col, 6.5, .85, 165, kind); light(p.clone().add(new THREE.Vector3(0, 12, 0)), '#ffffff', 3.5, .35, 120, 'other');
+    light(p, col, 8, 1, 190, kind); light(p.clone().add(new THREE.Vector3(0, 12, 0)), '#ffffff', 4.5, .35, 120, 'other');
     if (allowStrong()) { S.white = Math.max(S.white, isDay() ? .32 : .42); S.whiteC = kind === 'dark' ? '#d8c0ff' : '#ffffff'; S.ca = .12; }
     else edge(col, .3, .3);
     S.vig = .4; S.vigC = '#000000'; ray(p, col, .9, 11); S.haze = Math.min(.55, S.haze + .25); S.hazeC = kind === 'ice' ? '#d8eef8' : kind === 'water' ? '#a8c8e0' : '#c8b89a'; LF.st.haze++; flavor(kind, col, .8);
@@ -142,7 +142,7 @@
   }
   function onClash(a, b, big) { if (!a || !b) return; const p = (typeof chest === 'function' ? chest(a).add(chest(b)) : a.pos.clone().add(b.pos)).multiplyScalar(.5); light(p, '#fff6e0', big ? 3.6 : 1.8, big ? .3 : .16, big ? 110 : 70, 'bolt'); edge('#fff4dc', big ? .2 : .09, .12); }
   function onExplode(p, ek, pw) { if (!p) return; const e = ekOf(null, ek), col = colOf(e), kind = kindOf(e); pw = pw || 1; light(p, col, 2 + pw * 1.5, .3 + .15 * pw, 80 + pw * 30, kind); S.haze = Math.min(.5, S.haze + .08 * pw); if (pw >= 2) { edge(col, .16 + .04 * pw, .25); if (pw >= 3 && Math.random() < .5) S.ca = .1; } }
-  function onUltBlast(p, ek, rad) { if (!p) return; const e = ekOf(null, ek), col = colOf(e), kind = kindOf(e); light(p, col, 7, 1, 180, kind); if (allowStrong()) { S.white = Math.max(S.white, isDay() ? .34 : .45); S.ca = .12; } ray(p, col, 1.1, 13); S.haze = Math.min(.6, S.haze + .35); S.vig = .45; flavor(kind, col, 1); }
+  function onUltBlast(p, ek, rad) { if (!p) return; const e = ekOf(null, ek), col = colOf(e), kind = kindOf(e); light(p, col, 9, 1.1, 200, kind); if (allowStrong()) { S.white = Math.max(S.white, isDay() ? .34 : .45); S.ca = .12; } ray(p, col, 1.1, 13); S.haze = Math.min(.6, S.haze + .35); S.vig = .45; flavor(kind, col, 1); }
 
   const wrap = (name, fn) => { const o = window[name]; if (typeof o !== 'function') return; window[name] = function () { const r = o.apply(this, arguments); try { if (LF.on) fn.apply(this, arguments); } catch (e) { console.warn('lightfx', name, e); } return r; }; };
   wrap('wound', (v, a, text, ek) => hit(v, a, ek));

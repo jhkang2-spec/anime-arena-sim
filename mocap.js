@@ -52,6 +52,7 @@
       TPL.n = tpl(n.scene); TPL.m = m ? tpl(m.scene) : TPL.n; TPL.f = f ? tpl(f.scene) : TPL.n;
       inPlaceClips(n.scene);
       await loadMPFB(get); // 매끈한 사람 몸(없으면 기존 몸으로)
+      await loadCharBodies(get); // 캐릭터별 커스텀 모델(assets/char/manifest.json) — 없으면 no-op
       MC.report = {}; ['n', 'm', 'f'].forEach(k => { const tp = TPL[k]; MC.report[k] = { h: +tp.h.toFixed(3), yawDeg: Math.round(tp.yaw * 180 / Math.PI), missingBones: tp.miss, clipTrackMismatch: clipCheck(tp), fallback: (k === 'm' && !m) || (k === 'f' && !f) }; if (tp.miss.length) console.warn('[mocap] 몸', k, '필수 뼈 없음', tp.miss); });
       if (TPL.n.miss.length) throw Error('기본 몸 필수 뼈 없음: ' + TPL.n.miss.join(','));
       MC.ready = true;
@@ -812,6 +813,79 @@
     names.forEach((n, i) => { if (res[i]) MPFB[n] = tplM(res[i].scene); });
     MC.mpfb = Object.keys(MPFB).length; MC._get = get;
   }
+  // ═══ 캐릭터별 커스텀 모델 드롭인(11-07, 소유자 선택 경로) ═══
+  // assets/char/manifest.json = [{"key":"naruto","file":"naruto.glb","keepHead":true,"bones":{"Hips":"pelvis"}}]
+  // Mixamo·VRM·UE4·Bip본 본 이름을 UE4 네이밍으로 정규화해, 기존 46개 동작 클립이 그대로 바인딩되게 한다(추가 리타깃 없음).
+  // 모델은 자기 얼굴·머리·머리카락을 직접 보유 → keepHead:true(기본)면 절차형 머리 덧셈을 건너뛴다. 매니페스트 없으면 완전 no-op.
+  const CHAR = MC.char = {}; MC.charReport = {};
+  const CORE = ['pelvis', 'spine_03', 'neck_01', 'Head', 'hand_l', 'hand_r'];
+  const UE4BONE = new Set(['root', 'pelvis', 'spine_01', 'spine_02', 'spine_03', 'chest', 'abdomen_01', 'neck_01', 'Head']); // 이미 UE4 정상이면 그대로 통과(파괴 금지)
+  ['clavicle', 'upperarm', 'lowerarm', 'hand', 'thigh', 'calf', 'foot', 'ball'].forEach(p => { UE4BONE.add(p + '_l'); UE4BONE.add(p + '_r'); });
+  ['index', 'middle', 'ring', 'pinky', 'thumb'].forEach(f => [1, 2, 3].forEach(d => ['l', 'r'].forEach(s => UE4BONE.add(f + '_0' + d + '_' + s))));
+  function normBone(raw) {
+    const orig = String(raw || ''); if (UE4BONE.has(orig)) return orig; // 정상 UE4 이름은 절대 바꾸지 않음
+    let n = orig, side = '', mt;
+    if (mt = n.match(/[._\- ]([lr])$/i)) { side = mt[1].toLowerCase(); n = n.slice(0, mt.index); }
+    else if (mt = n.match(/[._\- ]([lr])(?=[._\- ])/i)) { side = mt[1].toLowerCase(); n = n.slice(0, mt.index + 1) + n.slice(mt.index + 2); } // Bip 식 중간 사이드(Bip01_L_Hand · "Bip R Thigh")
+    else if (/(^|[^a-z])l([._\-]|$)/i.test(n) && !/(^|[^a-z])r([._\-]|$)/i.test(n)) side = 'l';
+    else if (/(^|[^a-z])r([._\-]|$)/i.test(n)) side = 'r';
+    else if (/left/i.test(n)) side = 'l'; else if (/right/i.test(n)) side = 'r';
+    const low = n.toLowerCase().replace(/mixamorig|mixamo|j_bip|bip01|skeleton|joint|_?bone|take|def[_-]?|vrm[_0-9]*|rig_|left|right|[_\s]+/gi, '').replace(/[^a-z0-9]/g, '');
+    const S = side ? '_' + side : '';
+    const fg = low.match(/(?:^|hand)(thumb|index|middle|ring|pinky)(?:fun)?0*(\d)/); if (fg) return fg[1] + '_0' + fg[2] + S;
+    const sp = low.match(/^(?:spine|vertebra)(\d*)$/); if (sp) { const k = sp[1] ? Math.min(3, +sp[1] + 1) : 1; return 'spine_0' + k; }
+    if (/^chest/.test(low)) return 'spine_03';
+    if (/^neck/.test(low)) return 'neck_01';
+    if (/^head/.test(low)) return 'Head';
+    if (/^(pelvis|hips?)/.test(low)) return 'pelvis';
+    if (/^(clavicle|collar|shoulder)/.test(low)) return 'clavicle' + S;
+    if (/^(upperarm|arm)/.test(low)) return 'upperarm' + S;
+    if (/^(lowerarm|forearm|elbow)/.test(low)) return 'lowerarm' + S;
+    if (/^hand/.test(low)) return 'hand' + S;
+    if (/^(thigh|upleg|upperleg)/.test(low)) return 'thigh' + S;
+    if (/^(calf|shin|lowerleg|leg|knee)/.test(low)) return 'calf' + S;
+    if (/^foot/.test(low)) return 'foot' + S;
+    if (/^(ball|toe)/.test(low)) return 'ball' + S;
+    if (low === 'root') return 'root';
+    return null;
+  }
+  function aliasBones(scene, manual) {
+    const taken = new Set(), renames = [];
+    scene.traverse(o => { if (o.isBone) { const cur = (o.name || '').trim(); const want = (manual && manual[cur]) || normBone(cur); if (want && !taken.has(want)) { taken.add(want); if (want !== cur) renames.push([o, want]); } } });
+    renames.forEach(([o, w]) => { o.name = w; });
+    return renames.length;
+  }
+  function tplChar(scene) {
+    scene.updateMatrixWorld(true); const box = new THREE.Box3(); let body = null;
+    scene.traverse(o => { if (o.isSkinnedMesh) { if (!body) body = o; box.setFromObject(o); } });
+    if (!body) return null;
+    const names = new Set(); scene.traverse(o => { if (o.isBone) names.add(o.name); });
+    const wp = n => { let o = null; scene.traverse(x => { if (x.isBone && x.name === n) o = x; }); return o ? new THREE.Vector3().setFromMatrixPosition(o.matrixWorld) : null; };
+    const fa = wp('foot_l'), fb = wp('ball_l'), fwd = fa && fb ? fb.sub(fa) : new THREE.Vector3(0, 0, 1);
+    return { scene, h: box.max.y - box.min.y, minY: box.min.y, yaw: Math.atan2(fwd.x, fwd.z), bones: names, miss: NEED.filter(b => !names.has(b)), charTpl: true };
+  }
+  async function loadCharBodies(get) {
+    let man = null;
+    try { const rp = await fetch('assets/char/manifest.json', { cache: 'no-cache' }); if (rp.status !== 200) return; man = await rp.json(); } catch (e) { return; }
+    if (!man) return;
+    const list = (man && man.list) || (Array.isArray(man) ? man : []);
+    for (const it of list) {
+      try {
+        if (!it || !it.key) continue; if (!it.file) it.file = it.key + '.glb';
+        const g = await get('assets/char/' + it.file);
+        if (!g || !g.scene) { MC.charReport[it.key] = 'no-scene'; continue; }
+        const renamed = aliasBones(g.scene, it.bones);
+        const tp = tplChar(g.scene);
+        if (!tp) { MC.charReport[it.key] = 'no-skinned-mesh'; continue; }
+        tp.keepHead = it.keepHead !== false;
+        const coreMiss = CORE.filter(b => !tp.bones.has(b));
+        MC.charReport[it.key] = { bonesRenamed: renamed, coreMiss: coreMiss, h: +tp.h.toFixed(2) };
+        if (coreMiss.length) continue;
+        CHAR[it.key] = tp; if (it.scale) tp.scale = it.scale;
+      } catch (e) { MC.charReport[it && it.key || '?'] = String(e && e.message || e); }
+    }
+    MC.charN = Object.keys(CHAR).length;
+  }
   // 울트라: 고분할 몸(서브디비전 1단, Blender 로 구움 — tools/blender/work/make_bodies_hd.py) 을 처음 울트라가 켜질 때만 내려받아 쓰고, 다 받으면 모형을 다시 만듦
   const MPFB_HD = {};
   function ensureHD() { if (MC.hdLoading || !MC._get) return; MC.hdLoading = true; const names = ['m_slim', 'm_muscle', 'm_avg', 'm_boy', 'f_slim', 'f_curvy', 'f_small'];
@@ -1091,13 +1165,13 @@
     return g;
   };
   function buildRig(ch) {
-    const key = ch.key, P = ch.P || {}, m = ch.model, preset = regOf(key).mpfb || MP_PRESET[key] || (FEMALE.has(key) ? 'f_slim' : 'm_avg'), MB = MC.useMpfb !== false && ((PX() > 1 && MPFB_HD[preset]) || MPFB[preset]), B = MB || TPL[bodyOf(key)], root = THREE.SkeletonUtils.clone(B.scene), holder = new THREE.Group(), inner = new THREE.Group();
+    const key = ch.key, P = ch.P || {}, m = ch.model, preset = regOf(key).mpfb || MP_PRESET[key] || (FEMALE.has(key) ? 'f_slim' : 'm_avg'), CU = CHAR[key] && CHAR[key].bones && !CORE.some(b => !CHAR[key].bones.has(b)) ? CHAR[key] : null, MB = !CU && MC.useMpfb !== false && ((PX() > 1 && MPFB_HD[preset]) || MPFB[preset]), B = CU || MB || TPL[bodyOf(key)], root = THREE.SkeletonUtils.clone(B.scene), holder = new THREE.Group(), inner = new THREE.Group();
     if (MB) { const want = new Set([GN[GAR[key] !== undefined ? GAR[key] : (FEMALE.has(key) ? 'FT' : 'LS')], FEMALE.has(key) || /^f_/.test(preset) ? GN.FSH : GN.MSH]); const drop = []; root.traverse(o => { if (o.isMesh && /^G_/.test(o.name) && !want.has(o.name)) drop.push(o); }); drop.forEach(o => o.parent.remove(o)); }
-    const K = TARGET_H / B.h; inner.rotation.y = Math.PI / 2 - B.yaw; inner.scale.setScalar(K); inner.position.y = -B.minY * K; inner.add(root); holder.add(inner);
+    const K = TARGET_H / B.h * (B.scale || 1); inner.rotation.y = Math.PI / 2 - B.yaw; inner.scale.setScalar(K); inner.position.y = -B.minY * K; inner.add(root); holder.add(inner);
     const mat = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: typeof gm !== 'undefined' ? gm : null, skinning: true });
     // 몸 색도 달빛에 회색으로 바래지 않게: 정점 색의 일부를 자체 발광으로(받는 빛은 줄임) — 얼굴 피부와 같은 원리
     mat.color.setScalar(.66); mat.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += vColor.rgb * 0.34;'); };
-    const rig = { ch, holder, inner, root, mat, meshes: [], outs: [], bones: {}, pairs: [], cur: null, act: null, moRef: null, swd: [], tick: 0, r: 0, combo: 0, state: null, v: new THREE.Vector3(), last: new THREE.Vector3(), spd: 0, alt: 0, body: MB ? (/^f_/.test(preset) ? 'f' : preset === 'm_muscle' ? 'm' : 'n') : bodyOf(key), preset: MB ? preset : null };
+    const rig = { ch, holder, inner, root, mat, isCU: !!CU, meshes: [], outs: [], bones: {}, pairs: [], cur: null, act: null, moRef: null, swd: [], tick: 0, r: 0, combo: 0, state: null, v: new THREE.Vector3(), last: new THREE.Vector3(), spd: 0, alt: 0, body: MB ? (/^f_/.test(preset) ? 'f' : preset === 'm_muscle' ? 'm' : 'n') : bodyOf(key), preset: MB ? preset : null };
     if (PX() > 1 && MC.weave !== false && (MC.weave === true || (window.AAA && AAA.ultra))) { const wv = MC._weave || (MC._weave = (() => { const S = 128, cv = document.createElement('canvas'); cv.width = cv.height = S; const x = cv.getContext('2d'), im = x.createImageData(S, S); // 11-07: 울트라는 직물결(weave) 자동 켬(명시 false 존중) — 옷감 실감
         for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) { const u = (i % 8) / 8, v = (j % 8) / 8, over = ((i >> 3) + (j >> 3)) & 1, nx = over ? Math.sin(u * Math.PI * 2) * .5 : 0, ny = over ? 0 : Math.sin(v * Math.PI * 2) * .5, k = (j * S + i) * 4; im.data[k] = 128 + nx * 100; im.data[k + 1] = 128 + ny * 100; im.data[k + 2] = 255; im.data[k + 3] = 255; }
         x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(24, 24); return t; })());
@@ -1107,8 +1181,11 @@
     root.traverse(o => {
       if (o.isBone) { rig.bones[o.name] = o; if (o.name === 'head') rig.bones.Head = o; if (o.name === 'Root') rig.bones.root = o; }
       if (o.isSkinnedMesh) {
-        const dark = /Joint/i.test(o.material.name || ''), r = paint(o, key, P, dark, B.h, B.minY, !!MB); if (/^G_/.test(o.name)) { o.renderOrder = 1; } o.geometry = r.g; o.material = dark ? mat.clone() : mat; if (dark) o.material.vertexColors = true;
-        o.castShadow = Q.shadow; o.frustumCulled = false; rig.meshes.push(o); if (r.headR) head = r;
+        if (CU) { o.material.skinning = true; o.castShadow = CU_SHADOW(); o.frustumCulled = false; rig.meshes.push(o); }
+        else {
+          const dark = /Joint/i.test(o.material.name || ''), r = paint(o, key, P, dark, B.h, B.minY, !!MB); if (/^G_/.test(o.name)) { o.renderOrder = 1; } o.geometry = r.g; o.material = dark ? mat.clone() : mat; if (dark) o.material.vertexColors = true;
+          o.castShadow = Q.shadow; o.frustumCulled = false; rig.meshes.push(o); if (r.headR) head = r;
+        }
       }
     });
     LAP('paint');
@@ -1124,10 +1201,11 @@
     if (MB && rig.dSkel) { const tSkel = rig.meshes[0].skeleton; setupRetarget(rig, rig.dRoot, root, rig.dSkel, tSkel); }
     rig.acts.Idle_Loop.play(); animate(rig, 0); holder.updateMatrixWorld(true);
     const hb = rig.bones.Head;
-    if (hb && head && m && m.head) { // 원작 머리(머리 모양·색·눈·가면·머리띠·모자)
+    const CU_HEAD = !!CU && CU.keepHead === false; // 커스텀 모델이지만 머리가 없으면(keepHead:false) 절차형 머리 덧셈
+    if (hb && (head || CU_HEAD) && m && m.head) { // 원작 머리(머리 모양·색·눈·가면·머리띠·모자)
       rel(holder, hb, mB).decompose(vA, qA, sA);
-      const box = new THREE.Group(); box.position.copy(head.headC); box.quaternion.copy(qA).invert(); box.scale.set(1 / sA.x, 1 / sA.y, 1 / sA.z); hb.add(box);
-      const rH = head.headR * sA.x, R = rig.preset && MC.headRatio !== false ? TARGET_H / (headRatioOf(key) * 2.42) : rH * (rig.preset ? 1.04 : rig.body === 'f' ? 1.15 : 1.09) * (regOf(key).headK || 1); rig.headR = R; if (rig.preset && MC.headFix !== false) { holder.updateMatrixWorld(true); const hp_ = new THREE.Vector3(); hb.getWorldPosition(hp_); holder.worldToLocal(hp_); hp_.add(new THREE.Vector3(-R * (MC.headBack || .12), R * (MC.headUp || .72), 0)); holder.localToWorld(hp_); box.position.copy(hb.worldToLocal(hp_)); } // 머리 중심을 목 꼭대기(머리 관절) 바로 위·조금 뒤로 — MPFB 머리 정점 중심(얼굴 쪽으로 쏠림)을 쓰면 작은 머리가 앞으로 튀어나옴(11-05 소유자)
+      const box = new THREE.Group(); if (head) box.position.copy(head.headC); box.quaternion.copy(qA).invert(); box.scale.set(1 / sA.x, 1 / sA.y, 1 / sA.z); hb.add(box);
+      const rH = head ? head.headR * sA.x : 0, R = (rig.preset || CU_HEAD) && MC.headRatio !== false ? TARGET_H / (headRatioOf(key) * 2.42) : rH * (rig.body === 'f' ? 1.15 : 1.09) * (regOf(key).headK || 1); rig.headR = R; if ((rig.preset || CU_HEAD) && MC.headFix !== false) { holder.updateMatrixWorld(true); const hp_ = new THREE.Vector3(); hb.getWorldPosition(hp_); holder.worldToLocal(hp_); hp_.add(new THREE.Vector3(-R * (MC.headBack || .12), R * (MC.headUp || .72), 0)); holder.localToWorld(hp_); box.position.copy(hb.worldToLocal(hp_)); } // 머리 중심을 머리 관절 바로 위·조금 뒤로 — 절차형 머리(MPFB·머리없는 커스텀) 중심 보정
       // 머리 크기 = 키 ÷ (원작 머리 대 키 비율) — 얼굴(정수리~턱끝) 높이 약 2.04R, 머리 중심이 MPFB 정수리보다 낮아 실측 보정 2.42
       if (regOf(key).oldHead) { const cv = cloneVis(m.head), hc = cv.obj, k = R * 1.13 / 2.0; hc.position.set(-.15 * k, -2.2 * k, 0); hc.rotation.set(0, 0, 0); hc.scale.setScalar(k); box.add(hc); rig.headObj = hc; rig.pairs.push(...cv.pairs); }
       else { const hg = buildHead(key, P, rig.preset && MC.mpfbFace === true ? R * (MC.faceR || .86) : R, rig, { mpfbFace: !!(rig.preset && MC.mpfbFace === true), fx: MC.faceFX || .9 }); box.add(hg); rig.headG = hg; if (rig.hairSet) rig.csets.push(rig.hairSet); const eye = new THREE.Object3D(); eye.scale.setScalar(R / 2); eye.position.set(0, -2.2 * R / 2, 0); hg.add(eye); rig.headObj = eye; rig.pairs.push([m.head, hg]); } // 1인칭 눈 기준(기존 머리 좌표와 같은 배율) · 1인칭이면 자기 머리 숨김
@@ -1365,7 +1443,8 @@
   const QUAL = { ultra: { outline: true, shadow: true, fxCap: 1e9, lodFar: 1e9, lodSkip: 1, poly: 2 }, low: { outline: false, shadow: false, fxCap: 22, lodFar: 70, lodSkip: 3 }, mid: { outline: true, shadow: true, fxCap: 48, lodFar: 120, lodSkip: 2 }, high: { outline: true, shadow: true, fxCap: 1e9, lodFar: 1e9, lodSkip: 1 } };
   let qName = 'mid'; try { const s = localStorage.getItem('arenaQuality'); if (QUAL[s]) qName = s; } catch (e) { }
   let Q = QUAL[qName];
-  window.setQuality = q => { if (!QUAL[q]) return qName; const rebuild = (QUAL[q].poly || 1) !== (Q.poly || 1); if (rebuild) { MC.rigs.forEach(r => { if (!r.bad) { scene3.remove(r.holder); if (typeof baseTop !== "undefined" && baseTop) baseTop.delete(r.holder); } }); MC.rigs.clear(); } qName = q; Q = QUAL[q]; try { localStorage.setItem('arenaQuality', q); } catch (e) { } MC.rigs.forEach(r => { if (!r.bad) r.meshes.forEach(o => { o.castShadow = Q.shadow; }); }); return qName; };
+  const CU_SHADOW = () => (MC.charShadow === true) || (MC.charShadow !== false && Q.shadow && ULTRA()); // 커스텀(GLB) 바디는 기본(울트라 외) 그림자 미캐스트 — 성능 확보, MC.charShadow 로 강제 가능
+  window.setQuality = q => { if (!QUAL[q]) return qName; const rebuild = (QUAL[q].poly || 1) !== (Q.poly || 1); if (rebuild) { MC.rigs.forEach(r => { if (!r.bad) { scene3.remove(r.holder); if (typeof baseTop !== "undefined" && baseTop) baseTop.delete(r.holder); } }); MC.rigs.clear(); } qName = q; Q = QUAL[q]; try { localStorage.setItem('arenaQuality', q); } catch (e) { } MC.rigs.forEach(r => { if (!r.bad) r.meshes.forEach(o => { o.castShadow = r.isCU ? CU_SHADOW() : Q.shadow; }); }); return qName; };
   window.getQuality = () => qName;
   const sunL = scene3.children.find(o => o.isDirectionalLight);
   const applyQ = () => { if (sunL) sunL.castShadow = Q.shadow; };

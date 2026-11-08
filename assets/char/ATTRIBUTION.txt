@@ -1,0 +1,24 @@
+
+[key] gai
+Soldier
+by three.js examples (Mixamo Soldier)
+license: CC (see three.js examples)
+source: https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/Soldier.glb
+
+[key] sasuke
+X Bot
+by three.js examples / Mixamo (X Bot)
+license: see three.js examples
+source: https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/Xbot.glb
+
+[key] sakura
+Michelle
+by three.js examples / Mixamo (Michelle)
+license: see three.js examples
+source: https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/Michelle.glb
+
+[key] sanji
+RP avatar
+by readyplayer.me (via three.js examples)
+license: see three.js examples
+source: https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/readyplayer.me.glb

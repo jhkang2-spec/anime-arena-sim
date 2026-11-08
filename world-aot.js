@@ -101,7 +101,7 @@
     '수정체 경질화': (a, b) => [...seq(a, b, [['kneel', .5, { aura: 1, elem: 'harden' }]]), ...T.buff(a, b, '수정체 경질화', 'harden', { dur: 3, pose: 'kneel' })],
     '반지 칼날': (a, b) => T.melee(a, b, '반지 칼날 · 손 베기', 'odm', { prep: 'punchPrep', strike: 'palm', n: 1 }),
     '격투 · 업어치기': (a, b) => T.melee(a, b, '업어치기', 'power', { prep: 'shoulder', strike: 'palm', n: 1, pw: 1.5 }),
-  }, { name: '하이킥', hand: null, elem: 'power', kind: 'getsuga' });
+  }, { name: '하이킥', hand: null, elem: 'harden', kind: 'getsuga' });
 
   ['eren', 'mikasa', 'levi'].forEach(k => NW.sword(k, ODM));
   // 몸(남/녀·근육)·제복·머리·얼굴 — 모션 캡처 몸 레지스트리

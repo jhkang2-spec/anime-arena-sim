@@ -1,0 +1,45 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>char preview</title>
+<style>html,body{margin:0;height:100%;background:#101018}#c{width:100vw;height:100vh;display:block}</style>
+</head><body><canvas id="c"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+// ?show=<key> 하나만 정면 확대, ?list 로 4종 나란히(기본=list)
+(function(){
+  var all=[{k:'gai',f:'gai.glb'},{k:'sasuke',f:'sasuke.glb'},{k:'sakura',f:'sakura.glb'},{k:'sanji',f:'sanji.glb'}];
+  var q=new URLSearchParams(location.search), show=q.get('show');
+  var items = show? all.filter(x=>x.k===show) : all;
+  var W=innerWidth,H=innerHeight;
+  var rend=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
+  rend.setPixelRatio(Math.min(2,devicePixelRatio)); rend.setSize(W,H);
+  if('outputColorSpace' in rend) rend.outputColorSpace=THREE.SRGBColorSpace; else if('outputEncoding' in rend) rend.outputEncoding=THREE.sRGBEncoding;
+  var scene=new THREE.Scene(); scene.background=new THREE.Color('#141420');
+  scene.add(new THREE.HemisphereLight(0xffffff,0x334,1.0));
+  var d=new THREE.DirectionalLight(0xffffff,0.9); d.position.set(3,6,5); scene.add(d);
+  var d2=new THREE.DirectionalLight(0x88aaff,0.5); d2.position.set(-4,2,-3); scene.add(d2);
+  var cam=new THREE.PerspectiveCamera(35,W/H,0.01,2000);
+  var grp=new THREE.Group(); scene.add(grp);
+  var loader=new THREE.GLTFLoader(), loaded=0, boxes=[];
+  items.forEach((it,i)=>{
+    loader.load('assets/char/'+it.f, function(g){
+      var m=g.scene; grp.add(m); boxes.push(new THREE.Box3().setFromObject(m));
+      m.userData.i=i; if(++loaded===items.length) layout();
+    },undefined,function(err){ console.error('load fail',it.f,err); loaded++; if(loaded===items.length) layout(); });
+  });
+  function layout(){
+    // 각 모델 발바닥(y=0) 정렬 + X 간격 배치, 정면(+Z->카메라)
+    var gap=0, placed=[];
+    boxes.forEach((b,i)=>{ b.min.y && null; var w=b.max.x-b.min.x, h=b.max.y-b.min.y, dep=b.max.z-b.min.z;
+      // y 정렬: 바닥을 0으로
+      var off=new THREE.Vector3(0,-b.min.y,0); placed.push({b:b,w:w,h:h,dep:dep,off:off}); });
+    var totalW=placed.reduce((s,p)=>s+p.w,0)+ (placed.length-1)*1.2, x=-totalW/2;
+    grp.children.forEach((m,i)=>{ var p=placed[i]; if(!p) return; m.position.x = x + p.w/2 - (p.b.max.x+p.b.min.x)/2; m.position.y = -p.b.min.y; m.position.z = -(p.b.max.z+p.b.min.z)/2; x += p.w + 1.2; });
+    var big=new THREE.Box3().setFromObject(grp); var c=big.getCenter(new THREE.Vector3()); var size=big.getSize(new THREE.Vector3());
+    var dist=Math.max(size.z,1)*2.3 + size.x*0.55;
+    cam.position.set(c.x, c.y+size.y*0.12, c.z+dist); cam.lookAt(c);
+    document.title='ready'; window.__done=true;
+  }
+  (function tick(){ requestAnimationFrame(tick); if(grp.userData.rot) grp.rotation.y+=0.01; rend.render(scene,cam); })();
+})();
+</script></body></html>

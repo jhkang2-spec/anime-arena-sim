@@ -19,6 +19,16 @@
   // 피해 등급: 최근 기술 이름 외침(callout)이 있으면 중간, 필살(ult)이면 큼, 없으면 기본 공격
   const DMG = { basic: [50, 75], mid: [120, 175], ult: [330, 440] }; // 1인 약 1분 안팎에 KO 되도록(실측 60초 적중 수 기준)
   const HEAL_RE = /회복|치유|재생|반전술식|역전술식/;
+  // ── 속성 상성(가위바위보): 공격 속성이 방어 속성을 이기면 +25%, 당하면 -15%, 같거나 모르면 배율 없음 ──
+  const ADV = {
+    fire: ['wind', 'ice', 'insect', 'petal', 'mist'], water: ['fire', 'sand', 'earth', 'sun', 'steam', 'vapor'],
+    bolt: ['water', 'metal', 'ice'], wind: ['earth', 'slash', 'petal'], earth: ['bolt', 'fire', 'light', 'psychic'],
+    ice: ['wind', 'water', 'sand'], dark: ['light'], light: ['dark', 'shadow2', 'cursed', 'hollow'],
+    psychic: ['metal', 'nail'], sand: ['water', 'vapor'], metal: ['slash', 'ice'], slash: ['room', 'psychic', 'nail'],
+    shadow2: ['light'], cursed: ['room', 'nail'], blood: ['light'], steam: ['ice'], vapor: ['fire'],
+    getsuga: ['cursed', 'nail'], shrine: ['room', 'cursed'], ao: ['cursed'], kurama: ['dark', 'shadow2'],
+  };
+  function elemMatch(atk, def) { if (!atk || !def || atk === def) return 1; const A = ADV[atk], B = ADV[def]; if (A && A.indexOf(def) >= 0) return 1.25; if (B && B.indexOf(atk) >= 0) return .85; return 1; }
   const _callout = callout;
   callout = function (f, text, ult) {
     if (f) { f._coT = now(); f._coUlt = !!ult; if (HP.on && text && HEAL_RE.test(String(text))) heal(f, .14); }
@@ -29,10 +39,10 @@
   const _wound = wound;
   wound = function (v, a) {
     const r = _wound.apply(this, arguments);
-    try { if (HP.on) damage(v, a); } catch (e) { console.warn('hp', e); }
+    try { if (HP.on) damage(v, a, arguments[3]); } catch (e) { console.warn('hp', e); }
     return r;
   };
-  function damage(v, a) {
+  function damage(v, a, ek) {
     const rv = HP.of(v); if (!rv || rv.ko || !a || a === v || (a.team && a.team === v.team)) return;
     const t = now(), recent = a._coT && t - a._coT < 2.6;
     const grade = recent ? (a._coUlt ? 'ult' : 'mid') : 'basic';
@@ -45,7 +55,12 @@
     if (v.down) d *= .6;                               // 누운 상대 추가타 보정
     const buf = window.BUFFS && typeof BUFFS.dmgMul === 'function' ? BUFFS.dmgMul(a, v) : (window.COMBAT && typeof COMBAT.dmgMul === 'function' ? COMBAT.dmgMul(a, v) : 1); // 상태 효과(강화·경화 등) 훅
     const mul = Number.isFinite(buf) ? buf : 1;
-    d = mul === 0 ? 0 : Math.max(1, Math.round(d * mul)); // 무적(0배율)이면 피해 0 — 관통 금지
+    // 속성 상성: 기술 요소(ek) 우선, 없으면 인물 시그니처 속성으로
+    const atkE = ek || (a && (a.elem || (a.ch && a.ch.sig && a.ch.sig.elem))) || null;
+    const defE = (v && (v.elem || (v.ch && v.ch.sig && v.ch.sig.elem))) || null;
+    const emul = elemMatch(atkE, defE);
+    if (emul !== 1 && grade !== 'basic') { try { label(headP(v).add(V3(0, 14, 0)), emul > 1 ? '상성!' : '저항', emul > 1 ? '#7cffb0' : '#9fb0c8', { life: .8, rise: 2.0, keep: true }); } catch (e) { } }
+    d = mul === 0 ? 0 : Math.max(1, Math.round(d * mul * emul)); // 무적(0배율)이면 피해 0 — 관통 금지
     rv.hp = Math.max(0, rv.hp - d); if (d > 0) { HP.st.hits++; HP.st.dmg[grade].push(d); }
     // 띄움 피해 수치(애니 게임 정석): 등급별 색·큰 타격은 크게, 연속기 칩
     if (d > 0) {
