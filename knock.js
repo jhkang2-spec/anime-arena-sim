@@ -82,9 +82,9 @@
     else if (s.ph === 'return') {
       const d = Math.hypot(v.pos.x, v.pos.z), ux = -v.pos.x / (d || 1), uz = -v.pos.z / (d || 1);
       if (d > ARENA + 22 && s.t < 6) { const sp = 260 * dt; v.pos.x += ux * sp; v.pos.z += uz * sp; v.pos.y = 0; v.heading = Math.atan2(uz, ux); v.air = false; s.runT = (s.runT || 0) - dt; if (s.runT <= 0) { s.runT = .3; try { apply(v, { pose: 'run' }, .3); } catch (e) { } } }
-      else { s.ph = 'hop'; s.t = 0; const g = V3(-ux * (ARENA - 14), 0, -uz * (ARENA - 14)), dd = Math.hypot(g.x - v.pos.x, g.z - v.pos.z); if (window.MV) MV.arc(v, g, Math.min(1.1, .45 + dd / 400), 16 + dd * .08); else v.pos.copy(g); } // 경기장 가장자리 안쪽으로 뛰어 들어옴(멀면 크게 도약)
+      else { s.ph = 'hop'; s.t = 0; const g = V3(-ux * (ARENA - 14), 0, -uz * (ARENA - 14)), dd = Math.hypot(g.x - v.pos.x, g.z - v.pos.z); if (window.MV) MV.arc(v, g, Math.min(1.1, .45 + dd / 400), 16 + dd * .08); else { s.ret = g; } } // 경기장 가장자리 안쪽으로 뛰어 들어옴(멀면 크게 도약). MV 없어도 순간이동하지 않고 걷기 복귀
     }
-    else if (s.ph === 'hop') { if (!v.arc || s.t > 1.4) { v.away = null; KN.st.cliff.back++; KN.st.cliff.times.push(+(now() - s.t0).toFixed(2)); try { label(headP(v).add(V3(0, 6, 0)), '복귀!', '#cfe8ff'); } catch (e) { } } }
+    else if (s.ph === 'hop') { if (s.ret) { const dd = Math.hypot(s.ret.x - v.pos.x, s.ret.z - v.pos.z), step = 300 * dt; v.pos.y = 0; v.air = false; if (dd > step) { v.pos.x += (s.ret.x - v.pos.x) / dd * step; v.pos.z += (s.ret.z - v.pos.z) / dd * step; } else { v.pos.copy(s.ret); s.ret = null; v.away = null; KN.st.cliff.back++; return; } } else if (!v.arc || s.t > 1.4) { v.away = null; KN.st.cliff.back++; KN.st.cliff.times.push(+(now() - s.t0).toFixed(2)); try { label(headP(v).add(V3(0, 6, 0)), '복귀!', '#cfe8ff'); } catch (e) { } } }
   }
   const _res = resolve;
   resolve = function (a, b) { if ((a && a.away) || (b && b.away)) { KN.st.awaySkip = (KN.st.awaySkip || 0) + 1; return; } return _res.apply(this, arguments); }; // 바깥에 있는 동안은 공격 대상 아님 // 맞은 뒤 1.5초 동안 실제로 밀려난 수평 거리(등급별 평균 측정)
