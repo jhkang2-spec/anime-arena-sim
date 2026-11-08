@@ -13,17 +13,17 @@
 
   // ═══ 1. 몸: 분할 수를 늘린 도형으로 한 번 더 짓기 ═══
   const ULTRA = (() => { try { const a = localStorage.getItem('arenaUltra'); if (a !== null) return a === '1'; return !/Mobi|Android|iPhone/i.test(navigator.userAgent); } catch (e) { return false; } })(); // 11-07 라운드D: AAA와 동일한 기본값(데스크톱 켬) — 저장 안 한 첫 방문에도 고해상도
-  const KS = ULTRA ? 6.2 : 3.2, KR = ULTRA ? 7 : 3.6; // 11-07 라운드D: 모델링 대폭 증량(울트라: HD 대비 ~3배·기본 모형 대비 ~40배 삼각형) — LOD(근접 인물만)가 총량 보호
+  const KS = ULTRA ? 4.2 : 2.6, KR = ULTRA ? 4.8 : 2.8; /* 11-09: 폴리곤 낮춤(이펙트는 유지) — 끊김 개선 */ // 11-07 라운드D: 모델링 대폭 증량(울트라: HD 대비 ~3배·기본 모형 대비 ~40배 삼각형) — LOD(근접 인물만)가 총량 보호
   const G0 = { S: THREE.SphereGeometry, C: THREE.CylinderGeometry, L: THREE.LatheGeometry, T: THREE.TorusGeometry, K: THREE.ConeGeometry };
   class HS extends G0.S { constructor(r = 1, w = 8, h = 6, ...a) { super(r, Math.min(ULTRA ? 220 : 96, Math.round(w * KS)), Math.min(ULTRA ? 160 : 64, Math.round(h * KS)), ...a); } }
-  class HC extends G0.C { constructor(t = 1, b = 1, h = 1, rs = 8, hs = 1, ...a) { super(t, b, h, Math.min(ULTRA ? 180 : 80, Math.round(rs * KR)), hs * 2, ...a); } }
-  class HK extends G0.K { constructor(r = 1, h = 1, rs = 8, hs = 1, ...a) { super(r, h, Math.min(ULTRA ? 180 : 80, Math.round(rs * KR)), hs * 2, ...a); } }
-  class HT extends G0.T { constructor(r = 1, t = .4, rs = 8, ts = 6, ...a) { super(r, t, Math.min(ULTRA ? 110 : 40, Math.round(rs * KR)), Math.min(ULTRA ? 300 : 130, Math.round(ts * (ULTRA ? 5 : 2.3))), ...a); } }
+  class HC extends G0.C { constructor(t = 1, b = 1, h = 1, rs = 8, hs = 1, ...a) { super(t, b, h, Math.min(ULTRA ? 72 : 60, Math.round(rs * KR)), hs * 2, ...a); } }
+  class HK extends G0.K { constructor(r = 1, h = 1, rs = 8, hs = 1, ...a) { super(r, h, Math.min(ULTRA ? 72 : 60, Math.round(rs * KR)), hs * 2, ...a); } }
+  class HT extends G0.T { constructor(r = 1, t = .4, rs = 8, ts = 6, ...a) { super(r, t, Math.min(ULTRA ? 72 : 40, Math.round(rs * KR)), Math.min(ULTRA ? 300 : 130, Math.round(ts * (ULTRA ? 5 : 2.3))), ...a); } }
   class HL extends G0.L { // 회전체: 둘레 배 + 윤곽 점을 곡선으로 두 배(근육 굴곡·어깨·허리 곡선이 매끈하게)
     constructor(pts = [], seg = 12, ...a) {
       let P = pts;
       if (pts.length >= 4) { P = new THREE.SplineCurve(pts.map(p => new THREE.Vector2(p.x, p.y))).getPoints(pts.length * ((ULTRA ? 4 : 2) - 1)).map(p => new THREE.Vector2(Math.max(0, p.x), p.y)); P[0].copy(pts[0]); P[P.length - 1].copy(pts[pts.length - 1]); }
-      super(P, Math.min(ULTRA ? 140 : 56, Math.round(seg * KR)), ...a);
+      super(P, Math.min(ULTRA ? 84 : 40, Math.round(seg * KR)), ...a);
     }
   }
   function buildHi(c) {

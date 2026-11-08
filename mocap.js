@@ -317,7 +317,7 @@
   //  얼굴 메시: 구를 깎아 아래로 좁아지는 턱선·앞이 납작한 얼굴·작은 코 돌기. 정면 투영 UV 로 얼굴 그림(눈·눈썹·입·표식)을 입힘(뒤·옆은 피부색)
   //  눈 그림: 흰자 → 홍채(위 짙고 아래 밝은 그라데이션)·동공·하이라이트 2개 → 굵은 윗속눈썹 선(눈꼬리 날개)·가는 아랫선. 눈매(둥근·날카로운·졸린·점) · 사륜안/윤회안/불꽃 눈/맹인/검은 흰자 지원
   const FACE_TEX = 512;
-  const SG = n => Math.round(n * ((window.AAA && AAA.ultra) ? 5.5 : (PX() > 1 ? 4 : 1))); /* 울트라: 모자·탈 분할 4배→5.5배 */
+  const SG = n => Math.round(n * ((window.AAA && AAA.ultra) ? 4.2 : (PX() > 1 ? 3.2 : 1))); /* 11-09: 인물 폴리곤 5.5→4.2(이펙트 유지·프레임 확보) */ /* 울트라: 모자·탈 분할 4배→5.5배 */
   const FACE_X = new Set(['saitama', 'inosuke', 'law', 'luffy', 'kizaru', 'himejima', 'aizen', 'nanami']); /* 머리카락이 적은 인물: 울트라 얼굴 분할 더 */
   function faceGeo(R, FP) {
     const g = new THREE.SphereGeometry(R, PX() > 1 ? ((window.AAA && AAA.ultra) ? (FACE_X.has(MC._fk) ? 380 : 240) : (FACE_X.has(MC._fk) ? 300 : 180)) : 56, PX() > 1 ? ((window.AAA && AAA.ultra) ? (FACE_X.has(MC._fk) ? 266 : 170) : (FACE_X.has(MC._fk) ? 210 : 130)) : 40), p = g.attributes.position, uv = g.attributes.uv;

@@ -31,7 +31,7 @@
   }
   function flareTick(dt) { for (const f of FL) { if (f.life <= 0) { if (f.m.visible) f.m.visible = false; continue; } f.life -= dt; const u = Math.max(0, f.life / f.max); f.m.material.opacity = u * u; f.m.material.rotation += dt * 2.4; f.m.scale.setScalar(f.s0 * (1 + (1 - u) * 1.6)); } }
   // ── ③ 광기둥 ──
-  function shaft(p, c, w = 1.7, life = .55) { if (!p || !gate()) return; pillar(V3(p.x, Math.max(0, p.y - 2), p.z), w, c, life); EP.shafts++; EP.budget -= 3; }
+  function shaft(p, c, w = 1.0, life = .4) { if (!p || !gate()) return; pillar(V3(p.x, Math.max(0, p.y - 2), p.z), w, c, life); EP.shafts++; EP.budget -= 3; }
 
   // ── ④ 맞음(wound): 방향성 불똥 2중 + 번쩍 + 소형 링 ──
   const _wound = wound;
@@ -50,7 +50,7 @@
       }
       X.emit(b.clone(), V3(0, 0, 0), .14, 15, 0, '#ffffff');
       X.emit(b.clone(), dir.clone().multiplyScalar(60), .22, 6, 1, L.c);
-      flare(b, L.c, 5, .24);
+      flare(b, L.c, 3.5, .2);
       ring(b, 1.7, L.c, false, .38, 4.4);
       EP.budget -= 4; EP.hits++;
     } catch (e) { }
@@ -67,12 +67,12 @@
       const L = EL(ek || (a && a.elem) || 'metal');
       if (o === 'hit' || o === 'sub') {
         if (pw >= 1.3) { try { X.shock(p.clone().add(V3(0, 2, 0)), a && a.pos ? dirTo(b, a) : V3(0, 0, 1), 5 + pw * 3.2, L.c, .16 + .05 * pw); EP.shocks++; } catch (e) { } }
-        if (pw >= 1.9) { flare(p.clone().add(V3(0, 2, 0)), L.c, 8, .34); light(p, L.c, 4 + pw); }
+        if (pw >= 1.9) { flare(p.clone().add(V3(0, 2, 0)), L.c, 6, .3); light(p, L.c, 4 + pw); }
         if (pw >= 2.4 && gate()) { ring(p, 3, '#ffffff', false, .5, 5.5); EP.budget -= 4; }
       } else if (o === 'block') {
         const fan = a && a.pos ? dirTo(b, a) : V3(0, 0, 1);
         for (let i = 0; i < Math.round(7 * half()); i++) { const d = fan.clone().add(V3(rr(-1, 1), rr(0, 1), rr(-1, 1))).normalize().multiplyScalar(rr(130, 260)); X.streak(p.clone(), d, rr(.18, .32), rr(.4, .8), rr(.8, 1.5), (i & 1) ? '#9fd8ff' : '#ffffff', 260); }
-        flare(p, '#bfe4ff', 4, .18); EP.budget -= 3; EP.blocks++;
+        flare(p, '#bfe4ff', 3, .16); EP.budget -= 3; EP.blocks++;
       } else if (o === 'jump') { try { X.dustRing(b.pos, 4, 6); } catch (e) { } }
     } catch (e) { }
     return r;
@@ -85,8 +85,8 @@
       if (!p || !gate()) return r;
       const L = EL(ek), big = Math.min(2, (rad || 60) / 60);
       for (let i = 0; i < 3; i++) pending.push({ t: i * .09, fn: () => { try { X.shock(p.clone().add(V3(0, 3 + i * 2, 0)), V3(0, 1, 0), 9 + i * 7 * big, i ? L.c : '#ffffff', .2 + .06 * i); } catch (e) { } } });
-      shaft(p, L.c, 2.4 + big, .6); shaft(p, '#ffffff', 1.1, .4);
-      flare(p.clone().add(V3(0, 6, 0)), '#ffffff', 12, .5);
+      shaft(p, L.c, 1.6, .5); shaft(p, '#ffffff', .7, .3);
+      flare(p.clone().add(V3(0, 6, 0)), '#ffffff', 8, .45);
       light(p, L.c, 9);
       flashScreen(.07 * big);
       X.dustRing(p, 14 + 8 * big, 20 + 10 * big);
@@ -103,7 +103,7 @@
       try {
         if (a && b && a.pos && b.pos && gate()) {
           const m = a.pos.clone().lerp(b.pos, .5).add(V3(0, 8, 0));
-          flare(m, '#ffffff', big ? 9 : 5.5, .3);
+          flare(m, '#ffffff', big ? 6 : 4, .28);
           ring(m, big ? 4 : 2.4, '#ffffff', false, .4, 5);
           if (big) { try { X.shock(m, dirTo(b, a), 12, '#ffe9a0', .22); } catch (e) { } }
           EP.budget -= 5;
@@ -120,7 +120,7 @@
     try {
       if (f && f.pos && gate()) {
         const c = EL(f.elem || (f.ch && f.ch.sig && f.ch.sig.elem)).c, b = chestP(f) || f.pos.clone().add(V3(0, 10, 0));
-        if (ult) { light(b, c, 6); flare(b, c, 6.5, .35); shaft(f.pos, c, 1.4, .45); }
+        if (ult) { light(b, c, 6); flare(b, c, 4.5, .3); shaft(f.pos, c, .9, .3); }
         else { light(b, c, 2.2); if (Math.random() < .5) X.emit(b.clone(), V3(0, rr(30, 70), 0), rr(.3, .5), rr(1.2, 2), 1, c, -10); }
         EP.budget -= ult ? 6 : 1;
       }
@@ -134,8 +134,8 @@
     f.__epAw = 1;
     if (!gate()) return;
     const c = EL(f.ch && f.ch.sig && f.ch.sig.elem).c;
-    shaft(f.pos, c, 2.6, .9); shaft(f.pos, '#ffd84a', 1.2, .6);
-    flare(chestP(f) || f.pos, '#ffd84a', 13, .6);
+    shaft(f.pos, c, 1.6, .6); shaft(f.pos, '#ffd84a', .8, .4);
+    flare(chestP(f) || f.pos, '#ffd84a', 9, .5);
     light(f.pos, '#ffd84a', 9);
     try { X.shock(f.pos.clone().add(V3(0, 6, 0)), V3(0, 1, 0), 16, '#ffd84a', .3); } catch (e) { }
     EP.budget -= 16;

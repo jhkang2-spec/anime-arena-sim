@@ -62,7 +62,16 @@
   function flightTick(dt) {
     flights.forEach((fl, f) => {
       if (!F.includes(f) || (f.ch && f.ch.key) !== fl.key) { world.removeRigidBody(fl.rb); flights.delete(f); return; } // 교대·퇴장
-      fl.t += dt; const tr = fl.rb.translation(), lv0 = fl.rb.linvel(); { const onG = tr.y - fl.r < .4 && lv0.y <= 5, hh = Math.hypot(lv0.x, lv0.z), dec = onG && hh > 0 ? Math.max(0, hh - 260 * dt) / hh : 1; fl.rb.setLinvel({ x: lv0.x * dec, y: lv0.y - 420 * dt, z: lv0.z * dec }, true); } /* 중력(항상) + 바닥에 닿아 미끄러질 때 마찰 감속(초당 260) */ const lv = fl.rb.linvel(), h = Math.hypot(lv.x, lv.z);
+      fl.t += dt;
+      { const t0 = fl.rb.translation(), v0 = fl.rb.linvel(); // 이상 상태(비정상 값·허공 이탈)면 마지막으로 정상였던 지점으로 복원 — 중앙 순간이동 금지
+        const rr0 = Math.hypot(t0.x, t0.z), bad = !(isFinite(t0.x) && isFinite(t0.y) && isFinite(t0.z) && isFinite(v0.x) && isFinite(v0.y) && isFinite(v0.z)) || t0.y < -400 || rr0 > 1300;
+        if (bad) { PH.st.badRecover = (PH.st.badRecover || 0) + 1;
+          if (fl.lx != null) { fl.rb.setTranslation({ x: fl.lx, y: fl.ly, z: fl.lz }, true); fl.rb.setLinvel({ x: 0, y: 0, z: 0 }, true); }
+          else { world.removeRigidBody(fl.rb); flights.delete(f); }
+          return; }
+        fl.lx = t0.x; fl.ly = Math.max(0, t0.y); fl.lz = t0.z; }
+      const tr = fl.rb.translation(), lv0 = fl.rb.linvel(); { const onG = tr.y - fl.r < .4 && lv0.y <= 5, hh = Math.hypot(lv0.x, lv0.z), dec = onG && hh > 0 ? Math.max(0, hh - 260 * dt) / hh : 1; fl.rb.setLinvel({ x: lv0.x * dec, y: lv0.y - 420 * dt, z: lv0.z * dec }, true); } /* 중력(항상) + 바닥에 닿아 미끄러질 때 마찰 감속(초당 260) */ const lv = fl.rb.linvel(), h = Math.hypot(lv.x, lv.z);
+      { const sp = Math.hypot(lv.x, lv.y, lv.z); if (sp > 950) { const s2 = 950 / sp; fl.rb.setLinvel({ x: lv.x * s2, y: lv.y * s2, z: lv.z * s2 }, true); } } // 속도 상한: 라피어가 NaN·터널링을 내는 극단 값을 미리 자름
       const rr = Math.hypot(tr.x, tr.z), RM = ARENA - 4;
       if (lv.y > 360 || tr.y > 140) { fl.rb.setLinvel({ x: lv.x * .8, y: Math.min(lv.y, tr.y > 140 ? 0 : 360), z: lv.z * .8 }, true); PH.st.yCap = (PH.st.yCap || 0) + 1; } // 겹침 풀림으로 하늘로 튀는 것 방지(높이 상한)
       if (fl.cliff) { const hit = fl.cliff(tr.x, tr.z); if (hit) { const y = Math.max(0, tr.y - fl.r); f.pos.set(hit.x, y, hit.z); world.removeRigidBody(fl.rb); flights.delete(f); PH.st.cliffHit = (PH.st.cliffHit || 0) + 1; try { fl.onCliff && fl.onCliff(f, hit, y); } catch (e) { console.error(e); } return; } }

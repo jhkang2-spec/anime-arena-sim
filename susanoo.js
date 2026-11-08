@@ -49,7 +49,7 @@
   // ── 불러오기 ──
   (async () => {
     try {
-      for (let i = 0; i < 100 && !THREE.GLTFLoader; i++) { if (i === 10) await loadScript(BASE + 'loaders/GLTFLoader.js').catch(() => { }); await new Promise(r => setTimeout(r, 100)); }
+      for (let i = 0; i < 100 && !THREE.GLTFLoader; i++) { if (i === 5) await loadScript('vendor/GLTFLoader-r128.js').catch(() => { }); if (i === 12) await loadScript(BASE + 'loaders/GLTFLoader.js').catch(() => { }); await new Promise(r => setTimeout(r, 100)); } // 1차 로컬 벤더, 실패 시 CDN
       const L = new THREE.GLTFLoader(), get = u => new Promise((ok, no) => L.load(u, ok, undefined, no));
       const keys = ['sasuke_1', 'sasuke_2', 'sasuke_3', 'itachi_1', 'itachi_2', 'itachi_3'];
       const gs = await Promise.all(keys.map(k => get('assets/susanoo/' + k + '.glb')));
@@ -67,13 +67,13 @@
       const dm = new THREE.ShaderMaterial({ uniforms: o.material.uniforms, vertexShader: VS, fragmentShader: FS, colorWrite: false, depthWrite: true, side: THREE.FrontSide, blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.ZeroFactor, blendDst: THREE.OneFactor, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
       const d = new THREE.Mesh(o.geometry, dm); d.frustumCulled = false; d.renderOrder = 1000; /* 불투명 중 맨 마지막(배경·벽 다음) */ d.name = ''; o.add(d); ds.push(d); });
     Object.values(parts).forEach(o => { o.userData.r0 = o.rotation.clone(); });
-    return { g, mats, parts, stage, ds }; }
+    return { g, mats, parts, stage, ds, msh: ms }; }
   function setMats(I, op, cut, y0, s) { I.mats.forEach(m => { m.uniforms.uOp.value = op; m.uniforms.uCut.value = cut; m.uniforms.uY0.value = y0; m.uniforms.uS.value = s; }); I.g.visible = op > .003; I.ds.forEach(d => { d.visible = op > .3; }); }
   const sm = x => x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x);
   const fwd = f => (typeof fwdOf === 'function' ? fwdOf(f) : new THREE.Vector3(Math.cos(f.heading), 0, Math.sin(f.heading)));
   // 단계 시간표: 해골 0~.45 → 상반신 .45~.9 → 완성체 .9~1.35 (앞 단계는 안에 남았다가 흐려짐)
   const H = { 1: 46, 2: 62, 3: 92 };
-  const SUS_TITAN = 2.6;   // 수사노오 최대 높이 = 진격의거인(공격거인) 스케일 2.6 × 캐릭터. GLB 원본 크기와 무관하게 바운딩박스로 정규화해 화면 과다 채움 방지.
+  const SUS_TITAN = 1.5;   // 수사노오 최대 높이 = 캐릭터 1.5배(오리지널 초기~중반 수사노오 느낌). 그 이상은 화면을 뒤덮는다(주인 지적 11-09). GLB 원본 크기와 무관하게 바운딩박스로 정규화.
   function charHeight(f) { try { if (f.model && f.model.root) { const b = new THREE.Box3().setFromObject(f.model.root); const h = b.max.y - b.min.y; if (h > 1) return h; } } catch (e) { } return 33; }
   function show(f, kind, o) {
     if (!st.ready || !f || !f.pos) return null;
@@ -106,7 +106,7 @@
   }
   const curStage = S => { let c = S.stages[0]; S.stages.forEach(s => { if (S.t >= S.stages.indexOf(s) * .45) c = s; }); return c; };
   const _v = new THREE.Vector3();
-  function randPt(I) { const ms = []; I.g.traverse(o => { if (o.isMesh && o.visible) ms.push(o); }); if (!ms.length) return null; const m = ms[(Math.random() * ms.length) | 0], pa = m.geometry.attributes.position; const i = (Math.random() * pa.count) | 0; _v.fromBufferAttribute(pa, i); m.updateWorldMatrix(true, false); return _v.clone().applyMatrix4(m.matrixWorld); }
+  function randPt(I) { const ms = I.msh || []; if (!ms.length) return null; const m = ms[(Math.random() * ms.length) | 0], pa = m.geometry.attributes.position; const i = (Math.random() * pa.count) | 0; _v.fromBufferAttribute(pa, i); m.updateWorldMatrix(true, false); return _v.clone().applyMatrix4(m.matrixWorld); }
   // 움직임: 숨쉬기·턱·검 휘두르기·날개·팔 흔들림
   function anim(S, I, t, isLast) { const p = I.parts, br = Math.sin(t * 2.4) * .02;
     const r = (o, x, y, z) => { if (!o) return; const r0 = o.userData.r0; o.rotation.set(r0.x + x, r0.y + y, r0.z + z); };

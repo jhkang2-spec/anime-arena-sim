@@ -26,7 +26,7 @@
   let wantUltra = !isMobile; try { const s = localStorage.getItem('arenaUltra'); if (s === '0') wantUltra = false; else if (s === '1') wantUltra = true; } catch (e) { }
   /* 판 번호 이전(11-05 렌더 상향): 예전에 '높음'으로 굳은 PC 방문자도 한 번은 울트라로 올림. 이후 사용자가 고른 값은 그대로 존중 */
   const RENDER_V = '2'; try { if (localStorage.getItem('arenaRenderV') !== RENDER_V) { localStorage.setItem('arenaRenderV', RENDER_V); if (!isMobile) { wantUltra = true; localStorage.setItem('arenaUltra', '1'); } } } catch (e) { }
-  AAA.ss = 2; AAA.ssMin = 1.25; AAA.ssMax = 2; AAA.ssBudget = 9.5e6; /* 울트라 슈퍼샘플: 장면만 화면의 ss 배 크기 다중 샘플 판에 그려 1배로 줄이고, 후처리는 1배 해상도에서(비용 절감). 2→1.75→1.5→1.25 로만 내림(1배로는 안 떨어짐) */
+  AAA.ss = 1.6; AAA.ssMin = 1.2; AAA.ssMax = 1.6; AAA.ssBudget = 7.2e6; /* 울트라 슈퍼샘플(11-09 낮춤: 인물·배경 픽셀 비용 절감, 이펙트 후처리는 그대로). 장면만 ss 배 판에 그려 1배로 줄임 */
   if (typeof window.setQuality === 'function') {
     const _sq = window.setQuality;
     window.setQuality = function (q) { if (q === 'ultra') { AAA.ultra = true; try { localStorage.setItem('arenaUltra', '1'); } catch (e) { } applyShadow(); _sq.call(this, 'high'); return 'ultra'; }

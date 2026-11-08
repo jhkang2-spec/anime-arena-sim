@@ -273,7 +273,7 @@ function explode(p, ek, pw = 1) {
   for (let i = 0; i < 14 * pw * FXM(); i++) { const d = V3(R(-1, 1), R(-.3, 1), R(-1, 1)).normalize(); parts.push({ p: p.clone(), v: d.multiplyScalar(R(120, 260) * Math.sqrt(pw)), life: R(.4, .8), c: pick(['#ffffff', E.parts[0], E.parts[1]]), g: 120, s: 1 }); }
   for (let i = 0; i < 3 + 2 * pw; i++) parts.push({ p: p.clone().add(V3(R(-3, 3), R(-3, 3), R(-3, 3)).multiplyScalar(pw)), v: V3(R(-30, 30), R(-10, 50), R(-30, 30)).multiplyScalar(pw * .6), life: R(.5, .9), c: pick(E.parts), g: 0, s: 3 });
   switch (ek) { // 속성마다 다른 모양
-    case 'fire': case 'kurama': case 'sun': case 'blood': for (let i = 0; i < 5; i++) pillar(V3(p.x + R(-8, 8), WATER_H, p.z + R(-8, 8)), R(2, 4.5), E.c, .6); break;
+    case 'fire': case 'kurama': case 'sun': case 'blood': for (let i = 0; i < (pw > 1.5 ? 3 : 2); i++) pillar(V3(p.x + R(-8, 8), WATER_H, p.z + R(-8, 8)), R(1.6, 3), E.c, .45); break; // 불기둥: 큰 폭발에만 2~3개(주인 지적: 캐릭터 위로 기둥 난무 금지)
     case 'wind': case 'dark': case 'hollow': case 'petal': case 'psychic': case 'room': case 'mist': case 'insect': add({ k: 'spiral', p: p.clone(), c: E.c, life: 1.1 }); break;
     case 'bolt': case 'getsuga': case 'light': for (let i = 0; i < 4; i++) bolt(p.clone().add(V3(R(-8, 8), 45, R(-8, 8))), p, E.c, .7, 2); break;
     case 'water': for (let i = 0; i < 26; i++) { const a2 = i / 26 * PI * 2; parts.push({ p: V3(p.x, WATER_H + .5, p.z), v: V3(Math.cos(a2) * 55, R(120, 220), Math.sin(a2) * 55), life: 1.3, c: pick(E.parts), g: 300, s: 2 }); } break;
@@ -1153,8 +1153,9 @@ function update(dt, t) {
     f.fallA = f.fallA || 0; f.fallV = f.fallV || 0; f.fallV -= (f.fallA * 45 + f.fallV * 5) * dt; f.fallA = clampv(f.fallA + f.fallV * dt, -.4, 1.35);
     f.pos.x += (f.vel.x + f.kb.x) * dt; f.pos.z += (f.vel.z + f.kb.z) * dt; const kbl = Math.hypot(f.kb.x, f.kb.z); if (kbl > 40 && !f.air && frame % 2 === 0) splash(f.pos, .5); f.kb.multiplyScalar(Math.max(0, 1 - dt * 4.5));
     if (f.air) { if (f.hover) { const th = f.hoverH || 15; f.vel.y += ((th - f.pos.y) * 6 - f.vel.y * 3.2) * dt; f.vel.y = Math.max(-70, Math.min(70, f.vel.y)); f.pos.y += f.vel.y * dt; if (f.pos.y < 0) { f.pos.y = 0; f.vel.y = 24; } } else { f.vel.y -= GRAV * dt; f.pos.y += f.vel.y * dt; if (f.pos.y <= 0) { f.pos.y = 0; f.vel.y = 0; f.air = false; splash(f.pos, 1); f.cv = f.cv || {}; f.cv.bob = (f.cv.bob || 0) + 40; if (f.model.ph) f.model.ph.sv.y -= 3; } } }
-    clampArena(f.pos);
-    if (![f.pos.x, f.pos.y, f.pos.z, f.vel.x, f.vel.y, f.vel.z, f.heading].every(isFinite)) { f.pos.set(R(-40, 40), 0, R(-30, 30)); f.vel.set(0, 0, 0); f.air = false; f.heading = 0; }
+    if (!f.away) clampArena(f.pos); // 벽 박힘(절벽) 상태는 경기장 바깥에 있으므로 클램프 안 함 — 매 프레임 안으로 끌려와 순간이동처럼 보이는 것 방지
+    if ([f.pos.x, f.pos.y, f.pos.z].every(isFinite)) { f.__lgx = f.pos.x; f.__lgz = f.pos.z; } // 마지막으로 정상적이던 발자리 기억(중앙 순간이동 방지)
+    if (![f.pos.x, f.pos.y, f.pos.z, f.vel.x, f.vel.y, f.vel.z, f.heading].every(isFinite)) { f.pos.set(f.__lgx != null ? f.__lgx : R(-40, 40), 0, f.__lgz != null ? f.__lgz : R(-30, 30)); f.vel.set(0, 0, 0); f.kb.set(0, 0, 0); f.air = false; if (!isFinite(f.heading)) f.heading = 0; }
     const k = Math.min(1, dt * f.k);
     // 2차 스프링(살짝 넘쳤다 돌아옴). 프레임이 느려도 터지지 않게 잘게 나눠 적분하고, 값이 깨지면 바로 목표로 되돌린다
     const stf = Math.min(2400, f.k * f.k * .9), dmp = 2 * .78 * Math.sqrt(stf), subs = Math.max(1, Math.ceil(dt * Math.sqrt(stf) / .35)), h = dt / subs; f.cv = f.cv || {};
