@@ -100,7 +100,7 @@
   }
   function laneTickSolo(L) { if (L.t <= 0) { if (!L.q.length) { L.done = true; lanes = []; return; } L.t = runStep(L.q.shift()); } }
   const nextName = f => { const L = TEAMS[f.team], busy = F.filter(x => x !== f && x.team === f.team).map(x => x.ti); for (let s = 1; s <= L.length; s++) { const j = (f.ti + s) % L.length; if (!busy.includes(j)) return (CH[L[j]] || {}).name; } return null; };
-  window.TEAMS = TEAMS; window.teamSwap = teamSwap; window.rebuild = rebuild;
+  window.TEAMS = TEAMS; window.teamSwap = teamSwap;
   window.getTeams = () => SEL.slice();
   window.setTeams = ws => { SEL = (Array.isArray(ws) ? ws : []).filter(w => TEAMS[w]); try { localStorage.setItem(KEY, JSON.stringify(SEL)); } catch (e) { }
     const next = order(); if (JSON.stringify(next) !== JSON.stringify(ON)) { ON = next; rebuild(); } return ON; };
