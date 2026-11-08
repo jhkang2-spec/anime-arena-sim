@@ -1152,7 +1152,7 @@ function update(dt, t) {
     f.tilt = (f.tilt || 0) + ((f.tiltT || 0) - (f.tilt || 0)) * Math.min(1, dt * 9);
     f.fallA = f.fallA || 0; f.fallV = f.fallV || 0; f.fallV -= (f.fallA * 45 + f.fallV * 5) * dt; f.fallA = clampv(f.fallA + f.fallV * dt, -.4, 1.35);
     f.pos.x += (f.vel.x + f.kb.x) * dt; f.pos.z += (f.vel.z + f.kb.z) * dt; const kbl = Math.hypot(f.kb.x, f.kb.z); if (kbl > 40 && !f.air && frame % 2 === 0) splash(f.pos, .5); f.kb.multiplyScalar(Math.max(0, 1 - dt * 4.5));
-    if (f.air) { f.vel.y -= GRAV * dt; f.pos.y += f.vel.y * dt; if (f.pos.y <= 0) { f.pos.y = 0; f.vel.y = 0; f.air = false; splash(f.pos, 1); f.cv = f.cv || {}; f.cv.bob = (f.cv.bob || 0) + 40; if (f.model.ph) f.model.ph.sv.y -= 3; } }
+    if (f.air) { if (f.hover) { const th = f.hoverH || 15; f.vel.y += ((th - f.pos.y) * 6 - f.vel.y * 3.2) * dt; f.vel.y = Math.max(-70, Math.min(70, f.vel.y)); f.pos.y += f.vel.y * dt; if (f.pos.y < 0) { f.pos.y = 0; f.vel.y = 24; } } else { f.vel.y -= GRAV * dt; f.pos.y += f.vel.y * dt; if (f.pos.y <= 0) { f.pos.y = 0; f.vel.y = 0; f.air = false; splash(f.pos, 1); f.cv = f.cv || {}; f.cv.bob = (f.cv.bob || 0) + 40; if (f.model.ph) f.model.ph.sv.y -= 3; } } }
     clampArena(f.pos);
     if (![f.pos.x, f.pos.y, f.pos.z, f.vel.x, f.vel.y, f.vel.z, f.heading].every(isFinite)) { f.pos.set(R(-40, 40), 0, R(-30, 30)); f.vel.set(0, 0, 0); f.air = false; f.heading = 0; }
     const k = Math.min(1, dt * f.k);
