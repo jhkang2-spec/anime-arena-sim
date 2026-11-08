@@ -93,5 +93,24 @@
 
   NW.marvelProf = { marvel: { lunge: 1.6, kb: 1.1, hs: 1, combo: .25, blink: 1 } };
   NW.marvelKeyp = { ironman: { lunge: 1.9 }, hulk: { kb: 1.6 }, thor: { lunge: 1.8 } };
+
+  // ── 캐릭터별 외형 정체성(aot 와 동일한 registerCharAsset 경로: 머리·의상·망토·무기·체형) ──
+  if (window.registerCharAsset) {
+    registerCharAsset('ironman', { body: 'n', cos: { coat: { c: '#b8322a', c2: '#d8b24a', pat: 'split', len: 'thigh', sleeves: true }, shirt: '#b8322a', vest: '#b8322a', sash: '#d8b24a', boots: '#d8b24a', metalArms: '#d8b24a', metalBody: '#b8322a', core: '#7fe3ff', plate: '#c8ccd8' }, hair: { s: 'short', n: 12, L: .3 }, face: 'sharp', facep: { jw: .95, jl: 1.02, es: .9, ba: .3, bw: 1.05 } });
+    registerCharAsset('captain', { body: 'm', cos: { coat: { c: '#2a5a9a', c2: '#c0392b', pat: 'grad', len: 'thigh', sleeves: true }, shirt: '#e8e8ec', vest: '#2a5a9a', sash: '#c8a24a', boots: '#c0392b', plate: '#c8ccd8' }, hair: { s: 'short', n: 18, L: .5 }, face: 'round', facep: { jw: 1.0, jl: 1.0, es: 1.0, ba: .2, bw: 1.15 } });
+    registerCharAsset('thor', { body: 'm', cos: { cape: '#1a1a24', shirt: '#3a4a7a', vest: '#2a2a34', sash: '#7a5a2a', boots: '#2a2a34', plate: '#c8ccd8' }, hair: { s: 'long', n: 26, L: 1.25 }, face: 'sharp', facep: { jw: 1.05, jl: 1.06, es: .95, ba: .4, bw: 1.2 } });
+    registerCharAsset('hulk', { body: 'm', cos: { bare: true, shorts: { c: '#3a6a8a', cuff: '#2a4a6a', knee: .3 }, sash: '#2a4a6a', warmer: '#3a6a8a' }, hair: { s: 'messy', n: 16, L: .55 }, face: 'sharp', facep: { jw: 1.15, jl: 1.05, es: .8, ba: .55, bw: 1.3 } });
+    registerCharAsset('spiderman', { body: 'n', cos: { coat: { c: '#c0392b', len: 'knee', sleeves: true }, shirt: '#2a5a9a', pants: '#2a5a9a', sash: '#c0392b', boots: '#c0392b', wide: true }, hair: { s: 'short', n: 8, L: .18 }, face: 'round', facep: { jw: .95, jl: 1.0, es: 1.2, eh: .9, ba: .1, bw: 1.0 } });
+    registerCharAsset('vision', { body: 'n', cos: { cape: '#2a2a34', coat: { c: '#c0392b', c2: '#7a5a2a', len: 'thigh', sleeves: true }, shirt: '#c0392b', sash: '#e6c24a', boots: '#7a5a2a', plate: '#e8e8f0' }, hair: { s: 'short', n: 14, L: .45 }, face: 'sharp', facep: { jw: .95, jl: 1.05, es: .9, ba: .3, bw: 1.0 } });
+  }
+  if (window.NW && NW.sword) { NW.sword('thor', { L: 14, W: 3.4, c: '#a8b0bc', h: '#6a4a2a', g: '#2a2a2a', dual: false }); }
+  // ── 체형 구분감: 헐크(초대형)·비전(슬림)·토르(근육)·캡틴(근육) — aot 처럼 CH 직접 ──
+  if (CH.hulk) { CH.hulk.bodyScale = 1.55; CH.hulk.bulk = 1.55; }
+  if (CH.thor) { CH.thor.bodyScale = 1.15; CH.thor.bulk = 1.2; }
+  if (CH.captain) { CH.captain.bodyScale = 1.08; CH.captain.bulk = 1.15; }
+  if (CH.vision) { CH.vision.bodyScale = 1.02; CH.vision.bulk = .92; }
+  if (CH.ironman) { CH.ironman.bulk = 1.05; }
+  if (CH.spiderman) { CH.spiderman.bodyScale = .96; CH.spiderman.bulk = .92; }
+
   NW.finish(NW.marvelProf, NW.marvelKeyp); // addTeam 으로 marvel 팀 등록 + prof/keyp 머지(NW.finish 는 머지라 기존 aot/jjk 유지)
 })();
