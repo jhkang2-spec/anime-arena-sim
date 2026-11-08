@@ -1417,7 +1417,7 @@ function shot(mode, dur, a, b) {
 function castFX(f, ult) {
   const e = f.elem || (f.ch.sig && f.ch.sig.elem) || 'power', E = ELEM[e] || ELEM.power, g = V3(f.pos.x, WATER_H + .2, f.pos.z);
   ring(g, 3, E.c, true, 1, 1.6); ring(g, 2, '#ffffff', true, .8, 2.2); vortex(chest(f), e, ult ? 1 : .5, ult ? 1.6 : 1);
-  for (let i = 0; i < (ult ? 140 : 60); i++) { const a = R(0, PI * 2), r = R(2, 8); parts.push({ p: g.clone().add(V3(Math.cos(a) * r, R(0, 4), Math.sin(a) * r)), v: V3(-Math.cos(a) * 10, R(60, 160), -Math.sin(a) * 10), life: 1, c: pick(E.parts), g: -10, s: 2 }); }
+  for (let i = 0, cf = Math.max(6, Math.round((ult ? 140 : 60) * Math.min(1, FXM() / 1.3))); i < cf; i++) { const a = R(0, PI * 2), r = R(2, 8); parts.push({ p: g.clone().add(V3(Math.cos(a) * r, R(0, 4), Math.sin(a) * r)), v: V3(-Math.cos(a) * 10, R(60, 160), -Math.sin(a) * 10), life: 1, c: pick(E.parts), g: -10, s: 2 }); }
   light(chest(f), E.c, ult ? 8 : 4); ripple(f.pos.x, f.pos.z, ult ? 1.5 : .6); if (ult) { pillar(g, 10, E.c, 1); moses(g, g, 10, 1.6); }
 }
 function callout(f, text, ult) {

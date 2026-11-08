@@ -43,7 +43,7 @@
   }, { name: '리펄서', hand: null, elem: 'repulsor', kind: 'orb', fly: true });
 
   defChar('captain', '캡틴 아메리카', 'marvel', {
-    '실드 스로우': (a, b) => T.ranged(a, b, '실드 스로우', 'arrow', 'shield', { size: 1.2, v: 360, prep: 'throw', cast: 'throw' }),
+    '실드 스로우': (a, b) => [...T.ranged(a, b, '실드 스로우', 'arrow', 'shield', { size: 1.2, v: 360, prep: 'throw', cast: 'throw' }), step(.3, [[a, { pose: 'palm', face: b, elem: 'shield' }], [b, { pose: 'hurt', face: a }]], () => { try { bolt(chest(b), handP(a), '#e8b04a', .35, 1.8); ring(V3(b.pos.x, .4, b.pos.z), 8, '#e8b04a', true, .6, 1.2); light(chest(b), '#e8b04a', 5); } catch (e) { } })],
     '실드 연속 스로우': (a, b) => T.ranged(a, b, '실드 반사 스로우', 'arrow', 'shield', { n: 2, size: 1.1, v: 340, prep: 'throw', cast: 'throw' }),
     '실드 배치': (a, b) => T.melee(a, b, '실드 배치', 'shield', { prep: 'punchPrep', strike: 'punch', n: 2, reach: 7 }),
     '실드 가드': (a, b) => [...seq(a, b, [['crossArms', .3, { aura: 1, elem: 'shield' }]]), ...T.at(a, b, '진동 실드 가드', 'shield', 'shield', { pose: 'crossArms', pw: 1.1 })],
@@ -53,7 +53,7 @@
   }, { name: '실드 스로우', hand: null, elem: 'shield', kind: 'arrow', fly: false });
 
   defChar('thor', '토르', 'marvel', {
-    '묠니르 투척': (a, b) => [...hover(a, b, .2), ...T.ranged(a, b, '묠니르 투척', 'arrow', 'storm', { size: 1.6, v: 380, prep: 'throw', cast: 'throw' })],
+    '묠니르 투척': (a, b) => [...hover(a, b, .2), ...T.ranged(a, b, '묠니르 투척', 'arrow', 'storm', { size: 1.6, v: 380, prep: 'throw', cast: 'throw' }), step(.32, [[a, { pose: 'point', face: b, elem: 'storm' }], [b, { pose: 'hurt', face: a }]], () => { try { bolt(chest(b), handP(a), '#9fd8ff', .38, 2.4); ring(V3(b.pos.x, .4, b.pos.z), 10, '#9fd8ff', true, .6, 1.2); } catch (e) { } })],
     '천둥 소환': (a, b) => [...seq(a, b, [['skyRaise', .4, { aura: 1, elem: 'storm' }]]), ...T.sky(a, b, '천둥 소환', 'storm', { ult: true, w: 26 })],
     '묠니르 일격': (a, b) => T.melee(a, b, '묠니르 일격', 'storm', { prep: 'hammerUp', strike: 'hammerDown', n: 1, pw: 2, reach: 9 }),
     '뇌전 광역': (a, b) => [...T.aoe(a, b, '뇌전 방출', 'storm', { prep: 'skyRaise', strike: 'skyRaise', rad: 42, pw: 1.8, ult: true }), step(.28, [[a, { pose: 'skyRaise', face: b }], [b, { pose: 'hurt' }]], () => { try { for (let i = 0; i < 8; i++) { const gx = b.pos.x + R(-34, 34), gz = b.pos.z + R(-34, 34); bolt(V3(gx, 95, gz), V3(gx, 1, gz), '#cfe8ff', .5, 2); } light(chest(b), '#cfe8ff', 12); flashScreen(.06); } catch (e) { } })],
@@ -73,17 +73,20 @@
     '헐크 돌진': (a, b) => T.dash(a, b, '헐크 돌진', null, 'gamma', 1.9, true, { run: 'crouchRun', hold: 'shoulder' }),
   }, { name: '스매시', hand: null, elem: 'gamma', kind: 'fireball', fly: false });
 
+  const web = (a, to, life = .28) => { try { const h = handP(a); bolt(h, to.clone(), '#eef2f8', life, 1.3); bolt(h, to.clone().add(V3(R(-3, 3), R(-3, 3), R(-3, 3))), '#c8d2e0', life, 1.0); mark(to.clone(), R(0, PI), 5, '#e8ecf2', .5, 1); } catch (e) { } };
+
   defChar('spiderman', '스파이더맨', 'marvel', {
-    '웹 슈트': (a, b) => T.ranged(a, b, '웹 슈트', 'senbon', 'web', { n: 2, size: .8, v: 360, prep: 'point', cast: 'throw' }),
-    '웹 옐링': (a, b) => [...jump(a, b, .2), ...T.dash(a, b, '웹 끌어당김', null, 'web', 1.2, false, { run: 'crouchRun', hold: 'palm' })],
-    '스파이더 콤보': (a, b) => T.melee(a, b, '스파이더 콤보', 'power', { prep: 'punchPrep', strike: 'punch', strike2: 'highKick', n: 4 }),
-    '웹 속박': (a, b) => [...seq(a, b, [['point', .25, { aura: 1, elem: 'web' }]]), ...T.ranged(a, b, '웹 속박', 'senbon', 'web', { n: 3, size: .7, v: 340, prep: 'point', cast: 'throw' })],
-    '스파이더 센스 반격': (a, b) => [...seq(a, b, [['guard', .25, { aura: 1 }]]), ...T.melee(a, b, '회피 반격', 'power', { prep: 'flipAir', strike: 'highKick', n: 1, pw: 1.5 })],
-    '낙하 킥': (a, b) => [...jump(a, b, .25), ...T.aoe(a, b, '낙하 킥', 'web', { jump: true, prep: 'flipAir', strike: 'sweep', rad: 24, pw: 1.7 })],
-  }, { name: '웹 슈트', hand: null, elem: 'web', kind: 'senbon', fly: false });
+    '웹 슈팅': (a, b) => [...seq(a, b, [['point', .22, { aura: 1, elem: 'web' }]]), ...T.ranged(a, b, '웹 슈팅', 'senbon', 'web', { n: 2, size: .8, v: 440, prep: 'point', cast: 'throw' }), step(.16, [[a, { pose: 'point', face: b, elem: 'web' }], [b, { pose: 'hurt', face: a }]], () => web(a, chest(b)))],
+    '웹 옐링': (a, b) => [...seq(a, b, [['point', .2, { aura: 1, elem: 'web' }]]), step(.18, [[a, { pose: 'point', face: b, elem: 'web' }], [b, { pose: 'hurt', face: a }]], () => { web(a, chest(b)); try { b.kb.addScaledVector(dirTo(b, a), 240); b.air = true; } catch (e) { } }), ...T.melee(a, b, '당겨 붙여 타격', 'web', { prep: 'punchPrep', strike: 'punch', n: 2, reach: 9 })],
+    '웹 스윙 기동': (a, b) => [step(.16, [[a, { pose: 'point', face: b, elem: 'web' }], [b, { pose: 'stance', face: a }]], () => { try { const h = handP(a), ax = a.pos.clone().lerp(b.pos, .7).setY(70); bolt(h, ax, '#eef2f8', .45, 1.5); } catch (e) { } }), step(.34, [[a, { pose: 'flipAir', face: b, fwd: 180, vy: R(250, 330), to: near(a, b, 12), ghost: 1, elem: 'web' }], [b, { pose: 'hurt', face: a }]], () => web(a, chest(b))), ...T.aoe(a, b, '웹 스윙 강타', 'web', { jump: true, prep: 'flipAir', strike: 'hammerDown', rad: 26, pw: 1.8 })],
+    '스파이더 콤보': (a, b) => T.melee(a, b, '스파이더 콤보', 'web', { prep: 'punchPrep', strike: 'punch', strike2: 'highKick', n: 4 }),
+    '웹 돔': (a, b) => [...seq(a, b, [['point', .25, { aura: 1, elem: 'web' }]]), ...T.aoe(a, b, '웹 돔', 'web', { prep: 'point', strike: 'palm', rad: 30, pw: 1.2 }), step(.16, [[a, { pose: 'palm', face: b, elem: 'web' }], [b, { pose: 'hurt' }]], () => { try { ring(V3(b.pos.x, .4, b.pos.z), 14, '#eef2f8', true, .8, 1.4); for (let i = 0; i < 3; i++) mark(V3(b.pos.x + R(-8, 8), .3, b.pos.z + R(-8, 8)), R(0, PI), 6, '#e8ecf2', .5, 1.4); } catch (e) { } })],
+    '스파이더 센스 반격': (a, b) => [...seq(a, b, [['guard', .25, { aura: 1 }]]), ...T.melee(a, b, '회피 반격', 'web', { prep: 'flipAir', strike: 'highKick', n: 1, pw: 1.5 }), step(.12, [[a, { pose: 'guard', face: b }]], () => { try { arc(a, -1.4, 1.4, 8, '#eef2f8', 3, .6); } catch (e) { } })],
+    '웹 스윙 강타': (a, b) => [step(.18, [[a, { pose: 'point', face: b, aura: 1, elem: 'web' }], [b, { pose: 'stance', face: a }]], () => { try { const h = handP(a), ax = b.pos.clone().setY(120); bolt(h, ax, '#ffffff', .5, 2); light(h, '#eef2f8', 10); } catch (e) { } }), step(.4, [[a, { pose: 'flipAir', face: b, vy: R(320, 420), to: near(a, b, 8), ghost: 1, aura: 1, elem: 'web' }], [b, { pose: 'hurt', face: a }]], () => web(a, chest(b))), ...T.aoe(a, b, '스파이더 필살 강타', 'web', { jump: true, prep: 'flipAir', strike: 'hammerDown', rad: 34, pw: 2.4, ult: true })],
+  }, { name: '웹 슈터', hand: null, elem: 'web', kind: 'senbon', fly: false });
 
   defChar('vision', '비전', 'marvel', {
-    '솔라 플레어': (a, b) => [...hover(a, b, .2), ...T.ranged(a, b, '솔라 플레어', 'orb', 'cosmic', { size: 2.2, v: 440, ult: true, prep: 'crossArms', cast: 'palm' }), step(.2, [[a, { pose: 'palm', face: b, aura: 1, elem: 'cosmic' }]], () => { try { const h = hand(a), d = dirTo(a, b); bolt(h, h.clone().addScaledVector(d, 120), '#ff7a3a', .4, 4); light(h, '#ff7a3a', 12); } catch (e) { } })],
+    '솔라 플레어': (a, b) => [...hover(a, b, .2), ...T.ranged(a, b, '솔라 플레어', 'orb', 'cosmic', { size: 2.2, v: 440, ult: true, prep: 'crossArms', cast: 'palm' }), step(.2, [[a, { pose: 'palm', face: b, aura: 1, elem: 'cosmic' }]], () => { try { const h = handP(a), d = dirTo(a, b); bolt(h, h.clone().addScaledVector(d, 120), '#ff7a3a', .4, 4); light(h, '#ff7a3a', 12); } catch (e) { } })],
     '위상 관통': (a, b) => T.melee(a, b, '위상 관통', 'mystic', { prep: 'punchPrep', strike: 'punch', n: 2, pw: 1.6, reach: 8 }),
     '마인드 스톤 방출': (a, b) => [...hover(a, b, .2), ...T.aoe(a, b, '마인드 스톤 방출', 'cosmic', { prep: 'skyRaise', strike: 'palm', rad: 36, pw: 1.8 })],
     '위상 돌진': (a, b) => [...hover(a, b, .15), ...T.dash(a, b, '위상 돌진', null, 'mystic', 1.3, false, { run: 'flipAir' })],
