@@ -73,6 +73,8 @@
   const fwd = f => (typeof fwdOf === 'function' ? fwdOf(f) : new THREE.Vector3(Math.cos(f.heading), 0, Math.sin(f.heading)));
   // 단계 시간표: 해골 0~.45 → 상반신 .45~.9 → 완성체 .9~1.35 (앞 단계는 안에 남았다가 흐려짐)
   const H = { 1: 46, 2: 62, 3: 92 };
+  const SUS_TITAN = 2.6;   // 수사노오 최대 높이 = 진격의거인(공격거인) 스케일 2.6 × 캐릭터. GLB 원본 크기와 무관하게 바운딩박스로 정규화해 화면 과다 채움 방지.
+  function charHeight(f) { try { if (f.model && f.model.root) { const b = new THREE.Box3().setFromObject(f.model.root); const h = b.max.y - b.min.y; if (h > 1) return h; } } catch (e) { } return 33; }
   function show(f, kind, o) {
     if (!st.ready || !f || !f.pos) return null;
     const stages = o.stages || [1, 2, 3], root = new THREE.Group(); root.name = 'susanoo';
@@ -80,9 +82,10 @@
     const S = { f, kind, o, root, I, t: 0, dur: o.dur || 3, stages };
     // 무기 보이기: 검(수사노오 참격) / 활(인드라) / 이타치는 거울·호리병·토츠카
     Object.values(I).forEach(x => { if (!x) return; const p = x.parts; if (p.w_sword) p.w_sword.visible = !o.bow; if (p.w_bow) p.w_bow.visible = !!o.bow; if (p.w_totsuka) p.w_totsuka.visible = !o.shield || true; });
+    try { const bb = new THREE.Box3().setFromObject(root); const mh = bb.max.y - bb.min.y || 1; S.target = charHeight(f) * SUS_TITAN * (o.big || 1); S.scs = S.target / mh; } catch (e) { S.target = H[3]; S.scs = 1; }
     place(S); scene3.add(root); LIVE.push(S); st.shows++; return S;
   }
-  function place(S) { const f = S.f, fw = fwd(f), k = (f.scale || 1); S.root.position.copy(f.pos).addScaledVector(fw, -3.5); S.root.position.y = Math.max(0, f.pos.y - 1); S.root.rotation.y = Math.atan2(fw.x, fw.z); S.root.scale.setScalar(k); }
+  function place(S) { const f = S.f, fw = fwd(f), k = (f.scale || 1); S.root.position.copy(f.pos).addScaledVector(fw, -3.5); S.root.position.y = Math.max(0, f.pos.y - 1); S.root.rotation.y = Math.atan2(fw.x, fw.z); S.root.scale.setScalar(k * (S.scs || 1)); }
   function upd(S, dt) {
     S.t += dt; const t = S.t, last = S.stages[S.stages.length - 1], y0 = S.root.position.y, k = S.root.scale.x;
     const out = 1 - sm((t - S.dur) / .55);   // 끝 사라짐
