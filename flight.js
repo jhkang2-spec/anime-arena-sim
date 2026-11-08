@@ -17,13 +17,13 @@
         const fly = f.ch && f.ch.sig && f.ch.sig.fly;
         const knocked = fl && fl.has && fl.has(f);
         if (fly && !f.down && !knocked && !f.arc) {
-          f.hover = true; f.hoverH = FL.H[f.ch.key] || FL.H.default; f.air = true;
+          f.hover = true; f.hoverH = FL.H[f.ch.key] || FL.H.default; f.air = true; f.aura = 1; f._auraFly = 1;
           if (f.vel.y === undefined) f.vel.y = 0;
           if (f.pos.y < f.hoverH - 2 && f.vel.y < 40) f.vel.y += 30;   // 이륙 도움
           if ((fr & 1) === 0 && f.pos.y > 4) { const c = FL.jet[f.ch.key] || FL.jet.default;
             for (let i = 0; i < 2; i++) parts.push({ p: f.pos.clone().add(V3(R(-1.4, 1.4), .5, R(-1.4, 1.4))), v: V3(R(-12, 12), R(-110, -50), R(-12, 12)), life: .45, c, g: 0, s: 1.4 });
           }
-        } else f.hover = false;
+        } else { f.hover = false; if (f._auraFly) { f.aura = 0; f._auraFly = 0; } }
       }
     }
     requestAnimationFrame(loop);
