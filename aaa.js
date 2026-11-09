@@ -223,31 +223,34 @@
   const _v = new THREE.Vector3(), _sv = new THREE.Vector3();
   function post(ssTex, ssDep) {
     const t0 = performance.now(), q = QL(), ultra = q === 'ultra';
+    /* 로드 기반 마감 강도 조절(11-09): 여유 있을 땐 최고 품질 유지, 프레임 무너지면 후처리 표본 수를 계단으로 낮춰 끊김 완화 — ssTune·resScale 환류와 함께 3중 방어 */
+    const ft = (typeof ftAvg !== 'undefined' && Number.isFinite(ftAvg)) ? ftAvg : 16;
+    const hot1 = ft > 20, hot2 = ft > 26, hot3 = ft > 30; AAA.tier = hot3 ? 3 : hot2 ? 2 : hot1 ? 1 : 0;
     renderer.getDrawingBufferSize(dbs); const fw = dbs.x, fh = dbs.y;
     if (!colTex || cW !== fw || cH !== fh) { [colTex, histTex].forEach(t => t && t.dispose()); colTex = new THREE.DataTexture(null, fw, fh, THREE.RGBFormat); histTex = new THREE.DataTexture(null, fw, fh, THREE.RGBFormat); [colTex, histTex].forEach(t => { t.minFilter = t.magFilter = THREE.LinearFilter; t.generateMipmaps = false; }); cW = fw; cH = fh; hasPrev = false; } /* 그리기 판에 알파가 없어 RGB 로 복사 */
     let cTex = colTex; if (ssTex) { dsP.m.uniforms.t.value = ssTex; dsP.m.uniforms.px.value.set(1 / fw, 1 / fh); dsP.run(dsRT); cTex = dsRT.texture; } else renderer.copyFramebufferToTexture(new THREE.Vector2(0, 0), colTex); curCol = cTex;
     const slow = !ultra && typeof ftAvg !== 'undefined' && ftAvg > 19;
     const useDep = q !== 'low' && !slow;
-    const rawDep = !!(useDep && ssDep); if (!rawDep && AAA.lastRaw) haveDepth = false; AAA.lastRaw = rawDep; if (rawDep) haveDepth = true; else if (useDep) { dFrame++; if (q === 'high' || (dFrame & 1) === 0 || !haveDepth) depthPass(fw, fh, ultra ? 1 : q === 'high' ? 2 : 4); /* 정수 배율만(1.25배 같은 소수 배율은 깊이 표본이 줄무늬로 어긋남) */ } else haveDepth = false;
+    const rawDep = !!(useDep && ssDep); if (!rawDep && AAA.lastRaw) haveDepth = false; AAA.lastRaw = rawDep; if (rawDep) haveDepth = true; else if (useDep) { dFrame++; if ((q === 'high' && !hot1) || (dFrame & 1) === 0 || !haveDepth) depthPass(fw, fh, ultra ? 1 : q === 'high' ? 2 : 4); /* 정수 배율만(1.25배 같은 소수 배율은 깊이 표본이 줄무늬로 어긋남) */ } else haveDepth = false;
     const day = isDay() ? 1 : 0;
     U.tCol.value = cTex; U.tDep.value = rawDep ? ssDep : haveDepth && dRT ? dRT.texture : null; U.uDepRaw.value = rawDep ? 1 : 0; U.uRes.value.set(fw, fh); if (rawDep) U.uDRes.value.set(fw, fh); else U.uDRes.value.set(dW || 1, dH || 1);
     U.uT.value = (performance.now() % 100000) / 1000; U.uUseDep.value = useDep && haveDepth ? 1 : 0; U.uNear.value = camera.near; U.uFar.value = camera.far; U.uDay.value = day; U.uUltra.value = ultra ? 1 : 0;
     U.uInvProj.value.copy(camera.projectionMatrixInverse); U.uProj.value.copy(camera.projectionMatrix); U.uCamPos.value.copy(camera.position); U.uNUp.value.set(0, 1, 0).transformDirection(camera.matrixWorldInverse); U.uCamW.value.copy(camera.matrixWorld); U.uPrevVP.value.copy(hasPrev ? prevVP : _m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
-    U.uAO.value = ultra ? .62 : q === 'high' ? .55 : q === 'mid' ? .42 : 0; U.uAON.value = ultra ? 16 : 8; U.uFog.value = q === 'low' ? 0 : 1;
+    U.uAO.value = ultra ? .62 : q === 'high' ? .55 : q === 'mid' ? .42 : 0; U.uAON.value = ultra ? (hot2 ? 6 : hot1 ? 10 : 16) : (hot1 ? 6 : 8); U.uFog.value = q === 'low' ? 0 : 1;
     U.uGrain.value = q === 'low' ? .018 : .026; U.uCA.value = q === 'low' ? 0 : .0035; U.uAA.value = 1;
     if (scene3.fog && scene3.fog.color) U.uFogCol.value.copy(scene3.fog.color);
     const L = sunL(); let rays = 0, sunVis = 0;
     if (L && q !== 'low' && !slow) { _sv.copy(L.position).sub(L.target ? L.target.position : _v.set(0, 0, 0)).normalize(); _v.copy(_sv).multiplyScalar(900).add(camera.position); _v.project(camera);
       if (_v.z < 1 && Math.abs(_v.x) < 1.6 && Math.abs(_v.y) < 1.6) { U.uSun.value.set(_v.x * .5 + .5, _v.y * .5 + .5); sunVis = Math.max(0, 1 - Math.max(Math.abs(_v.x), Math.abs(_v.y)) / 1.6); rays = (day ? .32 : .2) * sunVis; }
       U.uSunCol.value.copy(L.color); U.uSunV.value.copy(_sv).transformDirection(camera.matrixWorldInverse); }
-    U.uRays.value = rays; U.uRayN.value = ultra ? 40 : q === 'high' ? 24 : 14;
+    U.uRays.value = rays; U.uRayN.value = ultra ? (hot2 ? 12 : hot1 ? 20 : 40) : (hot1 ? 10 : q === 'high' ? 24 : 14);
     const tnow = performance.now(); U.uDof.value = (ultra || q === 'high') && tnow < AAA.dofUntil ? Math.min(1, (AAA.dofUntil - tnow) / 400) : 0; U.uDofBase.value = 0; /* 평소 피사계 심도 끔(흐릿함 지적) — 필살 순간만 */
     if (typeof cam !== 'undefined' && cam && cam.tgt) U.uFocus.value = camera.position.distanceTo(cam.tgt);
-    U.uContact.value = ultra ? .45 : 0; U.uClouds.value = ultra && day ? 1 : 0;
-    U.uRefl.value = ultra ? (day ? .7 : .9) : 0; /* 화면 공간 반사(SSR): 장면을 다시 그리지 않고 깊이 버퍼로 반사 광선 추적 — 거울 장면 그리기(23ms)보다 훨씬 가벼움 */
+    U.uContact.value = ultra && !hot2 ? .45 : 0; U.uClouds.value = ultra && day ? 1 : 0;
+    U.uRefl.value = ultra ? (hot3 ? 0 : hot2 ? .4 : (day ? .7 : .9)) : 0; /* 화면 공간 반사(SSR): 장면을 다시 그리지 않고 깊이 버퍼로 반사 광선 추적 — 거울 장면 그리기(23ms)보다 훨씬 가벼움 */
     if (ultra) { U.tBloom.value = bloomPass(cTex, fw, fh); U.uBloomK.value = .14; U.uDirtK.value = .12; U.uFlare.value = sunVis * (day ? .6 : .4); } else { U.uBloomK.value = 0; U.uDirtK.value = 0; U.uFlare.value = 0; }
-    U.uMB.value = ultra && !AAA.noHist ? 1 : 0; U.uTAA.value = AAA.taa && ultra && hasPrev && !AAA.noHist ? 1 : 0; /* 지터 TAA 는 인물 속도 버퍼가 없어 가장자리가 떨려 기본 끔 → 슈퍼샘플+MSAA+SMAA 로 대체 */ U.tHist.value = histTex;
-    if ((AAA.frames++ % 20) === 0) { try { adaptExposure(); } catch (e) { } }
+    U.uMB.value = ultra && !AAA.noHist && !hot2 ? 1 : 0; U.uTAA.value = AAA.taa && ultra && hasPrev && !AAA.noHist ? 1 : 0; /* 지터 TAA 는 인물 속도 버퍼가 없어 가장자리가 떨려 기본 끔 → 슈퍼샘플+MSAA+SMAA 로 대체 */ U.tHist.value = histTex;
+    if ((AAA.frames++ % (hot2 ? 60 : hot1 ? 40 : 22)) === 0) { try { adaptExposure(); } catch (e) { } } /* readRenderTargetPixels 는 GPU→CPU 동기화 스톨 → 자동 노출 갱신 빈도를 로드·주사율에 맞춰 줄임(주기적 끊김 감소) */
     U.uExp.value = AAA.exposure;
     for (const k in AAA.force) if (U[k]) U[k].value = AAA.force[k];
     const ac = renderer.autoClear; renderer.autoClear = false; const sm = smaaFor(q, fw, fh); if (sm) { post_.run(sm.rt); sm.pass.render(renderer, null, sm.rt); renderer.setRenderTarget(null); } else post_.run(null); renderer.autoClear = ac;

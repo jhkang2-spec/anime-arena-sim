@@ -59,7 +59,8 @@
 
   let lastFilter = '';
   function drawOverlay(dt) {
-    const sh = Q() === 'low' ? 2 : (window.AAA && AAA.ultra) ? 0 : 1; // 11-07: 울트라는 화면 겹도 1:1 해상도(도트 수 증량)
+    const ft = (typeof ftAvg !== 'undefined' && Number.isFinite(ftAvg)) ? ftAvg : 16; // 로드 기반: 화면 겹(흐릿한 그라디언트) 해상도를 낮춰 풀스크린 채움 비용 절감 — 저화질이어도 티 안 남
+    const sh = Q() === 'low' ? 2 : ft > 26 ? 2 : (window.AAA && AAA.ultra) ? (ft > 19 ? 1 : 0) : 1; // 11-07: 울트라 여유 시 화면 겹도 1:1(도트 수 증량), 버거우면 1/2·1/4 로 채움 면적 축소
     const W = Math.max(64, (stage ? stage.clientWidth : 640) >> sh), H = Math.max(40, (stage ? stage.clientHeight : 380) >> sh);
     if (ov.width !== W || ov.height !== H) { ov.width = W; ov.height = H; }
     oc.clearRect(0, 0, W, H);
