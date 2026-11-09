@@ -1527,12 +1527,13 @@ function scene(now, q, extra) {
   /* 해상도 환류(11-07 감리): 평소엔 화소를 안 내림(소유자 규칙). 다만 24fps(울트라 24) 아래로 무너지면 72%까지 단계적 하강, 여유 회복 시 100% 복원 — 저사양 기본 사용자 방어 */
   if (frame % 30 === 0) {
     const u = window.AAA && AAA.ultra, hot = u ? 42 : 24, cool = u ? 26 : 13.5;
-    if (ftAvg > hot && resScale > .72) { resScale = Math.max(.72, resScale * .93); fitRes(); }
+    const rFloor = ftAvg > hot * 1.6 ? .6 : .72; /* 11-10 라운드M: 극과부하(ftAvg>67)엔 72%→60%까지 추가 하강 — 끊김 우선 방어 */
+    if (ftAvg > hot && resScale > rFloor) { resScale = Math.max(rFloor, resScale * .92); fitRes(); }
     else if (ftAvg < cool && resScale < 1) { resScale = Math.min(1, resScale * 1.04); fitRes(); }
     if (ftAvg > (u ? 34 : 17.2) && OUT.visible) OUT.visible = false;
     else if (ftAvg < (u ? 28 : 13) && !OUT.visible) OUT.visible = true;
     // 파티클 생성량 거버너: 저FPS 지속 시 FXM(입자 밀도)를 최대 40%까지 낮춰 끊김 완화, 여유 회복 시 복원(캐릭터·배경보다 이펙트 우선 방어)
-    if (window.AAA) { const A = window.AAA; A.perf = Number.isFinite(A.perf) ? A.perf : 1; if (ftAvg > hot && A.perf > .4) A.perf = Math.max(.4, A.perf * .82); else if (ftAvg < cool && A.perf < 1) A.perf = Math.min(1, A.perf * 1.06); }
+    if (window.AAA) { const A = window.AAA; A.perf = Number.isFinite(A.perf) ? A.perf : 1; const pFloor = ftAvg > hot * 1.5 ? .28 : .4; if (ftAvg > hot && A.perf > pFloor) A.perf = Math.max(pFloor, A.perf * .82); else if (ftAvg < cool && A.perf < 1) A.perf = Math.min(1, A.perf * 1.06); }
   }
   const idle = !q;
   if (!idle) update(dt * SPEED, t);

@@ -13,7 +13,7 @@
   const X = window.FX3, EP = window.EPIC_FX = { on: true, hits: 0, shocks: 0, flares: 0, shafts: 0, trails: 0, blocks: 0, ults: 0, budget: 0, skipped: 0 };
   const QF = () => (typeof getQuality === 'function' ? getQuality() : 'mid') || 'mid';
   const FT = () => (typeof ftAvg !== 'undefined' ? ftAvg : 16);
-  const gate = () => { if (!EP.on || QF() === 'low' || FT() > 20 || EP.budget <= 0) { EP.skipped++; return false; } return true; };
+  const gate = () => { if (!EP.on || QF() === 'low' || FT() > 21 || EP.budget <= 0) { EP.skipped++; return false; } return true; }; /* 11-10 라운드M: 모델 다운 여유로 20→21 — 소유자 주문의 충돌 평탄화는 유지 */
   const half = () => FT() > 15 ? .5 : 1; // 11-09: 충돌 프레임 스파이크 완화 — 60fps 부근에서도 반감으로 선제 감축
   const rr = X.rr;
   const EL = k => (window.ELEM && ELEM[k]) || { c: '#ffd890', parts: ['#ffffff', '#ffd890'] };
@@ -21,7 +21,7 @@
   const nowS = () => performance.now() / 1000;
 
   // ── ① 플레어 풀(광원 스프라이트, 블룸 층 태깅) ──
-  const FL = [], FL_MAX = 12;
+  const FL = [], FL_MAX = 18;
   function flare(p, c, s, life) {
     if (!p || !gate()) return;
     let f = FL.find(x => x.life <= 0);
@@ -42,7 +42,7 @@
       const b = chestP(v); if (!b) return r;
       const L = EL(ek || v.elem || 'metal');
       let dir = (a && a.pos) ? b.clone().sub(a.pos).setY(0) : V3(1, 0, 0); if (dir.lengthSq() < 1) dir.set(1, 0, 0); dir.normalize();
-      const n = Math.round(9 * half() * (a && a.mode > 0 ? 1.4 : 1));
+      const n = Math.round(13 * half() * (a && a.mode > 0 ? 1.4 : 1)); /* 라운드M: 9→13 — 프레임 밀리면 half()·gate()가 선제 감축 */
       for (let i = 0; i < n; i++) {
         const d = dir.clone().multiplyScalar(rr(.35, 1)).add(V3(rr(-.9, .9), rr(-.25, .9), rr(-.9, .9))).normalize();
         if (i & 1) X.streak(b.clone().add(V3(rr(-1.2, 1.2), rr(-1.2, 1.2), rr(-1.2, 1.2))), d.multiplyScalar(rr(150, 330)), rr(.2, .42), rr(.5, 1.1), rr(1, 1.9), (i & 3) ? L.c : '#ffffff', 320);
@@ -84,12 +84,14 @@
     try {
       if (!p || !gate()) return r;
       const L = EL(ek), big = Math.min(2, (rad || 60) / 60);
-      for (let i = 0; i < 3; i++) pending.push({ t: i * .09, fn: () => { try { X.shock(p.clone().add(V3(0, 3 + i * 2, 0)), V3(0, 1, 0), 9 + i * 7 * big, i ? L.c : '#ffffff', .2 + .06 * i); } catch (e) { } } });
-      shaft(p, L.c, 1.6, .5); shaft(p, '#ffffff', .7, .3);
+      for (let i = 0; i < 4; i++) pending.push({ t: i * .08, fn: () => { try { X.shock(p.clone().add(V3(0, 3 + i * 2, 0)), V3(0, 1, 0), 9 + i * 7 * big, i ? L.c : '#ffffff', .2 + .06 * i); } catch (e) { } } }); /* 3겹→4겹 시차 충격파 */
+      shaft(p, L.c, 1.6, .5); shaft(p, '#ffffff', .7, .3); shaft(p, L.c, .9, .26);
       flare(p.clone().add(V3(0, 6, 0)), '#ffffff', 8, .45);
-      light(p, L.c, 9);
-      flashScreen(.07 * big);
+      flare(p.clone().add(V3(0, 2, 0)), L.c, 10, .3);
+      light(p, L.c, 9 + 3 * big);
+      flashScreen(.08 * big);
       X.dustRing(p, 14 + 8 * big, 20 + 10 * big);
+      pending.push({ t: .35, fn: () => { try { X.dustRing(p, 9 + 5 * big, 13 + 7 * big); } catch (e) { } } }); /* 잔물링 먼지구름 */
       EP.budget -= 14; EP.ults++;
     } catch (e) { }
     return r;
@@ -143,7 +145,7 @@
 
   // ── ⑤ 가속 잔상줄기: 돌진(차크라 대시)·각성(모드)·초고속 이동자 뒤로 ──
   function dashTrails() {
-    if (typeof F === 'undefined' || QF() === 'low' || FT() > 20 || EP.budget < 60) return;
+    if (typeof F === 'undefined' || QF() === 'low' || FT() > 21 || EP.budget < 90) return;
     for (const f of F) {
       if (!f.pos || f.away) continue;
       const sp = f.vel ? Math.hypot(f.vel.x, f.vel.z) : 0;
@@ -173,7 +175,7 @@
   update = function (dt, t) {
     const r = _upd.apply(this, arguments);
     try {
-      EP.budget = QF() === 'low' ? 0 : FT() > 20 ? 0 : FT() > 16.5 ? 260 : 560;
+      EP.budget = QF() === 'low' ? 0 : FT() > 21 ? 0 : FT() > 16.5 ? 300 : 980; /* 라운드M: 여유 구간(16.5ms-) 예산 560→980 — 강등 임계는 소유자 평탄화 유지 */
       flareTick(Math.min(dt, .1));
       if (typeof F !== 'undefined') for (const f of F) if (f.storm) awakenFx(f);
       dashTrails();

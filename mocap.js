@@ -225,7 +225,7 @@
   }
   // 옷자락(하오리·긴 옷·치마): 허리 → len 까지 벌어지는 원통(앞 트임), 무늬는 정점 색
   function skirtGeo(cs, h, top, bot, rx, rz, open) {
-    const PXk = PX() > 1 ? ((window.AAA && AAA.ultra) ? 4.5 : 3) : 1, seg = (cs.pleat ? 84 : 40) * PXk, rows = (cs.pleat ? 14 : 10) * PXk, gap = open ? .55 : 0, pos = [], col = [], idx = [], c = new THREE.Color();
+    const PXk = PX() > 1 ? ((window.AAA && AAA.ultra) ? 3.6 : 2.7) : 1, seg = (cs.pleat ? 84 : 40) * PXk, rows = (cs.pleat ? 14 : 10) * PXk, gap = open ? .55 : 0, pos = [], col = [], idx = [], c = new THREE.Color();
     for (let r = 0; r <= rows; r++) {
       const v = r / rows, y = top + (bot - top) * v, fl = 1 + v * (open ? .35 : .22);
       for (let s = 0; s <= seg; s++) {
@@ -317,10 +317,10 @@
   //  얼굴 메시: 구를 깎아 아래로 좁아지는 턱선·앞이 납작한 얼굴·작은 코 돌기. 정면 투영 UV 로 얼굴 그림(눈·눈썹·입·표식)을 입힘(뒤·옆은 피부색)
   //  눈 그림: 흰자 → 홍채(위 짙고 아래 밝은 그라데이션)·동공·하이라이트 2개 → 굵은 윗속눈썹 선(눈꼬리 날개)·가는 아랫선. 눈매(둥근·날카로운·졸린·점) · 사륜안/윤회안/불꽃 눈/맹인/검은 흰자 지원
   const FACE_TEX = 512;
-  const SG = n => Math.round(n * ((window.AAA && AAA.ultra) ? 4.2 : (PX() > 1 ? 3.2 : 1))); /* 11-09: 인물 폴리곤 5.5→4.2(이펙트 유지·프레임 확보) */ /* 울트라: 모자·탈 분할 4배→5.5배 */
+  const SG = n => Math.round(n * ((window.AAA && AAA.ultra) ? 3.5 : (PX() > 1 ? 2.9 : 1))); /* 11-10 라운드M: 모델링 소폭 다운(4.2→3.5) — 프레임 여유를 FX·연출 재투자용 */ /* 11-09: 5.5→4.2 */
   const FACE_X = new Set(['saitama', 'inosuke', 'law', 'luffy', 'kizaru', 'himejima', 'aizen', 'nanami']); /* 머리카락이 적은 인물: 울트라 얼굴 분할 더 */
   function faceGeo(R, FP) {
-    const g = new THREE.SphereGeometry(R, PX() > 1 ? ((window.AAA && AAA.ultra) ? (FACE_X.has(MC._fk) ? 380 : 240) : (FACE_X.has(MC._fk) ? 300 : 180)) : 56, PX() > 1 ? ((window.AAA && AAA.ultra) ? (FACE_X.has(MC._fk) ? 266 : 170) : (FACE_X.has(MC._fk) ? 210 : 130)) : 40), p = g.attributes.position, uv = g.attributes.uv;
+    const g = new THREE.SphereGeometry(R, PX() > 1 ? ((window.AAA && AAA.ultra) ? (FACE_X.has(MC._fk) ? 300 : 192) : (FACE_X.has(MC._fk) ? 260 : 160)) : 56, PX() > 1 ? ((window.AAA && AAA.ultra) ? (FACE_X.has(MC._fk) ? 210 : 136) : (FACE_X.has(MC._fk) ? 182 : 116)) : 40), p = g.attributes.position, uv = g.attributes.uv;
     for (let i = 0; i < p.count; i++) {
       let x = p.getX(i) / R, y = p.getY(i) / R, z = p.getZ(i) / R;
       x *= .95; y *= 1.04; z *= .9;
@@ -334,7 +334,7 @@
     g.computeVertexNormals(); return g;
   }
   function drawFace(key, P, FP, MK, H, eyeOver) {
-    const S = PX() > 1 && window.AAA && AAA.ultra ? (renderer.capabilities.isWebGL2 ? 768 : 512) : FACE_TEX, cv = document.createElement('canvas'); cv.width = cv.height = S; const x = cv.getContext('2d'), skin = P.skin || '#f0c8a0', hair = P.hair || '#222'; // 11-07: 울트라 얼굴 텍스처 768(WebGL1 폴백은 512 유지 — NPOT mipmaps 금지 회피)
+    const S = PX() > 1 && window.AAA && AAA.ultra ? (renderer.capabilities.isWebGL2 ? 640 : 512) : FACE_TEX, cv = document.createElement('canvas'); cv.width = cv.height = S; /* 11-10 라운드M: 얼굴 텍스처 768→640(소폭 다운) */ const x = cv.getContext('2d'), skin = P.skin || '#f0c8a0', hair = P.hair || '#222'; // 11-07: 울트라 얼굴 텍스처 768(WebGL1 폴백은 512 유지 — NPOT mipmaps 금지 회피)
     x.fillStyle = skin; x.fillRect(0, 0, S, S);
     const U = u => u * S, V = v => (1 - v) * S, zU = z => U(.5 - z / 1.9), yV = y => V(.52 + y / 2.1);   // 얼굴 좌표(R 단위) → 그림 좌표
     const fs = FACE[key] || 'round', es = FP.es, ec0 = eyeOver || P.eye || '#3a2a1a';

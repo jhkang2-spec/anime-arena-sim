@@ -13,17 +13,17 @@
 
   // ═══ 1. 몸: 분할 수를 늘린 도형으로 한 번 더 짓기 ═══
   const ULTRA = (() => { try { const a = localStorage.getItem('arenaUltra'); if (a !== null) return a === '1'; return !/Mobi|Android|iPhone/i.test(navigator.userAgent); } catch (e) { return false; } })(); // 11-07 라운드D: AAA와 동일한 기본값(데스크톱 켬) — 저장 안 한 첫 방문에도 고해상도
-  const KS = ULTRA ? 4.2 : 2.6, KR = ULTRA ? 4.8 : 2.8; /* 11-09: 폴리곤 낮춤(이펙트는 유지) — 끊김 개선 */ // 11-07 라운드D: 모델링 대폭 증량(울트라: HD 대비 ~3배·기본 모형 대비 ~40배 삼각형) — LOD(근접 인물만)가 총량 보호
+  const KS = ULTRA ? 3.3 : 2.3, KR = ULTRA ? 3.8 : 2.5; /* 11-10 라운드M: 인물 모델링 소폭 다운그레이드(오너 지시: 모델은 조금 낮추고 나머지는 고도화) — 4.2/4.8→3.3/3.8, 근접 LOD 유지로 매끄러움 유지 */
   const G0 = { S: THREE.SphereGeometry, C: THREE.CylinderGeometry, L: THREE.LatheGeometry, T: THREE.TorusGeometry, K: THREE.ConeGeometry };
-  class HS extends G0.S { constructor(r = 1, w = 8, h = 6, ...a) { super(r, Math.min(ULTRA ? 220 : 96, Math.round(w * KS)), Math.min(ULTRA ? 160 : 64, Math.round(h * KS)), ...a); } }
-  class HC extends G0.C { constructor(t = 1, b = 1, h = 1, rs = 8, hs = 1, ...a) { super(t, b, h, Math.min(ULTRA ? 72 : 60, Math.round(rs * KR)), hs * 2, ...a); } }
-  class HK extends G0.K { constructor(r = 1, h = 1, rs = 8, hs = 1, ...a) { super(r, h, Math.min(ULTRA ? 72 : 60, Math.round(rs * KR)), hs * 2, ...a); } }
-  class HT extends G0.T { constructor(r = 1, t = .4, rs = 8, ts = 6, ...a) { super(r, t, Math.min(ULTRA ? 72 : 40, Math.round(rs * KR)), Math.min(ULTRA ? 300 : 130, Math.round(ts * (ULTRA ? 5 : 2.3))), ...a); } }
+  class HS extends G0.S { constructor(r = 1, w = 8, h = 6, ...a) { super(r, Math.min(ULTRA ? 176 : 88, Math.round(w * KS)), Math.min(ULTRA ? 128 : 56, Math.round(h * KS)), ...a); } }
+  class HC extends G0.C { constructor(t = 1, b = 1, h = 1, rs = 8, hs = 1, ...a) { super(t, b, h, Math.min(ULTRA ? 56 : 52, Math.round(rs * KR)), hs * 2, ...a); } }
+  class HK extends G0.K { constructor(r = 1, h = 1, rs = 8, hs = 1, ...a) { super(r, h, Math.min(ULTRA ? 56 : 52, Math.round(rs * KR)), hs * 2, ...a); } }
+  class HT extends G0.T { constructor(r = 1, t = .4, rs = 8, ts = 6, ...a) { super(r, t, Math.min(ULTRA ? 56 : 36, Math.round(rs * KR)), Math.min(ULTRA ? 232 : 112, Math.round(ts * (ULTRA ? 5 : 2.3))), ...a); } }
   class HL extends G0.L { // 회전체: 둘레 배 + 윤곽 점을 곡선으로 두 배(근육 굴곡·어깨·허리 곡선이 매끈하게)
     constructor(pts = [], seg = 12, ...a) {
       let P = pts;
-      if (pts.length >= 4) { P = new THREE.SplineCurve(pts.map(p => new THREE.Vector2(p.x, p.y))).getPoints(pts.length * ((ULTRA ? 4 : 2) - 1)).map(p => new THREE.Vector2(Math.max(0, p.x), p.y)); P[0].copy(pts[0]); P[P.length - 1].copy(pts[pts.length - 1]); }
-      super(P, Math.min(ULTRA ? 84 : 40, Math.round(seg * KR)), ...a);
+      if (pts.length >= 4) { P = new THREE.SplineCurve(pts.map(p => new THREE.Vector2(p.x, p.y))).getPoints(pts.length * ((ULTRA ? 3 : 2) - 1)).map(p => new THREE.Vector2(Math.max(0, p.x), p.y)); P[0].copy(pts[0]); P[P.length - 1].copy(pts[pts.length - 1]); }
+      super(P, Math.min(ULTRA ? 66 : 34, Math.round(seg * KR)), ...a);
     }
   }
   function buildHi(c) {
@@ -86,8 +86,8 @@
   }
   function handGeo(s, hi) {
     const R = rig(s); R.root.updateMatrixWorld(true);
-    const rs = hi ? (ULTRA ? 34 : 16) : 5, hs = hi ? (ULTRA ? 8 : 4) : 1, list = [];
-    palmGeo(hi ? (ULTRA ? 22 : 16) : 6).forEach(g => list.push([g, 0]));
+    const rs = hi ? (ULTRA ? 26 : 14) : 5, hs = hi ? (ULTRA ? 6 : 3) : 1, list = [];
+    palmGeo(hi ? (ULTRA ? 17 : 13) : 6).forEach(g => list.push([g, 0]));
     R.fj.forEach((js, fi) => js.forEach((b, j) => seg(FING[fi].L[j], FING[fi].r * (1 - j * .1), FING[fi].r * (1 - (j + 1) * .1), rs, hs, j === 0).forEach(g => list.push([g.applyMatrix4(b.matrixWorld), R.B.indexOf(b)]))));
     R.th.forEach((b, j) => seg(TH.L[j], TH.r * (1 - j * .1), TH.r * (1 - (j + 1) * .1), rs, hs, j === 0).forEach(g => list.push([g.applyMatrix4(b.matrixWorld), R.B.indexOf(b)])));
     const cat = (push) => { // 합치기(+ 윤곽선용은 법선 방향으로 부풀림)
@@ -195,7 +195,7 @@
     const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1, 3); return (TEX[h] = t);
   }
   function bladeHi(L, W, curve, wave, jag) {
-    const N = ULTRA ? 88 : 40, off = y => -curve * Math.pow(y / L, 2) * 2 + (wave ? Math.sin(y / L * PI * 5) * wave : 0), s = new THREE.Shape();
+    const N = ULTRA ? 64 : 32, off = y => -curve * Math.pow(y / L, 2) * 2 + (wave ? Math.sin(y / L * PI * 5) * wave : 0), s = new THREE.Shape();
     s.moveTo(W / 2 + off(0), 0);
     for (let i = 1; i <= N; i++) { const y = L * i / N * .92, j = jag && i % 4 < 2 ? -jag * W * 2 : 0; s.lineTo(W / 2 + off(y) + j, y); }
     s.lineTo(off(L) - W * .15, L + W * .7);
@@ -209,7 +209,7 @@
     if (grp) grp.scale.setScalar(1 / PROP.armK); // 팔을 줄여도 검 길이는 원작 그대로
     if (!grp || grp._hd || sp.axe) return; grp._hd = { lo: grp.children.slice(), hi: [] };
     const add = (geo, mat, y) => { const o = new THREE.Mesh(geo, mat); o.position.y = y; o.visible = false; grp.add(o); grp._hd.hi.push(o); return o; };
-    const Lh = sp.cleaver ? 4.5 : 5, U2 = ULTRA ? 2.4 : 1;
+    const Lh = sp.cleaver ? 4.5 : 5, U2 = ULTRA ? 1.8 : .9;
     add(new G0.C(.34, .34, Lh, Math.round(18 * U2), 6), new THREE.MeshToonMaterial({ color: '#ffffff', map: itoTex(sp.h), gradientMap: gm }), 1 - Lh / 2);
     add(new G0.S(.38, Math.round(16 * U2), 10), phong('#c8a040'), 1 - Lh).scale.set(1, .5, 1); // 손잡이 끝 마개
     if (sp.g) { add(new G0.C(sp.cleaver ? 1.4 : 1.05, sp.cleaver ? 1.4 : 1.05, .26, Math.round(36 * U2), 1), phong(sp.g), 1.15); add(new G0.T(sp.cleaver ? 1.4 : 1.05, .07, Math.round(6 * U2), Math.round(40 * U2)), phong('#f0d890'), 1.15).rotation.x = PI / 2; }
@@ -228,7 +228,7 @@
     const s = new Set(); if (typeof F === 'undefined' || !F.length) return s;
     const cv = window.getCamView ? window.getCamView() : null;
     if (cv && cv.mode !== 'act' && cv.key) F.forEach(f => { if (f.ch.key === cv.key) s.add(f); });
-    const room = ULTRA ? 8 : ft < 15 ? 3 : ft < 17.5 ? 2 : 1; // 라운드D: 울트리는 출전 전원 고해상도
+    const room = (ULTRA && ft < 15) ? 8 : ft < 15 ? 3 : ft < 17.5 ? 2 : 1; /* 라운드D: 울트리는 출전 전원 고해상도 · 11-10: 프레임 밀리면(15ms+) 울트라라도 근접 소수만 */
     F.filter(f => !s.has(f)).map(f => [f, camera.position.distanceTo(f.pos)]).filter(x => x[1] < 120).sort((a, b) => a[1] - b[1]).slice(0, room).forEach(x => s.add(x[0]));
     return s;
   }

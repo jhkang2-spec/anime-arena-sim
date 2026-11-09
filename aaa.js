@@ -39,7 +39,7 @@
     if (wantUltra) { AAA.ultra = true; try { _sq('high'); } catch (e) { } }
   }
   try { if (AAA.ultra && typeof fitRes === 'function') setTimeout(fitRes, 0); } catch (e) { }
-  function applyShadow() { try { renderer.shadowMap.type = THREE.PCFSoftShadowMap; const sl = scene3.children.find(o => o.isDirectionalLight && o.castShadow) || scene3.children.find(o => o.isDirectionalLight); if (sl && sl.shadow) { const roomy = typeof ftAvg !== 'undefined' && ftAvg < 13; const s = AAA.ultra ? (roomy ? 4096 : 2048) : baseQ() === 'high' ? 2048 : 1024; /* 그림자 계단: env.js 부하 조절이 1024 로 내리던 것을 울트라는 2048 하한으로 다시 올림 */ if (sl.shadow.mapSize.x !== s) { sl.shadow.mapSize.set(s, s); if (sl.shadow.map) { sl.shadow.map.dispose(); sl.shadow.map = null; } } sl.shadow.radius = AAA.ultra ? 5 : 3; sl.shadow.bias = -.0006; sl.shadow.normalBias = .4; } } catch (e) { } }
+  function applyShadow() { try { renderer.shadowMap.type = THREE.PCFSoftShadowMap; const sl = scene3.children.find(o => o.isDirectionalLight && o.castShadow) || scene3.children.find(o => o.isDirectionalLight); if (sl && sl.shadow) { const roomy = typeof ftAvg !== 'undefined' && ftAvg < 13; const load = typeof ftAvg !== 'undefined' ? ftAvg : 16; const s = AAA.ultra ? (load > 40 ? 1024 : (roomy ? 4096 : 2048)) : baseQ() === 'high' ? 2048 : 1024; /* 그림자 계단: env.js 부하 조절이 1024 로 내리던 것을 울트라는 2048 하한으로 다시 올림 · 11-10: 극과부하(40ms+)엔 1024로 강등 */ if (sl.shadow.mapSize.x !== s) { sl.shadow.mapSize.set(s, s); if (sl.shadow.map) { sl.shadow.map.dispose(); sl.shadow.map = null; } } sl.shadow.radius = AAA.ultra ? 5 : 3; sl.shadow.bias = -.0006; sl.shadow.normalBias = .4; } } catch (e) { } }
   applyShadow();
 
   const _render = renderer.render.bind(renderer);
@@ -210,7 +210,8 @@
   // ── 5e) 울트라 슈퍼샘플 배율 자동 조절(여유 있으면 올리고, 버거우면 내림 — 1~2배) ──
   let ssCool = 0;
   function ssTune(q) { if (q !== 'ultra' || AAA.ssLock) return; if (++ssCool < 90) return; ssCool = 0; const ft = typeof ftAvg !== 'undefined' ? ftAvg : 16; let n = AAA.ss;
-    const now = performance.now(); if (ft > 31 && n > AAA.ssMin) { n = Math.max(AAA.ssMin, n - .25); AAA.ssDrop = now; } else if (ft < 21 && n < AAA.ssMax && now - (AAA.ssDrop || -1e9) > 45000) n = Math.min(AAA.ssMax, n + .25); /* 4인 교전 30fps(≈33ms) 지킴, 내린 뒤 45초는 다시 안 올림 */
+    const now = performance.now(); const floorSS = ft > 45 ? 1 : AAA.ssMin; /* 11-10: 극과부하(45ms+)엔 슈퍼샘플 완전 해제(1.0) */
+    if (ft > 31 && n > floorSS) { n = Math.max(floorSS, n - (ft > 45 ? .3 : .25)); AAA.ssDrop = now; } else if (ft < 21 && n < AAA.ssMax && now - (AAA.ssDrop || -1e9) > 45000) n = Math.min(AAA.ssMax, n + .25); /* 4인 교전 30fps(≈33ms) 지킴, 내린 뒤 45초는 다시 안 올림 */
     AAA.ss = n; }
   // 슈퍼샘플 판(WebGL2 다중 샘플 4) → 1배로 줄이는 4점 상자 필터
   let ssRT = null, ssW = 0, ssH = 0, dsRT = null; const ssShadow = { n: 0 };
@@ -241,14 +242,14 @@
     if (scene3.fog && scene3.fog.color) U.uFogCol.value.copy(scene3.fog.color);
     const L = sunL(); let rays = 0, sunVis = 0;
     if (L && q !== 'low' && !slow) { _sv.copy(L.position).sub(L.target ? L.target.position : _v.set(0, 0, 0)).normalize(); _v.copy(_sv).multiplyScalar(900).add(camera.position); _v.project(camera);
-      if (_v.z < 1 && Math.abs(_v.x) < 1.6 && Math.abs(_v.y) < 1.6) { U.uSun.value.set(_v.x * .5 + .5, _v.y * .5 + .5); sunVis = Math.max(0, 1 - Math.max(Math.abs(_v.x), Math.abs(_v.y)) / 1.6); rays = (day ? .32 : .2) * sunVis; }
+      if (_v.z < 1 && Math.abs(_v.x) < 1.6 && Math.abs(_v.y) < 1.6) { U.uSun.value.set(_v.x * .5 + .5, _v.y * .5 + .5); sunVis = Math.max(0, 1 - Math.max(Math.abs(_v.x), Math.abs(_v.y)) / 1.6); rays = (day ? .4 : .25) * sunVis; }
       U.uSunCol.value.copy(L.color); U.uSunV.value.copy(_sv).transformDirection(camera.matrixWorldInverse); }
     U.uRays.value = rays; U.uRayN.value = ultra ? (hot2 ? 12 : hot1 ? 20 : 40) : (hot1 ? 10 : q === 'high' ? 24 : 14);
     const tnow = performance.now(); U.uDof.value = (ultra || q === 'high') && tnow < AAA.dofUntil ? Math.min(1, (AAA.dofUntil - tnow) / 400) : 0; U.uDofBase.value = 0; /* 평소 피사계 심도 끔(흐릿함 지적) — 필살 순간만 */
     if (typeof cam !== 'undefined' && cam && cam.tgt) U.uFocus.value = camera.position.distanceTo(cam.tgt);
     U.uContact.value = ultra && !hot2 ? .45 : 0; U.uClouds.value = ultra && day ? 1 : 0;
     U.uRefl.value = ultra ? (hot3 ? 0 : hot2 ? .4 : (day ? .7 : .9)) : 0; /* 화면 공간 반사(SSR): 장면을 다시 그리지 않고 깊이 버퍼로 반사 광선 추적 — 거울 장면 그리기(23ms)보다 훨씬 가벼움 */
-    if (ultra) { U.tBloom.value = bloomPass(cTex, fw, fh); U.uBloomK.value = .14; U.uDirtK.value = .12; U.uFlare.value = sunVis * (day ? .6 : .4); } else { U.uBloomK.value = 0; U.uDirtK.value = 0; U.uFlare.value = 0; }
+    if (ultra) { U.tBloom.value = bloomPass(cTex, fw, fh); U.uBloomK.value = hot1 ? .1 : .17; U.uDirtK.value = hot1 ? .08 : .15; U.uFlare.value = sunVis * (day ? (hot1 ? .5 : .75) : (hot1 ? .35 : .5)); } else { U.uBloomK.value = 0; U.uDirtK.value = 0; U.uFlare.value = 0; } /* 라운드M: 여유 있을 때 마감 강도 상향, hot1(20ms+)부터는 원격 판의 강등 계단으로 */
     U.uMB.value = ultra && !AAA.noHist && !hot2 ? 1 : 0; U.uTAA.value = AAA.taa && ultra && hasPrev && !AAA.noHist ? 1 : 0; /* 지터 TAA 는 인물 속도 버퍼가 없어 가장자리가 떨려 기본 끔 → 슈퍼샘플+MSAA+SMAA 로 대체 */ U.tHist.value = histTex;
     if ((AAA.frames++ % (hot2 ? 60 : hot1 ? 40 : 22)) === 0) { try { adaptExposure(); } catch (e) { } } /* readRenderTargetPixels 는 GPU→CPU 동기화 스톨 → 자동 노출 갱신 빈도를 로드·주사율에 맞춰 줄임(주기적 끊김 감소) */
     U.uExp.value = AAA.exposure;
@@ -291,7 +292,7 @@
   function propsFor(q) {
     if (props.q === q) return; props.q = q;
     ['grass', 'dust'].forEach(k => { if (props[k]) { scene3.remove(props[k]); props[k].geometry.dispose(); props[k].material.dispose(); props[k] = null; } });
-    const gN = q === 'ultra' ? 2200 : q === 'high' ? 900 : q === 'mid' ? 450 : 160, dN = q === 'ultra' ? 1800 : q === 'high' ? 700 : q === 'mid' ? 350 : 120;
+    const gN = q === 'ultra' ? 2500 : q === 'high' ? 1000 : q === 'mid' ? 500 : 170, dN = q === 'ultra' ? 2000 : q === 'high' ? 780 : q === 'mid' ? 380 : 130; /* 라운드M: 소품 밀도 상향 */
     props.grass = grass(gN); props.dust = dust(dN); scene3.add(props.grass); scene3.add(props.dust);
     if (typeof baseTop !== 'undefined' && baseTop && baseTop.add) { baseTop.add(props.grass); baseTop.add(props.dust); }
   }
