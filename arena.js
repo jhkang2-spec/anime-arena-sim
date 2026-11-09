@@ -245,7 +245,7 @@ const ELEM = {
 
 // ═══ 효과 ═══
 let parts = [], labels = [], fx = [], projs = [], drops = [], emitters = [];
-  const FXM = () => (window.AAA && AAA.ultra ? 3.8 : 1.3) * (window.AAA && Number.isFinite(AAA.perf) ? Math.max(.4, AAA.perf) : 1) * (parts.length > 640 ? .35 : parts.length > 430 ? .6 : parts.length > 270 ? .82 : 1); // 전투 이펙트 개수 배율 — 저FPS/perf 거버너 + 이미 파티클이 많은 순간(스킬·충돌)엔 방출 자동 얇게(GC 스파이크 완화)
+  const FXM = () => (window.AAA && AAA.ultra ? 3.8 : 1.3) * (window.AAA && Number.isFinite(AAA.perf) ? Math.max(.4, AAA.perf) : 1) * (parts.length > 520 ? .38 : parts.length > 300 ? .55 : parts.length > 160 ? .8 : 1); // 전투 이펙트 개수 배율 — 저FPS/perf 거버너 + 파티클이 조금만 쌓여도(스킬·충돌) 방출을 일찍 얇게(11-09: 충돌 프레임 GC 스파이크 완화로 문턱 하향)
 let shake = 0, whiteout = 0, flashC = '255,255,255', clashes = 0, frame = 0, tempo = 1, counterBy = null;
 const hexRgb = c => { const n = parseInt(c.slice(1), 16); return `${n >> 16 & 255},${n >> 8 & 255},${n & 255}`; };
 function flashScreen(a, rgb = '255,255,255') { a = Math.min(a, FLASH_MAX); if (a > whiteout) { whiteout = a; flashC = rgb; } }
@@ -1164,9 +1164,7 @@ function update(dt, t) {
     const hs = Math.hypot(f.vel.x, f.vel.z); f.speed = Math.min(1, hs / 150);
     gait(f, o, tg, k, dt, hs);
     f.breath = !f.air && hs < 10 ? Math.sin(t * 3.5 + f.pos.x) * .8 : 0;
-    if (f.aura && Math.random() < .7) parts.push({ p: f.pos.clone().add(V3(R(-5, 5), R(0, 18), R(-5, 5))), v: V3(0, R(15, 45), 0), life: .8, c: Math.random() < .3 ? '#ffffff' : (f.elem ? pick(ELEM[f.elem].parts) : '#ffffff'), g: 0, s: 1 });
-    if (f.mode > 0 && f.modeElem && Math.random() < .8) parts.push({ p: f.pos.clone().add(V3(R(-5, 5), R(0, 18), R(-5, 5))), v: V3(R(-5, 5), R(30, 70), R(-5, 5)), life: .7, c: pick(ELEM[f.modeElem].parts), g: -10, s: 2 });
-    if (f.aura && frame % 14 === 0) ring(f.pos.clone().add(V3(0, .4, 0)), 3, f.elem ? ELEM[f.elem].c : '#ffffff', true, .6, 1.2);
+    /* (11-09 소유자 요청) 캐릭터를 상시 따라다니는 빛기둥(각성·비행 오라: 위로 올라가는 입자 기둥 + 발밑 링) 제거 — 영구 오라 연출 제거로 시각 정리 + 매 프레임 파티클 발생 감소 */
     if (f.ghost && frame % 3 === 0) ghosts.push({ ch: f.ch, pos: f.pos.clone(), heading: f.heading, c: { ...o }, life: 1, color: f.elem ? ELEM[f.elem].c : '#ffffff', dec: .12 });
     if (f.flash > 0) f.flash--;
     if (!f.air && hs > 60 && frame % 3 === 0) { splash(f.pos, .35); } if (!f.air && hs > 60) for (let i = 0; i < 2; i++) parts.push({ p: f.pos.clone().add(V3(R(-1.5, 1.5), WATER_H + .3, R(-1.5, 1.5))), v: f.vel.clone().multiplyScalar(-.25).add(V3(R(-15, 15), R(30, 60), R(-15, 15))), life: .5, c: '#dff0ff', g: 260, s: 1 });
