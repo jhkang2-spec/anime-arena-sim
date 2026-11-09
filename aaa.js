@@ -23,9 +23,13 @@
   const isDay = () => { try { return (localStorage.getItem('arenaWorld') || 'cliff') !== 'train'; } catch (e) { return true; } };
 
   // ── 0) 울트라 품질: 기존 setQuality(낮음·중간·높음)는 그대로 두고 'ultra' 를 덧붙임(다른 파일엔 '높음'으로 보임) ──
-  let wantUltra = !isMobile; try { const s = localStorage.getItem('arenaUltra'); if (s === '0') wantUltra = false; else if (s === '1') wantUltra = true; } catch (e) { }
-  /* 판 번호 이전(11-05 렌더 상향): 예전에 '높음'으로 굳은 PC 방문자도 한 번은 울트라로 올림. 이후 사용자가 고른 값은 그대로 존중 */
-  const RENDER_V = '2'; try { if (localStorage.getItem('arenaRenderV') !== RENDER_V) { localStorage.setItem('arenaRenderV', RENDER_V); if (!isMobile) { wantUltra = true; localStorage.setItem('arenaUltra', '1'); } } } catch (e) { }
+  /* GPU 실체 탐지(11-09, 주인 주문: 구동 자원를 이 PC 사양에 맞춤): 저·중급 GPU는 기본을 '높음'으로 — 1440p 울트라는 GTX 10시리즈에서 37fps까지 떨어짐. 수동 선택은 언제든 가능 */
+  AAA.gpu = (() => { try { const gl = renderer.getContext(), d = gl.getExtension('WEBGL_debug_renderer_info'); return String(gl.getParameter(d.UNMASKED_RENDERER_WEBGL)).toLowerCase(); } catch (e) { return ''; } })().slice(0, 90);
+  AAA.gpuTier = /gtx 1050|gtx 9|gtx 7|uhd |iris|vega 3|mx[12]|intel hd|basic render|swiftshader/.test(AAA.gpu) ? 'low'
+    : /gtx 10[67]0(?! ti)|gtx 1650|rx 5[5-9]0|rx 54|arc a3/.test(AAA.gpu) ? 'mid' : 'high';
+  let wantUltra = !isMobile && AAA.gpuTier === 'high'; try { const s = localStorage.getItem('arenaUltra'); if (s === '0') wantUltra = false; else if (s === '1') wantUltra = true; } catch (e) { }
+  /* 판 번호 이전(11-09 GPU 티어): 새 판에서는 GPU 등급에 맞게 기본값을 다시 고름. 이후 사용자가 고른 값은 그대로 존중 */
+  const RENDER_V = '3'; try { if (localStorage.getItem('arenaRenderV') !== RENDER_V) { localStorage.setItem('arenaRenderV', RENDER_V); if (!isMobile) { wantUltra = AAA.gpuTier === 'high'; localStorage.setItem('arenaUltra', wantUltra ? '1' : '0'); } } } catch (e) { }
   AAA.ss = 1.6; AAA.ssMin = 1.2; AAA.ssMax = 1.6; AAA.ssBudget = 7.2e6; /* 울트라 슈퍼샘플(11-09 낮춤: 인물·배경 픽셀 비용 절감, 이펙트 후처리는 그대로). 장면만 ss 배 판에 그려 1배로 줄임 */
   if (typeof window.setQuality === 'function') {
     const _sq = window.setQuality;

@@ -107,6 +107,7 @@
     elephant: { life: 4.5, hp: 200, spd: 0, reach: 40, pw: 1.8, nm: '만상', ek: 'water', drop: true, cd: 9 },
   };
   const teamOf = f => f && (f.team || (f.ch && f.ch.world));
+  window.__summonBuild = k => BUILD[k] && BUILD[k](); // 예열(warmup) 전용: 모형만 깎아 컴파일 후 버림 — 화면·전체 영향 없음
   const foes = s => F.filter(f => f !== s.owner && teamOf(f) !== teamOf(s.owner));
   window.spawnSummon = function (owner, kind) {
     if (!owner || !BUILD[kind]) return null; const K = KIND[kind], m = BUILD[kind](), s = { owner, kind, K, m, pos: owner.pos.clone(), heading: owner.heading, life: K.life, hp: K.hp, cd: .6, t: 0, atk: 0, adapted: new Map(), wheelA: 0 };

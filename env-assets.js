@@ -10,12 +10,14 @@
   try { EA.on = localStorage.getItem('arenaEnvAssets') !== '0'; } catch (e) { }
   const D = 'assets/env/';
   const TL = new THREE.TextureLoader();
-  /* 고해상도 PBR(11-05 렌더 상향): 2K 를 기본으로 받고, PC 울트라는 4K 가 있는 것을 뒤이어 받아 바꿔 끼움(첫 화면은 빠르게, 이후 선명하게). 이방성 필터는 장치 최대 */
+  /* 고해상도 PBR(11-09 GPU 티어 대응): 고급 GPU만 2K 기본(4K 승급), 중·저급(GTX 1060급 이하)은 1K — VRAM 3GB급에서 실사 텍스처가 메모리를 다 잡아먹어 크래시·끊김남 */
   const isMob = (() => { try { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || matchMedia('(pointer: coarse)').matches; } catch (e) { return false; } })();
-  let ultraWant = !isMob; try { if (localStorage.getItem('arenaUltra') === '0') ultraWant = false; } catch (e) { }
-  const HI4 = { cliff_side: ['diff', 'nor_gl'], dry_ground_rocks: ['diff', 'nor_gl'] }; /* 4K 는 화면을 가장 넓게 차지하는 바닥·절벽의 색·법선만(올리기 멈춤 최소화). arm 은 2K */
+  const GT = (() => { try { const gl = renderer.getContext(), d = gl.getExtension('WEBGL_debug_renderer_info'); const g = String(gl.getParameter(d.UNMASKED_RENDERER_WEBGL)).toLowerCase(); return /gtx 1050|gtx 9|gtx 7|uhd |iris|vega 3|mx[12]|intel hd|basic render|swiftshader/.test(g) ? 'low' : /gtx 10[67]0(?! ti)|gtx 1650|rx 5[5-9]0|rx 54|arc a3/.test(g) ? 'mid' : 'high'; } catch (e) { return 'high'; } })();
+  const SZ = (GT === 'high' && !isMob) ? '2k' : '1k';
+  let ultraWant = !isMob && GT === 'high'; try { if (localStorage.getItem('arenaUltra') === '0') ultraWant = false; } catch (e) { }
+  const HI4 = GT === 'high' ? { cliff_side: ['diff', 'nor_gl'], dry_ground_rocks: ['diff', 'nor_gl'] } : {}; /* 4K 승급은 고급 GPU만(중급 VRAM 보호) */
   const maxAni = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 4;
-  const tex = (f, rep) => { const t = TL.load(D + f, () => { EA.ready[f] = 1; }); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = maxAni; t.minFilter = THREE.LinearMipmapLinearFilter; if (rep) t.repeat.set(rep, rep); return t; };
+  const tex = (f, rep) => { const t = TL.load(D + f.replace('_2k.jpg', '_' + SZ + '.jpg'), () => { EA.ready[f] = 1; }); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = maxAni; t.minFilter = THREE.LinearMipmapLinearFilter; if (rep) t.repeat.set(rep, rep); return t; };
   const q4 = []; let q4busy = false; /* 4K 는 한 장씩 차례로(동시에 올리면 수백 ms 멈춤) */
   const pump4 = () => { if (q4busy || !q4.length) return; q4busy = true; const [t, f4] = q4.shift(); new THREE.ImageLoader().load(D + f4, img => { t.image = img; t.needsUpdate = true; EA.ready[f4] = 1; EA.hi4 = (EA.hi4 || 0) + 1; setTimeout(() => { q4busy = false; pump4(); }, 1500); }, undefined, () => { q4busy = false; pump4(); }); };
   const up4 = (t, f4) => { q4.push([t, f4]); pump4(); };
