@@ -13,8 +13,21 @@
     annie: corps({ hair: '#f0d890', hair2: '#f8e8b0', eye: '#6aa0d0', top: '#e8e8ec', sleeve: '#e8e8ec', top2: '#c8c8d0' }),
   });
   const ODM = { L: 15, W: .7, cut: true, c: '#dfe6ee', h: '#5a5e68', g: '#3a3e48', dual: true }; // 교체식 직선 칼날(끝 비스듬)
-  const air = (a, b, d = .32) => [step(d, [[a, { pose: 'flipAir', vy: R(220, 300), side: R(-180, 180), face: b, ghost: 1 }], [b, { pose: 'stance', face: a }]], () => NW.wire(a, chest(b).add(V3(R(-30, 30), R(40, 70), R(-30, 30)))))];
-  const odmCut = (nm, ek, op = {}) => (a, b) => [...air(a, b), ...T.melee(a, b, nm, ek, { prep: 'xSwords', strike: 'spreadSlash', arc: [-2.2, 1.4, 28], arcW: 8, n: op.n || 2, reach: 6, ...op })];
+  const gasP = (f, n) => { const budget = (typeof ftAvg === 'undefined' || ftAvg < 21) ? n : (n >> 1); for (let i = 0; i < budget; i++) parts.push({ p: f.pos.clone().add(V3(R(-1.8, 1.8), R(1.5, 8), R(-1.8, 1.8))), v: V3(R(-16, 16), R(-50, 6), R(-16, 16)), life: .5, c: '#e8eef6', g: 20, s: R(1.4, 2.8) }); };
+  // 입체기동 진입(11-09): 측면 급상승 선회(밴킹·와이어) → 반대 밴킹 대각 다이빙 + 스핀 — 그대로 떠 있지 않고 궤적으로 파고든다
+  const air = (a, b, d = .3) => {
+    const sgn = Math.random() < .5 ? 1 : -1, side = R(18, 30), tilt = sgn * R(.8, 1.3), dd = fwdOf(b);
+    const F1 = V3(b.pos.x + dd.z * side * sgn, 0, b.pos.z - dd.x * side * sgn);
+    const D1 = V3(b.pos.x + dd.z * side * .3 * sgn - dd.x * 5, 0, b.pos.z - dd.x * side * .3 * sgn - dd.z * 5);
+    return [step(.32, [[a, { pose: 'flipAir', to: () => F1, vy: R(150, 230), tilt, face: b, ghost: 1 }], [b, { pose: 'stance', face: a }]], () => { try { NW.wire(a, V3(F1.x + R(-8, 8), R(44, 76), F1.z + R(-8, 8))); } catch (e) { } gasP(a, 8); }),
+    step(d, [[a, { pose: 'flipAir', to: () => D1, vy: R(-80, 30), tilt: -tilt * .8, spin: R(8, 14) * sgn, face: b, ghost: 1 }], [b, { pose: 'stance', face: a }]], () => { try { NW.wire(a, chest(b).add(V3(R(-14, 14), R(26, 44), R(-14, 14)))); } catch (e) { } gasP(a, 6); })];
+  };
+  const odmCut = (nm, ek, op = {}) => (a, b) => {
+    const sgn = Math.random() < .5 ? 1 : -1, dd = fwdOf(b), side = R(16, 26);
+    const PAST = V3(b.pos.x - dd.z * side * sgn, 0, b.pos.z + dd.x * side * sgn); // 베고 적 반대편을 지나 빠져나감(스윙어라운드)
+    return [...air(a, b), ...T.melee(a, b, nm, ek, { prep: 'xSwords', strike: 'spreadSlash', arc: [-2.2, 1.4, 28], arcW: 8, n: op.n || 2, reach: 6, ...op }),
+    step(.3, [[a, { pose: 'crouchRun', to: () => PAST, face: b, tilt: sgn * .4 }], [b, { pose: 'stance', face: a }]], () => { try { ring(V3(a.pos.x, .3, a.pos.z), 5, '#dfe8f2', false, .5, 1.4); } catch (e) { } })];
+  };
   const spear = (nm, n = 1) => (a, b) => [...T.ranged(a, b, nm, 'arrow', 'spear', { n, size: 1.2, v: 330, prep: 'point', cast: 'throw' })].concat([step(.2, [[a, { pose: 'guard', face: b }], [b, { pose: 'stance', face: a }]], () => { const p = chest(b); explode(p, 'spear', 1.8); ring(V3(p.x, .3, p.z), 6, '#ffb040', true, 1, 3); })]);
   const titanFist = (nm, ek, pw = 1.8) => (a, b) => T.aoe(a, b, nm, ek, { prep: 'punchPrep', strike: 'hammerDown', rad: 34, pw, reach: 14 });
 

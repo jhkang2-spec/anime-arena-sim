@@ -342,7 +342,7 @@
     ['dual_cross', 'dual_scissor', 'dual_thrust'], ['dual_alt', 'dual_alt_l', 'dual_spin'], ['dual_rise', 'dual_cross', 'dual_jump_x'], ['dual_wild', 'dual_cross'], ['dual_scissor', 'dual_spin'],
     ['quick_slash', 'thrust_mid', 'gyaku_1h'], ['feint_cut', 'yoko_rl_2h', 'down_1h'], ['low_sweep_cut', 'rise_1h'], ['high_arc', 'gyaku_2h', 'thrust_2h'],
     ['waki_far', 'kesa_1h', 'thrust_mid'], ['quick_slash_l', 'thrust_mid_l', 'gyaku_1h'], ['windmill_2h', 'down_2h'], ['dual_wall_press', 'dual_cross', 'dual_thrust'],
-    ['dual_low_high', 'dual_cross'], ['dual_wide_sweep', 'dual_scissor', 'dual_thrust'], ['dual_low_sweep', 'dual_low_high'],
+    ['dual_low_sweep', 'dual_cross'], ['dual_rise', 'dual_scissor', 'dual_thrust'], ['dual_low_sweep', 'dual_rise'],
     ['slide_kick', 'spin_back_r'], ['long_jab', 'cross_r', 'hook_l'], ['mex_upper', 'scoop_palm'], ['air_back_r', 'slide_kick'], ['wall_backkick', 'wall_backfist'],
     ['jab_l', 'cross_r'], ['one_two_r', 'hook_l', 'upper_r'], ['jab_l', 'cross_r', 'serious_r'],
     ['wall_slam', 'gyaku_1h', 'down_2h'], ['low_reap', 'rise_2h'], ['high_arc', 'low_cut'], ['riposte', 'yoko_rl'], ['iai_double', 'thrust_mid'], ['spin_low', 'kesa_2h'],

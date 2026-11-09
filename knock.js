@@ -64,7 +64,7 @@
       if (s.t > .22) { const tg = s.a && F.includes(s.a) && !s.a.away ? s.a : F.find(o => o !== v && !o.away && (!o.team || o.team !== v.team)); s.ph = 'hop'; s.t = 0; v.stun = 0;
         const g = tg ? tg.pos.clone().add(V3(s.hit.nx * -6, 0, s.hit.nz * -6)) : V3(s.hit.x + s.hit.nx * 90, 0, s.hit.z + s.hit.nz * 90); g.y = 0; clampArena(g); // 목표 없으면 반대편 끝이 아니라 벽에서 안쪽으로 약간만(중앙 순간이동처럼 보였던 부호 버그 수정 11-09)
         try { apply(v, { pose: 'kick', face: tg || null, k: 80 }, .5); } catch (e) { }
-        if (window.MV) MV.arc(v, g, Math.min(1, .5 + Math.hypot(g.x - v.pos.x, g.z - v.pos.z) / 600), 26, { done: () => { if (tg && F.includes(tg) && F.includes(v)) { KN.st.wall.counter++; if (v.away) { KN.st.cliff.back++; KN.st.cliff.times.push(+(now() - v.away.t0).toFixed(2)); } v.away = null; try { resolve(v, tg, null, 'hit', '반격 돌진!', 1.3); } catch (e) { } } } }); else v.pos.copy(g); }
+        if (window.MV) MV.arc(v, g, Math.min(1, .5 + Math.hypot(g.x - v.pos.x, g.z - v.pos.z) / 600), 26, { done: () => { if (tg && F.includes(tg) && F.includes(v)) { KN.st.wall.counter++; if (v.away) { KN.st.cliff.back++; KN.st.cliff.times.push(+(now() - v.away.t0).toFixed(2)); } v.away = null; try { resolve(v, tg, null, 'hit', '반격 돌진!', 1.3); } catch (e) { } } } }); else { s.ret = g; s.ph = 'hop'; s.t = 0; } }
       return; }
     if (s.ph === 'slide' || s.ph === 'sword') { // 손으로 벽 짚고·검을 꽂아 미끄러져 내려옴(긁힘 자국·먼지/불꽃 줄)
       const dur = s.ph === 'sword' ? .75 : .85, u = Math.min(1, s.t / dur); const yy = s.y * (1 - u); v.pos.set(s.hit.x + s.hit.nx * 2, yy, s.hit.z + s.hit.nz * 2); v.air = yy > .3; v.stun = Math.max(v.stun, .2);

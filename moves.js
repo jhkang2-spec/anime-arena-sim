@@ -106,6 +106,9 @@
   const swOn = f => { const sp = SWD[f.ch.key]; return sp && (!sp.only || f.elem === sp.only) ? sp : null; };
   const _apply = apply;
   apply = function (f, s, d) {
+    // 감리 규칙(11-09): 비행·입체기동 세계관 외 인물은 기술 상승 vy를 200으로 제한 → 전체 체공 ~0.95초(1초 미만).
+    // 넉백으로 날아가는 것은 apply 경로가 아니라 예외(피격 반동은 세계관 무관 물리).
+    if (s.vy > 200 && !AIRF(f)) s = Object.assign({}, s, { vy: 200 });
     _apply(f, s, d);
     const sp = swOn(f);
     if (sp) {
@@ -144,8 +147,13 @@
   const POLES = [{ p: V3(-60, 71, -141), name: '전봇대' }, { p: V3(60, 71, -141), name: '전봇대' }];
   const BANK = [{ p: V3(-30, 10.5, -158), name: '철둑' }, { p: V3(40, 10.5, -158), name: '철둑' }];
   const PLAT = [...ROCKS, ...ROCKS, ...TRAIN, ...POLES, ...BANK];
+  // ── 공중 교전 능력 게이트(11-09 논리 감리, 주인 지적): 날 수 없는 세계관 인물(비행·입체기동 없음)이
+  //    열차 지붕(56m)·전봇대(71m) 위에서 1초 가까이 공중 채공하는 것 원천 차단.
+  //    규칙: ① 높은 발판(30m↑)은 AIRF만 ② 모두는 바위·둑(낮은 발판)만 ③ 경기장 밖 발판은 어떤 세계관에도 금지 ④ 비AIRF perch는 1.4초 이하
+  const AIRF = f => { const c = (f && f.ch) || {}, s = c.sig || {}; return !!(s.fly || (c.world === 'aot' && s.kind === 'getsuga' && (f.scale || 1) < 1.6) || c.key === 'mahoraga'); };
+  const PLATOK = (f, pl) => pl.p.y <= (AIRF(f) ? 1e9 : 16); // 낮은 발판(바위·둑)은 모두, 열차 지붕·전봇대 같은 고공 발판은 비행·입체기동만
 
-  function arc(f, to, dur, h, o = {}) { f.arc = { from: f.pos.clone(), to: to.clone(), t: 0, dur: Math.max(.15, dur), h, perch: o.perch, hold: o.hold || 2.5, done: o.done }; f.perchAt = null; f.air = true; }
+  function arc(f, to, dur, h, o = {}) { f.arc = { from: f.pos.clone(), to: to.clone(), t: 0, dur: Math.max(.15, dur), h, perch: o.perch, hold: o.perch && !AIRF(f) ? Math.min(o.hold || 2.5, 1.4) : (o.hold || 2.5), done: o.done }; f.perchAt = null; f.air = true; }
   const landFx = (f, big) => { ring(V3(f.pos.x, .4, f.pos.z), big ? 5 : 3, '#c8b090', true, .8, big ? 2.6 : 1.8); for (let i = 0; i < (big ? 18 : 8); i++) parts.push({ p: f.pos.clone().add(V3(R(-3, 3), 1, R(-3, 3))), v: V3(R(-40, 40), R(10, 40), R(-40, 40)), life: R(.8, 1.3), c: pick(['#7a6248', '#8a7258', '#6a5440']), g: -4, s: 3, n: true }); f.cv = f.cv || {}; f.cv.bob = (f.cv.bob || 0) + (big ? 60 : 30); };
   function moveHook(f, dt) {
     if (f.roll) { const R2 = f.roll; R2.t += dt; const u = Math.min(1, R2.t / R2.dur); f.tilt = f.tiltT = -u * PI * 2 * R2.dir; if (u >= 1) { f.tilt = f.tiltT = 0; f.roll = null; } }
@@ -200,7 +208,8 @@
 
   // 피하며 다른 물체 위로 → 위에서 내려다보다 급강하 공격
   function perchDive(a, b) {
-    const pl = PLAT.slice().sort((x, y) => x.p.distanceTo(a.pos) - y.p.distanceTo(a.pos))[Math.random() < .6 ? 0 : Math.floor(R(0, PLAT.length))];
+    const PL = PLAT.filter(p => PLATOK(a, p));
+    const pl = PL.slice().sort((x, y) => x.p.distanceTo(a.pos) - y.p.distanceTo(a.pos))[Math.random() < .6 ? 0 : Math.floor(R(0, PL.length))];
     const top = pl.p.clone().add(V3(R(-2, 2), 0, R(-2, 2))), far = top.distanceTo(a.pos), up = Math.max(.6, Math.min(1.3, far / 140)), o = pick(['hit', 'block', 'dodge', 'hit']);
     return [
       step(.18, [[a, { pose: 'crouchDodge', face: b }], [b, { pose: ATK(b), fwd: 120, k: 90, face: a }]], () => { spark(chest(a).add(V3(0, -4, 0)), '#ffffff', 4); }),
@@ -261,8 +270,8 @@
     const r = Math.random(), a = pick(F), b = pick(others(a)); if (!b) return _plan();
     a.target = b; b.target = a;
     const W = st => F.length > 2 ? withThird(st, a, b) : st;
-    if (r < .07) return W(perchDive(a, b));
-    if (r < .13) return W(airClash(a, b));
+    if (r < .07 && AIRF(a)) return W(perchDive(a, b));
+    if (r < .13 && AIRF(a) && AIRF(b)) return W(airClash(a, b));
     if (r < .21) return W(pressBack(a, b));
     if (r < .27) return W(bind(a, b));
     if (r < .33) { const pool = (ALLF || F).filter(x => x !== a && x !== b); if (pool.length) return cutIn(a, b, pick(pool)); }
@@ -272,8 +281,8 @@
   // 혼자 남은 인물도 이따금 발판 위로 올라가 기회를 노림
   const _solo = soloLane;
   soloLane = function (f0) {
-    if (Math.random() < .25 && !f0.perchAt && !f0.arc) { const pl = pick(PLAT), tg = pick(others(f0)); if (tg) { lanes.push({ fs: [f0], q: [step(.7, [[f0, { pose: 'flipAir', face: tg }]], () => arc(f0, pl.p, .7, 24, { perch: true, hold: R(1.2, 2.4) })), step(R(.8, 1.4), [[f0, { pose: pick(['taunt', 'guard']), face: tg }]])], t: 0 }); return; } }
+    if (Math.random() < .25 && !f0.perchAt && !f0.arc) { const PL = PLAT.filter(p => PLATOK(f0, p)); const pl = PL.length && pick(PL), tg = pick(others(f0)); if (pl && tg) { lanes.push({ fs: [f0], q: [step(.7, [[f0, { pose: 'flipAir', face: tg }]], () => arc(f0, pl.p, .7, 24, { perch: true, hold: R(1.2, 2.4) })), step(R(.8, 1.4), [[f0, { pose: pick(['taunt', 'guard']), face: tg }]])], t: 0 }); return; } }
     return _solo(f0);
   };
-  window.MV = { perchDive, airClash, pressBack, bind, cutIn, dodgeDance, entry, arc, PLAT, SWD };
+  window.MV = { perchDive, airClash, pressBack, bind, cutIn, dodgeDance, entry, arc, PLAT, SWD, canAir: f => AIRF(f) };
 })();

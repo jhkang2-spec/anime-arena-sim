@@ -108,6 +108,8 @@
   };
   const teamOf = f => f && (f.team || (f.ch && f.ch.world));
   window.__summonBuild = k => BUILD[k] && BUILD[k](); // 예열(warmup) 전용: 모형만 깎아 컴파일 후 버림 — 화면·전체 영향 없음
+  const killM = root => { try { root.traverse(o => { if (o.isMesh) { if (o.geometry) o.geometry.dispose(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose()); } }); } catch (e) { } };
+  window.__summonFree = killM;
   const foes = s => F.filter(f => f !== s.owner && teamOf(f) !== teamOf(s.owner));
   window.spawnSummon = function (owner, kind) {
     if (!owner || !BUILD[kind]) return null; const K = KIND[kind], m = BUILD[kind](), s = { owner, kind, K, m, pos: owner.pos.clone(), heading: owner.heading, life: K.life, hp: K.hp, cd: .6, t: 0, atk: 0, adapted: new Map(), wheelA: 0 };
@@ -147,7 +149,7 @@
     else if (m.legs) m.legs.forEach((l, i) => { l.rotation.z = w * .5 * (i % 2 ? 1 : -1); });
     if (m.wings) m.wings.forEach((g, i) => { g.rotation.x = Math.sin(t * 10) * .5 * (i ? 1 : -1); });
     // 사라짐
-    if (s.life <= 0 || s.hp <= 0) { for (let i = 0; i < 40; i++) parts.push({ p: m.root.position.clone().add(V3(R(-8, 8), R(0, 20), R(-8, 8))), v: V3(R(-20, 20), R(-60, -10), R(-20, 20)), life: 1, c: pick(['#0a0a14', '#2a2a40']), g: 0, s: 3 }); label(m.root.position.clone().add(V3(0, 22, 0)), s.hp <= 0 ? K.nm + ' 격파!' : K.nm + ' · 그림자로 돌아감', '#cfd0e8'); scene3.remove(m.root); return false; }
+    if (s.life <= 0 || s.hp <= 0) { for (let i = 0; i < 40; i++) parts.push({ p: m.root.position.clone().add(V3(R(-8, 8), R(0, 20), R(-8, 8))), v: V3(R(-20, 20), R(-60, -10), R(-20, 20)), life: 1, c: pick(['#0a0a14', '#2a2a40']), g: 0, s: 3 }); label(m.root.position.clone().add(V3(0, 22, 0)), s.hp <= 0 ? K.nm + ' 격파!' : K.nm + ' · 그림자로 돌아감', '#cfd0e8'); killM(m.root); scene3.remove(m.root); return false; }
     return true;
   }
   // 소환물 피격: 적의 공격이 소환물 가까이에서 맞으면 소환물이 대신 막아 섬(마허라는 같은 기술에 적응)

@@ -83,9 +83,9 @@
   update = function (dt, t) { if (st.hs > 0) dt *= .12; return _update(dt, t); };
 
   // ── 방향 있는 화면 흔들림(맞은 방향으로 밀렸다 돌아옴, 카메라와 멀수록 약함) ──
-  const _cam = camUpdate;
+  const _cam = camUpdate, __off = V3();
   camUpdate = function (dt, idle) { _cam(dt, idle); try {
-    const off = V3(), cp = camera.position;
+    const off = __off.set(0, 0, 0), cp = camera.position;
     st.shakes = st.shakes.filter(s => (s.t += dt) < s.dur);
     st.shakes.forEach(s => { const k = (1 - s.t / s.dur) ** 2 / (1 + cp.distanceTo(s.p) / 160), w = Math.sin(s.t * 58) * s.amp * k; off.addScaledVector(s.dir, w).add(V3(rr(-.3, .3), rr(-.4, .4), rr(-.3, .3)).multiplyScalar(s.amp * k)); });
     if (off.length() > 7) off.setLength(7); camera.position.add(off);

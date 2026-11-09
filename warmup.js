@@ -32,7 +32,7 @@
     try {
       ['mahoraga', 'dogW', 'dogB', 'nue', 'elephant'].forEach(k => { try { const m = __summonBuild(k); if (m && m.root) { m.root.position.set(0, -4000, 0); scene3.add(m.root); } } catch (e) { } });
       renderer.compile(scene3, camera);
-      scene3.children.slice().forEach(o => { if (o.position && o.position.y < -3000) scene3.remove(o); });
+      scene3.children.slice().forEach(o => { if (o.position && o.position.y < -3000) { try { if (window.__summonFree) __summonFree(o); } catch (e) { } scene3.remove(o); } });
       st.summon = 1;
     } catch (e) { }
   }, 3400);

@@ -208,6 +208,7 @@
     const dir = dot > .5 ? 'front' : dot < -.4 ? 'back' : 'side'; CB.st.dirs[dir]++;
     b.hitPart = c.part; b.hitDir = dir; b.hitKind = p.k; // mocap.js 가 피격 클립 고를 때 쓸 수 있는 값
     if (CB.preLand && CB.preLand(p, c)) { diagEnd(p, 'sub', 'substituted'); emit('result', { a, b, k: p.k, out: 'sub', part: c.part, dir }); return true; } // storm-combat.js: 맞기 직전 바꿔치기(대타) — 피해 없이 통과
+    if ((a && a.away) || (b && b.away)) { diagEnd(p, 'away', 'away-guard'); return true; } // 상대가 경기장 밖(벽 박힘)으로 나간 뒤면 지연 적중 무효(knock.js 가드와 동일 규칙)
     lastOut = null; const stunBefore = b.stun || 0, kb0x = b.kb.x, kb0z = b.kb.z;
     _res.call(p.ctx, a, b, p.ek, p.o, p.nm, p.pw, c.p);
     if (lastOut === 'hit') { b.kb.x = kb0x + (b.kb.x - kb0x) * .55; b.kb.z = kb0z + (b.kb.z - kb0z) * .55; } // 넉백 정리: 근접 적중은 기존 무작위 넉백을 줄이고 공격 자료(knock)의 방향 넉백을 씀 — 상대가 너무 멀리 날아가 다음 연타가 헛치던 원인

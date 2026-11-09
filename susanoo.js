@@ -118,7 +118,7 @@
     if (p.s3_wings) r(p.s3_wings, Math.sin(t * 2.2) * .06, 0, 0);
     if (p.s2_head) r(p.s2_head, br, 0, 0); if (p.s3_head) r(p.s3_head, br, 0, 0);
   }
-  function endS(S) { scene3.remove(S.root); Object.values(S.I).forEach(I => I && I.mats.forEach(m => m.dispose())); }
+  function endS(S) { scene3.remove(S.root); Object.values(S.I).forEach(I => { if (!I) return; I.mats.forEach(m => m.dispose()); (I.ds || []).forEach(d => d.material && d.material.dispose()); }); }
 
   // ── 기존 수사노오 메시 숨김(이펙트 일꾼 파일은 고치지 않음): 보이기 값을 항상 거짓으로 ──
   const HIDE = new WeakSet();

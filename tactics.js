@@ -386,7 +386,7 @@
       if (dom) { const v = f.pos.clone().sub(dom.fx.domain.c).setY(0); if (v.lengthSq() < .01) v.set(1, 0, 0); f.pos.addScaledVector(v.normalize(), 22 * dt); return; }
       const tg = f.aiTarget; if (!tg || !alive(tg) || (f.aiState !== 'IDLE' && f.aiState !== 'DEFEND' && f.aiState !== 'CHASE')) return;
       const v = tg.pos.clone().sub(f.pos).setY(0), d = v.length(); if (d < .01) return; v.multiplyScalar(1 / d);
-      let k = 0; if ((has(tg, 'haste') || has(tg, 'power') || has(tg, 'giant') || tg.mode > 0) && d < 30) k = -16; // 강해진 상대와는 거리를 둠 else if ((has(tg, 'slow') || has(tg, 'freeze')) && d > 12) k = 18; else if (hp01(f) < .3 && d < 32) k = -12;
+      let k = 0; if ((has(tg, 'haste') || has(tg, 'power') || has(tg, 'giant') || tg.mode > 0) && d < 30) k = -16; /* 강해진 상대와는 거리를 둠 */ else if ((has(tg, 'slow') || has(tg, 'freeze')) && d > 12) k = 18; else if (hp01(f) < .3 && d < 32) k = -12;
       if (k) f.pos.addScaledVector(v, k * dt);
     });
     return r;

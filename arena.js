@@ -300,6 +300,7 @@ function explode(p, ek, pw = 1) {
 // ═══ 자세 (각도 0 = 아래, + = 앞) ═══
 const P0 = { arm: .35, fore: 2.65, barm: .85, bfore: 2.35, leg: .42, kick: 0, lean: 2, bob: 2.5, twist: -.32, spread: .1, armX: .18 };
 const mkP = o => ({ ...P0, ...o });
+const SPR_KEYS = ['arm', 'fore', 'barm', 'bfore', 'lean', 'bob', 'twist', 'spread', 'armX'];
 const POSE = {
   guard: mkP({}), stance: mkP({ arm: .7, fore: 2.0, barm: .5, bfore: 1.6, leg: .65, lean: 2, bob: 4 }),
   seal: mkP({ arm: .9, fore: 2.6, barm: 1.1, bfore: 2.75, leg: .4, lean: 0, bob: 1 }),
@@ -1159,7 +1160,7 @@ function update(dt, t) {
     const k = Math.min(1, dt * f.k);
     // 2차 스프링(살짝 넘쳤다 돌아옴). 프레임이 느려도 터지지 않게 잘게 나눠 적분하고, 값이 깨지면 바로 목표로 되돌린다
     const stf = Math.min(2400, f.k * f.k * .9), dmp = 2 * .78 * Math.sqrt(stf), subs = Math.max(1, Math.ceil(dt * Math.sqrt(stf) / .35)), h = dt / subs; f.cv = f.cv || {};
-    ['arm', 'fore', 'barm', 'bfore', 'lean', 'bob', 'twist', 'spread', 'armX'].forEach(key => { const tv = tg[key] ?? 0; let cur = o[key] ?? tv, vv = f.cv[key] ?? 0; for (let i = 0; i < subs; i++) { vv += ((tv - cur) * stf - vv * dmp) * h; cur += vv * h; } if (!isFinite(cur) || !isFinite(vv) || Math.abs(cur - tv) > 8) { cur = tv; vv = 0; } f.cv[key] = clampv(vv, -60, 60); o[key] = cur; });
+    SPR_KEYS.forEach(key => { const tv = tg[key] ?? 0; let cur = o[key] ?? tv, vv = f.cv[key] ?? 0; for (let i = 0; i < subs; i++) { vv += ((tv - cur) * stf - vv * dmp) * h; cur += vv * h; } if (!isFinite(cur) || !isFinite(vv) || Math.abs(cur - tv) > 8) { cur = tv; vv = 0; } f.cv[key] = clampv(vv, -60, 60); o[key] = cur; });
     const hs = Math.hypot(f.vel.x, f.vel.z); f.speed = Math.min(1, hs / 150);
     gait(f, o, tg, k, dt, hs);
     f.breath = !f.air && hs < 10 ? Math.sin(t * 3.5 + f.pos.x) * .8 : 0;

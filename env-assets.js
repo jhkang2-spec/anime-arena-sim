@@ -15,7 +15,7 @@
   const GT = (() => { try { const gl = renderer.getContext(), d = gl.getExtension('WEBGL_debug_renderer_info'); const g = String(gl.getParameter(d.UNMASKED_RENDERER_WEBGL)).toLowerCase(); return /gtx 1050|gtx 9|gtx 7|uhd |iris|vega 3|mx[12]|intel hd|basic render|swiftshader/.test(g) ? 'low' : /gtx 10[67]0(?! ti)|gtx 1650|rx 5[5-9]0|rx 54|arc a3/.test(g) ? 'mid' : 'high'; } catch (e) { return 'high'; } })();
   const SZ = (GT === 'high' && !isMob) ? '2k' : '1k';
   let ultraWant = !isMob && GT === 'high'; try { if (localStorage.getItem('arenaUltra') === '0') ultraWant = false; } catch (e) { }
-  const HI4 = GT === 'high' ? { cliff_side: ['diff', 'nor_gl'], dry_ground_rocks: ['diff', 'nor_gl'] } : {}; /* 4K 승급은 고급 GPU만(중급 VRAM 보호) */
+  const HI4 = {}; /* 11-09 감리: 4K 파일 themselves 제거됨(VRAM 3GB 정책) — 4K 승급 완전 차단, 404 예방 */
   const maxAni = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 4;
   const tex = (f, rep) => { const t = TL.load(D + f.replace('_2k.jpg', '_' + SZ + '.jpg'), () => { EA.ready[f] = 1; }); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = maxAni; t.minFilter = THREE.LinearMipmapLinearFilter; if (rep) t.repeat.set(rep, rep); return t; };
   const q4 = []; let q4busy = false; /* 4K 는 한 장씩 차례로(동시에 올리면 수백 ms 멈춤) */
