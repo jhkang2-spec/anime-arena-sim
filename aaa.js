@@ -39,7 +39,7 @@
     if (wantUltra) { AAA.ultra = true; try { _sq('high'); } catch (e) { } }
   }
   try { if (AAA.ultra && typeof fitRes === 'function') setTimeout(fitRes, 0); } catch (e) { }
-  function applyShadow() { try { renderer.shadowMap.type = THREE.PCFSoftShadowMap; const sl = scene3.children.find(o => o.isDirectionalLight && o.castShadow) || scene3.children.find(o => o.isDirectionalLight); if (sl && sl.shadow) { const roomy = typeof ftAvg !== 'undefined' && ftAvg < 13; const load = typeof ftAvg !== 'undefined' ? ftAvg : 16; const s = AAA.ultra ? (load > 40 ? 1024 : (roomy ? 4096 : 2048)) : baseQ() === 'high' ? 2048 : 1024; /* 그림자 계단: env.js 부하 조절이 1024 로 내리던 것을 울트라는 2048 하한으로 다시 올림 · 11-10: 극과부하(40ms+)엔 1024로 강등 */ if (sl.shadow.mapSize.x !== s) { sl.shadow.mapSize.set(s, s); if (sl.shadow.map) { sl.shadow.map.dispose(); sl.shadow.map = null; } } sl.shadow.radius = AAA.ultra ? 5 : 3; sl.shadow.bias = -.0006; sl.shadow.normalBias = .4; } } catch (e) { } }
+  function applyShadow() { try { renderer.shadowMap.type = THREE.PCFSoftShadowMap; const sl = scene3.children.find(o => o.isDirectionalLight && o.castShadow) || scene3.children.find(o => o.isDirectionalLight); if (sl && sl.shadow) { const roomy = typeof ftAvg !== 'undefined' && ftAvg < 13; const load = typeof ftAvg !== 'undefined' ? ftAvg : 16; const cur = sl.shadow.mapSize.x || 0; let s; /* 11-10: 히스테리시스 — 45ms 넘어야 1024 강등·28ms 밑으로 돌아가야 복원(맵 재생성 진동 방지) */ if (AAA.ultra) s = (cur === 1024 ? (load < 28 ? (roomy ? 4096 : 2048) : 1024) : (load > 45 ? 1024 : (roomy ? 4096 : 2048))); else s = baseQ() === 'high' ? 2048 : 1024; if (sl.shadow.mapSize.x !== s) { sl.shadow.mapSize.set(s, s); if (sl.shadow.map) { sl.shadow.map.dispose(); sl.shadow.map = null; } } sl.shadow.radius = AAA.ultra ? 5 : 3; sl.shadow.bias = -.0006; sl.shadow.normalBias = .4; } } catch (e) { } }
   applyShadow();
 
   const _render = renderer.render.bind(renderer);
@@ -209,9 +209,9 @@
 
   // ── 5e) 울트라 슈퍼샘플 배율 자동 조절(여유 있으면 올리고, 버거우면 내림 — 1~2배) ──
   let ssCool = 0;
-  function ssTune(q) { if (q !== 'ultra' || AAA.ssLock) return; if (++ssCool < 90) return; ssCool = 0; const ft = typeof ftAvg !== 'undefined' ? ftAvg : 16; let n = AAA.ss;
+  function ssTune(q) { if (q !== 'ultra' || AAA.ssLock) return; const t0 = performance.now(); if (t0 - (ssTune._t || 0) < 1500) return; ssTune._t = t0; /* 11-10: 주기 90프레임→실시간 1.5초 — 낮은 fps에서도 강등 결정이 늦지 않게 */ const ft = typeof ftAvg !== 'undefined' ? ftAvg : 16; let n = AAA.ss;
     const now = performance.now(); const floorSS = ft > 45 ? 1 : AAA.ssMin; /* 11-10: 극과부하(45ms+)엔 슈퍼샘플 완전 해제(1.0) */
-    if (ft > 31 && n > floorSS) { n = Math.max(floorSS, n - (ft > 45 ? .3 : .25)); AAA.ssDrop = now; } else if (ft < 21 && n < AAA.ssMax && now - (AAA.ssDrop || -1e9) > 45000) n = Math.min(AAA.ssMax, n + .25); /* 4인 교전 30fps(≈33ms) 지킴, 내린 뒤 45초는 다시 안 올림 */
+    if (ft > 31 && n > floorSS) { n = Math.max(floorSS, n - (ft > 45 ? .5 : .25)); AAA.ssDrop = now; } else if (ft < 21 && n < AAA.ssMax && now - (AAA.ssDrop || -1e9) > 45000) n = Math.min(AAA.ssMax, n + .25); /* 4인 교전 30fps(≈33ms) 지킴, 내린 뒤 45초는 다시 안 올림 */
     AAA.ss = n; }
   // 슈퍼샘플 판(WebGL2 다중 샘플 4) → 1배로 줄이는 4점 상자 필터
   let ssRT = null, ssW = 0, ssH = 0, dsRT = null; const ssShadow = { n: 0 };

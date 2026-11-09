@@ -1525,11 +1525,14 @@ function scene(now, q, extra) {
   if (iv > 0 && iv < 100) ivAvg += (iv - ivAvg) * .05; // 100ms 넘는 간격(창 가림·탭 숨김)은 부담으로 치지 않음
   ftAvg = ivAvg > 17.5 ? ivAvg : Math.min(ivAvg, wkAvg * 1.6 + 2);
   /* 해상도 환류(11-07 감리): 평소엔 화소를 안 내림(소유자 규칙). 다만 24fps(울트라 24) 아래로 무너지면 72%까지 단계적 하강, 여유 회복 시 100% 복원 — 저사양 기본 사용자 방어 */
-  if (frame % 30 === 0) {
+  if (!scene._fbT) scene._fbT = 0; /* 11-10: 환류 주기를 프레임→실시간(1.5초)로 — 낮은 fps에서 강등 결정이 수 초 늦어지는 것 방지 */
+  if (now - scene._fbT > 1500) {
+    scene._fbT = now;
     const u = window.AAA && AAA.ultra, hot = u ? 42 : 24, cool = u ? 26 : 13.5;
-    const rFloor = ftAvg > hot * 1.6 ? .6 : .72; /* 11-10 라운드M: 극과부하(ftAvg>67)엔 72%→60%까지 추가 하강 — 끊김 우선 방어 */
-    if (ftAvg > hot && resScale > rFloor) { resScale = Math.max(rFloor, resScale * .92); fitRes(); }
-    else if (ftAvg < cool && resScale < 1) { resScale = Math.min(1, resScale * 1.04); fitRes(); }
+    /* 11-10 라운드M+: 과부하 땐 목표 티어로 굵은 단계(.78)로 곧장 — setSize/reAlloc 횟수를 줄여 진동(oscillation) 스톨 방지. 극과부하(ftAvg>hot*1.6)엔 60% 바닥 */
+    const rT = ftAvg > hot * 1.6 ? .6 : ftAvg > hot ? .72 : 1;
+    if (resScale > rT) { resScale = Math.max(rT, resScale * .78); fitRes(); }
+    else if (ftAvg < cool && resScale < 1) { resScale = Math.min(1, resScale * 1.05); fitRes(); }
     if (ftAvg > (u ? 34 : 17.2) && OUT.visible) OUT.visible = false;
     else if (ftAvg < (u ? 28 : 13) && !OUT.visible) OUT.visible = true;
     // 파티클 생성량 거버너: 저FPS 지속 시 FXM(입자 밀도)를 최대 40%까지 낮춰 끊김 완화, 여유 회복 시 복원(캐릭터·배경보다 이펙트 우선 방어)
