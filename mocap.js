@@ -1254,6 +1254,8 @@
   const mkVar = (ch, hd) => { MC._builtAt = frameN; let r; MC._bpx = hd ? 2 : 1; try { r = buildRig(ch); } catch (e) { console.error('[mocap] 인물 만들기 실패', ch.key, e); r = { bad: true }; } MC._bpx = 0; if (!r.bad) r.hd = hd; return r; };
   const varOf = ch => { let v = VAR.get(ch.key); if (!v) VAR.set(ch.key, v = {}); return v; };
   const rigOf = ch => { if (!MC.ready || !MC.on || !ch || !ch.model) return null; let r = MC.rigs.get(ch.key); if (!r) { const v = varOf(ch); r = v.n || (v.n = mkVar(ch, false)); MC.rigs.set(ch.key, r); } return r.bad ? null : r; };
+  MC.rigOf = rigOf; // warmup.js: 메뉴 유휴 시간에 선발 인물 모형·셰이더 예열
+  MC.hdWarm = ch => (ULTRA() && MC.hd && MC.lod !== false && ch && ch.model) ? hdOf(ch) : null; // 근접 고분할(옷감 결 노멀맵 = 별도 셰이더)도 미리
   const hdOf = ch => { const v = varOf(ch); if (!v.hd) { v.hd = mkVar(ch, true); if (!v.hd.bad) { v.hd.holder.visible = false; v.hd.warm = 2; } } return v.hd.bad ? null : v.hd; };
   // 거리 단계(이력 있음): 가까워지면 near 안에서 고분할, 멀어지면 far 밖에서 보통 — 경계에서 깜빡이지 않게
   const lodWant = (f, rig) => { if (!ULTRA() || MC.lod === false || !MC.hd) return false; camera.getWorldPosition(camP); const d = camP.distanceTo(f.pos), H = 33 * MS * (f.scale || 1); const near = (MC.lodNear || 3.4) * H, far = (MC.lodFar || 4.2) * H; f._lodHD = f._lodHD ? d < far : d < near; return f._lodHD; };

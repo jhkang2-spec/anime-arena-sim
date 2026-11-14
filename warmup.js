@@ -3,6 +3,20 @@
 (function () {
   if (typeof renderer === 'undefined' || typeof scene3 === 'undefined' || typeof camera === 'undefined') return;
   const st = window.WARM = { compiled: 0, sus: 0, summon: 0, fx: 0, gpu: (window.AAA && AAA.gpu) || '', tier: (window.AAA && AAA.gpuTier) || '' };
+  // ⓪ 셰이더 프로그램 고정(11-14 실측: 전투 25초 중 9.7초가 getProgramInfoLog=셰이더 컴파일 대기).
+  //   three r128 은 재질이 버려져 사용 횟수가 0이 되면 GPU 프로그램을 지운다 → 아지랑이·방사 왜곡·빛기둥처럼
+  //   '하나 쓰고 버리는' 효과가 나올 때마다 같은 셰이더를 처음부터 다시 컴파일(회당 0.3~1.4초 멈춤).
+  //   한 번 만든 프로그램은 사용 횟수를 1 올려 영구 보존 → 같은 cacheKey 는 즉시 재사용. 예열(①~④)도 이제 실제로 남는다.
+  //   (고유 cacheKey 수는 재질 조합 수로 유한 — 메모리 무해)
+  const progs = renderer.info.programs, pinned = new WeakSet();
+  const pinAll = () => { if (!progs) return; for (let i = 0; i < progs.length; i++) { const p = progs[i]; if (!pinned.has(p)) { pinned.add(p); p.usedTimes++; } } st.pinned = progs.length; };
+  if (progs) {
+    const _rd = renderer.render.bind(renderer); let lastN = -1;
+    renderer.render = function (s, c) { const r = _rd(s, c); if (progs.length !== lastN) { lastN = progs.length; pinAll(); } return r; };
+    const _cp = renderer.compile.bind(renderer); renderer.compile = function (s, c) { const r = _cp(s, c); pinAll(); return r; };
+  }
+  // 병렬 셰이더 컴파일(지원 GPU): 여러 프로그램을 드라이버 스레드에서 동시에 → 몰릴 때 대기 합계 단축
+  try { renderer.getContext().getExtension('KHR_parallel_shader_compile'); } catch (e) { }
   const later = (fn, t0) => { const iv = setInterval(() => { if (document.hidden) return; if (performance.now() > t0) { clearInterval(iv); try { fn(); } catch (e) { console.warn('warm', e); } } }, 300); };
   // ① 씬 전체 셰이더 사전 컴파일(전투 직전, 정적 씬이라 멈춤 체감 없음)
   later(() => { renderer.compile(scene3, camera); st.compiled = 1; }, 2000);
@@ -36,5 +50,29 @@
       st.summon = 1;
     } catch (e) { }
   }, 3400);
-  window.__warmStats = () => Object.assign({}, st);
+  // ⑤ 선발 인물 예열(11-14): 세계관 클릭 직후 1~4초 멈춤 = 새 인물 재질(툰·외곽선·원단) 셰이더 첫 컴파일.
+  //   메뉴·몸풀기(교전 전) 유휴 시간에 각 세계관 앞 2명 모형을 숨김 상태로 만들고, 잠깐 보이게 해 컴파일한 뒤 다시 숨김.
+  //   모형은 mocap 캐시(MC.rigs)에 남아 클릭 시 CPU 생성도 생략, 프로그램은 ⓪으로 고정돼 그대로 재사용.
+  const MC = window.MOCAP;
+  later(() => {
+    if (!MC || typeof MC.rigOf !== 'function' || typeof TEAMS === 'undefined' || typeof CH === 'undefined') return;
+    const ws = Object.keys(TEAMS), q = []; [0, 1].forEach(j => ws.forEach(w => { const k = (TEAMS[w] || [])[j]; if (k) q.push(k); })); // 클릭 즉시 등장하는 선발(0번)부터 전 세계관 → 그다음 1번
+    st.chWarm = 0; st.chQ = q.length;
+    const tick = () => {
+      if (!q.length) return;
+      // 교전 중(2명 이상)·화면 숨김·프레임 밀림이면 미룸 — 예열이 전투를 끊지 않게
+      if (document.hidden || (typeof F !== 'undefined' && F.length >= 2) || (typeof ftAvg !== 'undefined' && ftAvg > 30) || !MC.ready) { setTimeout(tick, 700); return; }
+      const k = q.shift(), ch = CH[k];
+      try {
+        if (ch && ch.model) {
+          const rs = [MC.rigOf(ch)]; if (typeof MC.hdWarm === 'function') rs.push(MC.hdWarm(ch)); // 보통 + 근접 고분할(울트라)
+          const hs = rs.filter(r => r && r.holder).map(r => [r.holder, r.holder.visible]);
+          if (hs.length) { hs.forEach(h => { h[0].visible = true; }); renderer.compile(scene3, camera); hs.forEach(h => { h[0].visible = h[1]; }); st.chWarm++; }
+        }
+      } catch (e) { console.warn('warm ch', k, e); }
+      setTimeout(tick, 250);
+    };
+    tick();
+  }, 3800);
+  window.__warmStats =() => Object.assign({}, st);
 })();

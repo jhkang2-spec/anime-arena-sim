@@ -7,7 +7,11 @@
   const L = window.PIXELFX_LIB, PX = window.PIXFX = { on: true, st: { spawns: 0, culled: 0, skipped: 0, live: 0 }, lib: L };
   try { if (localStorage.getItem('arenaPixFx') === '0') PX.on = false; } catch (e) { }
   const Q = () => { try { return (window.getQuality && getQuality()) || 'mid'; } catch (e) { return 'mid'; } };
-  const budget = () => Q() === 'low' ? 0 : (window.AAA && AAA.ultra) ? 46 : Q() === 'high' ? 14 : Q() === 'mid' ? 6 : 0;
+  // 11-14: 효과 1개 = 매 갱신마다 CPU 픽셀 렌더 + 캔버스 전체 텍스처 재업로드 → 교전 몰림 때 50~70ms 프레임 연속(실측 CPU 1위).
+  //   동시 개수 축소 + 부하 시 추가 반감(울트라 46→20, 높음 14→8, 중간 6→4).
+  const FTv = () => (typeof ftAvg !== 'undefined' ? ftAvg : 16);
+  const budget0 = () => Q() === 'low' ? 0 : (window.AAA && AAA.ultra) ? 20 : Q() === 'high' ? 8 : Q() === 'mid' ? 4 : 0;
+  const budget = () => { const b = budget0(); return b && FTv() > 20 ? Math.max(2, b >> 1) : b; };
   const U = 0.085; // 픽셀→월드 단위(캐릭터 키 33유닛 기준 hit-spark ~11유닛, big-explosion ~30유닛)
   const GEO = new THREE.PlaneGeometry(1, 1);
   const active = [];
@@ -21,6 +25,8 @@
   function spawn(key, p3, o) {
     const cap = budget();
     if (!PX.on || cap === 0 || !p3 || typeof p3.clone !== 'function' || typeof scene3 === 'undefined') { PX.st.skipped++; return; }
+    // 11-14 실측: big-explosion(360x300) 그리기 1회 3.5ms × 수명 ~100회 = 픽셀FX 비용의 89%. 동시 1개만, 나머지는 small(0.9ms)로
+    if (key === 'explosions/big-explosion' && active.some(e => e.key === key)) key = 'explosions/small-explosion';
     const mod = L.EFFECTS[key]; if (!mod) { PX.st.skipped++; return; }
     if (camera && camera.position.distanceTo(p3) > 190) { PX.st.culled++; return; }
     if (active.length >= cap) { try { PX.kill(active.shift()); } catch (e) { } PX.st.culled++; }
@@ -47,7 +53,7 @@
       // 앵커(원점)를 월드 p3에 놓기: 프레임 중심 = 앵커 + (fw/2-ax, fh/2-ay), 프레임 y는 아래→월드 y는 위
       mesh.position.set(p3.x + (fw / 2 - ax) * U, p3.y + (ay - fh / 2) * U, p3.z);
       scene3.add(mesh);
-      active.push({ fx, fr, cv2, c2, img, tex, mat, mesh, fw, fh, st: false, born: performance.now() });
+      active.push({ key, fx, fr, cv2, c2, img, tex, mat, mesh, fw, fh, st: false, born: performance.now() });
       PX.st.spawns++;
     } catch (e) { PX.st.skipped++; }
   }
@@ -64,7 +70,7 @@
       const ek2 = elemOf(a, ek), col = ELEM[ek2] || '#e8eef5';
       spawn('impacts/hit-spark', chest(v), { palette: ramp(col), angle: ang(a, v), light: .9 });
       const ef = EFX[ek2];
-      if (ef && (window.AAA && AAA.ultra || Q() !== 'low')) spawn(ef, chest(v), { light: 1.1 });
+      if (ef && (window.AAA && AAA.ultra || Q() !== 'low') && active.length < budget() >> 1) spawn(ef, chest(v), { light: 1.1 }); // 속성 효과는 여유 있을 때만(타격 1번에 3개 몰림 방지)
       if (a && a.crit) spawn('impacts/crit-hit', chest(v), { angle: ang(a, v) });
     } catch (e) { }
   };
@@ -111,17 +117,23 @@
       }
       PX.st.live = active.length;
       if (!active.length) return;
+      // 픽셀아트(원래 12~15fps 손그림 결)는 20fps 갱신으로 충분: 효과마다 위상을 엇갈려 1/3씩 번갈아 그림(부하 높으면 1/4)
+      const every = FTv() > 22 ? 4 : 3; PX.fr = (PX.fr || 0) + 1;
       for (let i = active.length - 1; i >= 0; i--) {
         const e = active[i];
+        e.acc = (e.acc || 0) + dt;
+        if (camera) e.mesh.quaternion.copy(camera.quaternion);
+        if (e.ph === undefined) e.ph = (PX.st.spawns + i) % 4;
+        if ((PX.fr + e.ph) % every !== 0 && e.acc < .1) continue;
+        const d = e.acc; e.acc = 0;
         if (e.fx.meta.loop && !e.st && e.fx.t >= 2.1) { e.fx.stop(); e.st = true; }
-        e.fx.update(dt);
+        e.fx.update(d);
         if (e.fx.done()) { PX.kill(e); active.splice(i, 1); continue; }
         L.clearFrame(e.fr);
         e.fx.draw(e.fr);
         L.composite(e.fr, e.img.data, null);
         e.c2.putImageData(e.img, 0, 0);
         e.tex.needsUpdate = true;
-        if (camera) e.mesh.quaternion.copy(camera.quaternion);
       }
     } catch (e) { }
   };

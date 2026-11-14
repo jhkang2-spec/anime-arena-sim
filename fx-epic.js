@@ -122,7 +122,7 @@
     try {
       if (f && f.pos && gate()) {
         const c = EL(f.elem || (f.ch && f.ch.sig && f.ch.sig.elem)).c, b = chestP(f) || f.pos.clone().add(V3(0, 10, 0));
-        if (ult) { light(b, c, 6); flare(b, c, 4.5, .3); shaft(f.pos, c, .9, .3); }
+        if (ult) { light(b, c, 6); flare(b, c, 4.5, .3); } /* 11-14: 시전자 위 광기둥 제거(소유자 요청) */
         else { light(b, c, 2.2); if (Math.random() < .5) X.emit(b.clone(), V3(0, rr(30, 70), 0), rr(.3, .5), rr(1.2, 2), 1, c, -10); }
         EP.budget -= ult ? 6 : 1;
       }
@@ -132,11 +132,14 @@
 
   // ── 각성자: 한 번에 광기둥·대플레어·충격파 ──
   function awakenFx(f) {
-    if (f.__epAw) { if (!f.storm || !f.storm.awake) f.__epAw = 0; return; }
+    /* 11-14 버그 수정: 예전엔 각성 아닌 인물도 매 프레임 래치가 풀렸다 걸려 2프레임마다 광기둥 2개 생성
+       (실측 20초 1,476개 = 캐릭터를 따라다니는 빛기둥의 정체 + 기둥당 줄기 26개·충격파로 교전 끊김). 이제 '각성 켜지는 순간'에만 1회. */
+    const aw = !!(f.storm && f.storm.awake);
+    if (!aw) { f.__epAw = 0; return; }
+    if (f.__epAw) return;
     f.__epAw = 1;
     if (!gate()) return;
-    const c = EL(f.ch && f.ch.sig && f.ch.sig.elem).c;
-    shaft(f.pos, c, 1.6, .6); shaft(f.pos, '#ffd84a', .8, .4);
+    /* (11-14 소유자 요청) 캐릭터 위 광기둥 제거 — 플레어·점광·충격파만 */
     flare(chestP(f) || f.pos, '#ffd84a', 9, .5);
     light(f.pos, '#ffd84a', 9);
     try { X.shock(f.pos.clone().add(V3(0, 6, 0)), V3(0, 1, 0), 16, '#ffd84a', .3); } catch (e) { }
