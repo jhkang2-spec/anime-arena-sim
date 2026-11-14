@@ -12,7 +12,8 @@
   if (typeof CH === 'undefined' || typeof scene3 === 'undefined' || typeof camUpdate !== 'function') return;
   const KEY = 'arenaMocap', HIDE = 5, FX_KEYS = ['rasen', 'chid', 'glow', 'fxg'];
   let on = true; try { on = localStorage.getItem(KEY) !== '0'; } catch (e) { }
-  const MC = window.MOCAP = { useMpfb: (() => { try { return localStorage.getItem('arenaMpfb') !== '0'; } catch (e) { return false; } })(), on, ready: false, failed: null, rigs: new Map(), clipN: 0, ms: 0, lineup: null };
+  const MC = window.MOCAP = { useMpfb: (() => { try { return localStorage.getItem('arenaMpfb') !== '0'; } catch (e) { return false; } })(), on, ready: false, failed: null, rigs: new Map(), clipN: 0, ms: 0, lineup: null,
+    lod: false /* 11-14 소유자 지시(캐릭터 폴리곤 감축): 근접 HD 변형 끔 — 실측 1명당 68~74만 삼각형(보통 변형 ~11만)이라 클로즈업마다 GPU 급등 */ };
   const TPL = {}, CLIPS = {}; // TPL.n 보통 남자(마네킹) · TPL.m 근육형 남자 · TPL.f 여자
   const TARGET_H = 33; // 기존 모형 키(모형 단위)
   const mA = new THREE.Matrix4(), mB = new THREE.Matrix4(), vA = new THREE.Vector3(), qA = new THREE.Quaternion(), sA = new THREE.Vector3();
@@ -317,7 +318,7 @@
   //  얼굴 메시: 구를 깎아 아래로 좁아지는 턱선·앞이 납작한 얼굴·작은 코 돌기. 정면 투영 UV 로 얼굴 그림(눈·눈썹·입·표식)을 입힘(뒤·옆은 피부색)
   //  눈 그림: 흰자 → 홍채(위 짙고 아래 밝은 그라데이션)·동공·하이라이트 2개 → 굵은 윗속눈썹 선(눈꼬리 날개)·가는 아랫선. 눈매(둥근·날카로운·졸린·점) · 사륜안/윤회안/불꽃 눈/맹인/검은 흰자 지원
   const FACE_TEX = 512;
-  const SG = n => Math.round(n * ((window.AAA && AAA.ultra) ? 3.5 : (PX() > 1 ? 2.9 : 1))); /* 11-10 라운드M: 모델링 소폭 다운(4.2→3.5) — 프레임 여유를 FX·연출 재투자용 */ /* 11-09: 5.5→4.2 */
+  const SG = n => Math.round(n * ((window.AAA && AAA.ultra) ? 2.3 : (PX() > 1 ? 2 : 1))); /* 11-14: 폴리곤 감축 3.5→2.3 */ /* 11-10 라운드M: 모델링 소폭 다운(4.2→3.5) — 프레임 여유를 FX·연출 재투자용 */ /* 11-09: 5.5→4.2 */
   const FACE_X = new Set(['saitama', 'inosuke', 'law', 'luffy', 'kizaru', 'himejima', 'aizen', 'nanami']); /* 머리카락이 적은 인물: 울트라 얼굴 분할 더 */
   function faceGeo(R, FP) {
     const g = new THREE.SphereGeometry(R, PX() > 1 ? ((window.AAA && AAA.ultra) ? (FACE_X.has(MC._fk) ? 300 : 192) : (FACE_X.has(MC._fk) ? 260 : 160)) : 56, PX() > 1 ? ((window.AAA && AAA.ultra) ? (FACE_X.has(MC._fk) ? 210 : 136) : (FACE_X.has(MC._fk) ? 182 : 116)) : 40), p = g.attributes.position, uv = g.attributes.uv;
@@ -862,7 +863,14 @@
     const names = new Set(); scene.traverse(o => { if (o.isBone) names.add(o.name); });
     const wp = n => { let o = null; scene.traverse(x => { if (x.isBone && x.name === n) o = x; }); return o ? new THREE.Vector3().setFromMatrixPosition(o.matrixWorld) : null; };
     const fa = wp('foot_l'), fb = wp('ball_l'), fwd = fa && fb ? fb.sub(fa) : new THREE.Vector3(0, 0, 1);
-    return { scene, h: box.max.y - box.min.y, minY: box.min.y, yaw: Math.atan2(fwd.x, fwd.z), bones: names, miss: NEED.filter(b => !names.has(b)), charTpl: true };
+    /* 11-14 버그 수정('스사노오가 너무 커서 화면에 아무것도 안 보임'의 진짜 원인): 위 box 는 스킨 메시마다 setFromObject 로 덮어써
+       마지막 부위만 재고, 메시 노드 행렬 기준이라 Mixamo GLB(아마추어 0.01 배율)에서 실제 렌더 뼈대와 크게 어긋남.
+       실측 키: 사스케 0.018(실제 1.78 → 약 100배 거대), 사쿠라 0.0039(약 400배), 가이 0.12(13배), 상디 0.25(7배) → 화면 전체를 덮음.
+       렌더되는 뼈대 위치로 키·바닥을 잼(머리뼈 위 정수리 여유 +7%). */
+    const bb = new THREE.Box3(); scene.traverse(o => { if (o.isBone) bb.expandByPoint(new THREE.Vector3().setFromMatrixPosition(o.matrixWorld)); });
+    const bh = bb.isEmpty() ? 0 : (bb.max.y - bb.min.y) * 1.07, mh = box.max.y - box.min.y;
+    const useB = bh > 1e-4 && (!(mh > 0) || mh / bh > 1.6 || mh / bh < .6);
+    return { scene, h: useB ? bh : mh, minY: useB ? bb.min.y : box.min.y, yaw: Math.atan2(fwd.x, fwd.z), bones: names, miss: NEED.filter(b => !names.has(b)), charTpl: true, hFix: useB ? +(mh / bh).toFixed(4) : 0 };
   }
   async function loadCharBodies(get) {
     let man = null;
@@ -872,6 +880,7 @@
     for (const it of list) {
       try {
         if (!it || !it.key) continue; if (!it.file) it.file = it.key + '.glb';
+        if (it.key === 'sasuke') { MC.charReport[it.key] = 'skip: X Bot 더미(사스케와 무관) → 표준 인체+사스케 외형'; continue; } /* 11-14: 크기 버그로 가려져 있던 분홍 로봇 더미 */
         const g = await get('assets/char/' + it.file);
         if (!g || !g.scene) { MC.charReport[it.key] = 'no-scene'; continue; }
         const renamed = aliasBones(g.scene, it.bones);
@@ -1164,6 +1173,16 @@
       const tg = new THREE.TubeGeometry(st, 16, .9, 10, false); g.add(new THREE.Mesh(tg, mat)); const e = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 12), (() => { const m = new THREE.MeshPhongMaterial({ color: '#141420', shininess: 120, transparent: true }); m.userData.op0 = 1; return m; })()); e.position.copy(st.getPoint(1)); g.add(e); }); // 더듬이 + 눈
     return g;
   };
+  /* 11-14 '스사노오가 너무 커서 화면에 아무것도 안 보임'의 근본 원인 수정: 커스텀 캐릭터 GLB(사스케·사쿠라·가이·상디)는
+     템플릿 키 측정이 실제 렌더 크기와 어긋나 사스케는 표준의 약 48배(화면 전체를 덮음), 고친 뒤에도 측정 방식에 따라 절반 등으로 흔들림.
+     → 리그를 만든 직후 '실제 스키닝된 정점'으로 키를 재서 표준 인물(키/홀더 비 STD_PH)에 맞추고, 발바닥을 0에 붙인다. */
+  const STD_PH = 27;
+  function skinExtent(rig) { rig.holder.updateMatrixWorld(true); let lo = 1e9, hi = -1e9; const v = new THREE.Vector3(), hm = new THREE.Matrix4().copy(rig.holder.matrixWorld).invert();
+    rig.root.traverse(o => { if (!o.isSkinnedMesh || !o.visible || !o.geometry.attributes.position) return; o.skeleton.update(); const n = o.geometry.attributes.position.count, step = Math.max(1, Math.floor(n / 500)); for (let i = 0; i < n; i += step) { o.boneTransform(i, v); v.applyMatrix4(o.matrixWorld).applyMatrix4(hm); if (v.y < lo) lo = v.y; if (v.y > hi) hi = v.y; } });
+    return hi > lo ? { lo, hi, h: hi - lo } : null; }
+  function fitCU(rig) { try { const e = skinExtent(rig); if (!e || !(e.h > 1e-4)) return; const k = STD_PH / e.h; if (!isFinite(k) || k <= 0) return;
+      if (Math.abs(k - 1) > .03) { rig.inner.scale.multiplyScalar(k); rig.inner.position.y *= k; }
+      const e2 = skinExtent(rig); if (e2) rig.inner.position.y -= e2.lo; MC.fitCU = MC.fitCU || {}; MC.fitCU[rig.ch.key] = +k.toFixed(3); } catch (err) { console.warn('[mocap] fitCU', err); } }
   function buildRig(ch) {
     const key = ch.key, P = ch.P || {}, m = ch.model, preset = regOf(key).mpfb || MP_PRESET[key] || (FEMALE.has(key) ? 'f_slim' : 'm_avg'), CU = CHAR[key] && CHAR[key].bones && !CORE.some(b => !CHAR[key].bones.has(b)) ? CHAR[key] : null, MB = !CU && MC.useMpfb !== false && ((PX() > 1 && MPFB_HD[preset]) || MPFB[preset]), B = CU || MB || TPL[bodyOf(key)], root = THREE.SkeletonUtils.clone(B.scene), holder = new THREE.Group(), inner = new THREE.Group();
     if (MB) { const want = new Set([GN[GAR[key] !== undefined ? GAR[key] : (FEMALE.has(key) ? 'FT' : 'LS')], FEMALE.has(key) || /^f_/.test(preset) ? GN.FSH : GN.MSH]); const drop = []; root.traverse(o => { if (o.isMesh && /^G_/.test(o.name) && !want.has(o.name)) drop.push(o); }); drop.forEach(o => o.parent.remove(o)); }
@@ -1247,6 +1266,7 @@
     };
     if (m && m.swd) { grip('r', m.swd.grp); if (m.swd.grp2) grip('l', m.swd.grp2); }
     LAP('sleeve·shell·sword'); MC.prof.n = (MC.prof.n || 0) + 1;
+    if (CU) fitCU(rig); // 11-14: 커스텀 GLB(Mixamo 0.01 아마추어 등)는 실제 스키닝된 키로 표준 인물 크기·바닥에 맞춤
     rig.acts.Idle_Loop.stop(); rig.cur = null; rig.state = null;
     return rig;
   }
@@ -1477,7 +1497,7 @@
     if (ULTRA() && MC.hd && MC.lod !== false) for (let i = 0; i < F.length; i++) { const f = F[i]; if (f.ch && f.ch.model && !varOf(f.ch).hd) { hdOf(f.ch); MC.preHD = (MC.preHD || 0) + 1; return; } }
     const ws = getTeams(); for (let i = 0; i < ws.length; i++) { const L = TEAMS[ws[i]] || []; for (let j = 0; j < L.length; j++) { const ch = CH[L[j]]; if (ch && ch.model && !MC.rigs.has(L[j])) { const r = rigOf(ch); if (r) { r.holder.visible = false; r.warm = 2; } MC.pre = (MC.pre || 0) + 1; return; } } } }
   function step() {
-    { const px = ULTRA() ? 2 : 1; if (px > 1) ensureHD(); if (MC.px !== undefined && MC.px !== px && px === 1) { VAR.forEach((v, k) => { if (v.hd && !v.hd.bad) { scene3.remove(v.hd.holder); if (typeof baseTop !== "undefined" && baseTop) baseTop.delete(v.hd.holder); if (MC.rigs.get(k) === v.hd) MC.rigs.set(k, v.n); } v.hd = null; }); } if (MC.px === -1) VAR.forEach(v => { if (v.hd && !v.hd.bad) scene3.remove(v.hd.holder); v.hd = null; }); MC.px = px; } // 울트라 켜고 끌 때 모형 다시 만들기
+    { const px = ULTRA() ? 2 : 1; if (px > 1 && MC.lod !== false) ensureHD(); if (MC.px !== undefined && MC.px !== px && px === 1) { VAR.forEach((v, k) => { if (v.hd && !v.hd.bad) { scene3.remove(v.hd.holder); if (typeof baseTop !== "undefined" && baseTop) baseTop.delete(v.hd.holder); if (MC.rigs.get(k) === v.hd) MC.rigs.set(k, v.n); } v.hd = null; }); } if (MC.px === -1) VAR.forEach(v => { if (v.hd && !v.hd.bad) scene3.remove(v.hd.holder); v.hd = null; }); MC.px = px; } // 울트라 켜고 끌 때 모형 다시 만들기
     const now = performance.now() / 1000, dt = lastT ? Math.min(.05, now - lastT) : .016; lastT = now; frameN++;
     const seen = new Set(), doScan = (scan++ % 15) === 0;
     if (MC.lineup) { // 시험용: 대표 인물 나란히 세우기

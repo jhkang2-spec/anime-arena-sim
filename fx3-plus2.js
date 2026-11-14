@@ -196,7 +196,7 @@
     if (kind !== 'itachi') add(new THREE.TorusGeometry(26, .7, 10, 128, Math.PI * .9), C[1], .9, [-24, 34, 10], [0, Math.PI / 2, Math.PI * .55], [1, 1, 1], 4); /* 활(인드라) */
     g.visible = false; scene3.add(g); return { g, mats, kind, on: false }; }
   const susOf = kind => SUS[kind] || (SUS[kind] = buildSus(kind));
-  function showSus(f, kind, stage, dur, bow) { const S = susOf(kind); S.on = true; S.endT = performance.now() + (dur + .1) * 1000 * 1.6; let el = 0;
+  function showSus(f, kind, stage, dur, bow) { if (window.__susanoo && __susanoo.ready) return; /* 11-14: GLB 스사노오와 겹쳐 화면을 덮음 → GLB 있으면 생략 */ const S = susOf(kind); S.on = true; S.endT = performance.now() + (dur + .1) * 1000 * 1.6; let el = 0;
     during(dur, .016, k => { el += .016; const fw = fwdOf(f); S.g.visible = true; S.g.position.copy(f.pos).addScaledVector(fw, -4); S.g.rotation.y = Math.atan2(fw.x, fw.z); const grow = Math.min(1, el * 2.2), sc = (stage >= 3 ? 1.35 : 1) * (.6 + .4 * grow); S.g.scale.setScalar(sc);
       S.g.children.forEach(m => { const st2 = m.userData.stage; const show = st2 === 4 ? bow : st2 <= stage && (st2 === 1 || el > (st2 - 1) * .25); m.visible = show; const fade = Math.min(1, el * 3) * Math.min(1, (dur - el) * 3); if (m.material) m.material.opacity = (m.material.userData.op0 || (m.material.userData.op0 = m.material.opacity)) * fade; m.children.forEach(o => { if (o.material) o.material.opacity = .55 * fade; }); });
       if (k >= .98) { S.g.visible = false; S.on = false; } });

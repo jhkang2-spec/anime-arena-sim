@@ -249,7 +249,7 @@
     if (typeof cam !== 'undefined' && cam && cam.tgt) U.uFocus.value = camera.position.distanceTo(cam.tgt);
     U.uContact.value = ultra && !hot2 ? .45 : 0; U.uClouds.value = ultra && day ? 1 : 0;
     U.uRefl.value = ultra ? (hot3 ? 0 : hot2 ? .4 : (day ? .7 : .9)) : 0; /* 화면 공간 반사(SSR): 장면을 다시 그리지 않고 깊이 버퍼로 반사 광선 추적 — 거울 장면 그리기(23ms)보다 훨씬 가벼움 */
-    if (ultra) { U.tBloom.value = bloomPass(cTex, fw, fh); U.uBloomK.value = hot1 ? .1 : .17; U.uDirtK.value = hot1 ? .08 : .15; U.uFlare.value = sunVis * (day ? (hot1 ? .5 : .75) : (hot1 ? .35 : .5)); } else { U.uBloomK.value = 0; U.uDirtK.value = 0; U.uFlare.value = 0; } /* 라운드M: 여유 있을 때 마감 강도 상향, hot1(20ms+)부터는 원격 판의 강등 계단으로 */
+    if (ultra) { U.tBloom.value = bloomPass(cTex, fw, fh); U.uBloomK.value = hot1 ? .13 : .24; /* 11-14: 마감 블룸 .1/.17→.13/.24(이펙트 광채) */ U.uDirtK.value = hot1 ? .08 : .15; U.uFlare.value = sunVis * (day ? (hot1 ? .5 : .75) : (hot1 ? .35 : .5)); } else { U.uBloomK.value = 0; U.uDirtK.value = 0; U.uFlare.value = 0; } /* 라운드M: 여유 있을 때 마감 강도 상향, hot1(20ms+)부터는 원격 판의 강등 계단으로 */
     U.uMB.value = ultra && !AAA.noHist && !hot2 ? 1 : 0; U.uTAA.value = AAA.taa && ultra && hasPrev && !AAA.noHist ? 1 : 0; /* 지터 TAA 는 인물 속도 버퍼가 없어 가장자리가 떨려 기본 끔 → 슈퍼샘플+MSAA+SMAA 로 대체 */ U.tHist.value = histTex;
     if ((AAA.frames++ % (hot2 ? 60 : hot1 ? 40 : 22)) === 0) { try { adaptExposure(); } catch (e) { } } /* readRenderTargetPixels 는 GPU→CPU 동기화 스톨 → 자동 노출 갱신 빈도를 로드·주사율에 맞춰 줄임(주기적 끊김 감소) */
     U.uExp.value = AAA.exposure;

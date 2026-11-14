@@ -47,7 +47,7 @@
     camera.layers.mask = mask; scene3.background = bg; scene3.fog = fog; renderer.setClearColor(cc, ca);
     quad.material = blurM; blurM.uniforms.tex.value = rtA.texture; blurM.uniforms.dir.value.set(1.4 / w, 0); renderer.setRenderTarget(rtB); renderer.render(qs, qc);
     blurM.uniforms.tex.value = rtB.texture; blurM.uniforms.dir.value.set(0, 1.4 / h); renderer.setRenderTarget(rtA); renderer.render(qs, qc);
-    renderer.setRenderTarget(null); renderer.autoClear = false; quad.material = addM; addM.uniforms.tex.value = rtA.texture; addM.uniforms.k.value = (q === 'high' ? .7 : .55) * (st.slowT > 0 ? 1.3 : 1) * (1 - .7 * (X.DAY ? X.DAY.value : 0)); renderer.render(qs, qc); renderer.autoClear = ac; st.bloom = div; }
+    renderer.setRenderTarget(null); renderer.autoClear = false; quad.material = addM; addM.uniforms.tex.value = rtA.texture; addM.uniforms.k.value = (q === 'high' ? .95 : .72) * (st.slowT > 0 ? 1.3 : 1) * (1 - .45 * (X.DAY ? X.DAY.value : 0)); /* 11-14 소유자 요청: 이펙트 더 빛나게(.7/.55→.95/.72, 낮 감쇠 .7→.45) */ renderer.render(qs, qc); renderer.autoClear = ac; st.bloom = div; }
   const _render = renderer.render.bind(renderer); let inside = false;
   renderer.render = function (sc, cam) {
     const main = !inside && sc === scene3 && cam === camera && renderer.getRenderTarget() === null;

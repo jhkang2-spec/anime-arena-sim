@@ -70,8 +70,12 @@
     if (o.bow) { weap = new THREE.Group(); weap.position.set(16, 34, 0); sk.add(weap); mk(weap, G.torH, c, .9, [26, 26, 26], [0, 0, 0], [0, PI / 2, -PI / 2]); mk(weap, G.box, c2, .9, [.4, 52, .4], [-4, 0, 0]); }
     if (o.shield) { weap = new THREE.Group(); weap.position.set(16, 32, -6); sk.add(weap); mk(weap, G.disc, c, .55, [16, 16, 16], [0, 0, 0], [0, PI / 2, 0]); mk(weap, G.ring, c2, .95, [16, 16, 16], [.2, 0, 0], [0, PI / 2, 0]); spr(weap, glowTex, c2, .5, 40); }
     if (o.gourd) { mk(sk, G.sph, c, .7, [5, 6, 5], [-2, 30, 16]); mk(sk, G.sph, c, .7, [3.5, 4, 3.5], [-2, 38, 16]); }
-    spr(g, glowTex, c, .4, 120, [0, 30, 0]);
-    return spawn({ g, max: o.dur + .6, w: weap, armF, armB, up(s, dt, t) { follow(g, f); const k = Math.min(1, s.t * 2.2); sk.scale.set(k, k, k); const fd = s.t > o.dur ? 1 - (s.t - o.dur) / .6 : 1; fade(s, fd);
+    spr(g, glowTex, c, .4, 34, [0, 22, 0]); /* 11-14: 120 → 34 (화면 전체를 덮던 빛번짐) */
+    /* 11-14 소유자 지적 '스사노오가 너무 커서 화면에 아무것도 안 보임': 시전 1회에 스사노오가 최대 4겹(이 절차 모형 높이~55·검 46 + fx3 입자 + fx3-plus2 메시 + susanoo.js GLB).
+       GLB(캐릭터 1.5배 정규화)가 준비됐으면 이 모형은 숨김(타이밍·검 위치 계산만 유지), 아니면 대체로 캐릭터 1.5배 크기로 축소. */
+    if (window.__susanoo && __susanoo.ready) g.children.forEach(x => { x.visible = false; });
+    const SK = Math.min(1, ((() => { try { const b = new THREE.Box3().setFromObject(f.model.root); return Math.max(10, b.max.y - b.min.y); } catch (e) { return 33; } })() * 1.5) / 58);
+    return spawn({ g, max: o.dur + .6, w: weap, armF, armB, up(s, dt, t) { follow(g, f); const k = Math.min(1, s.t * 2.2) * SK; sk.scale.set(k, k, k); const fd = s.t > o.dur ? 1 - (s.t - o.dur) / .6 : 1; fade(s, fd);
       if (o.swing && s.t > o.swing[0] && s.t < o.swing[1]) armF.rotation.z = -1.6 * Math.min(1, (s.t - o.swing[0]) / (o.swing[1] - o.swing[0])) * 1.6 + 1.2; else if (!o.swing || s.t <= o.swing[0]) armF.rotation.z = 1.2;
       if (Math.random() < .7) P(g.position.clone().add(V3(R(-12, 12), R(10, 55), R(-12, 12))), V3(R(-6, 6), R(20, 50), R(-6, 6)), pick([c, c2]), .7, -10, 2); light(g.position.clone().add(V3(0, 30, 0)), c, 4); return true; } });
   }

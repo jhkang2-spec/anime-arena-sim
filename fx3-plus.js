@@ -114,7 +114,7 @@
     groundLight(p, R * 1.5, '#9fd8ff', 1.4); dustRing(V3(p.x, 0, p.z), R * 1.2, 30); ground(p, 3.2, 'wind'); }
 
   // ═══ 5) 불꽃 해골 무사(수사노오): 뼈대 점을 따라 보라 불꽃 입자 ═══
-  function susanoo(f, dur, col, full) { const H = full ? 70 : 46; during(dur, .03, el => { const fw = fwdOf(f), rt = V3(-fw.z, 0, fw.x), base = f.pos.clone().addScaledVector(fw, -4), grow = Math.min(1, el * 2.5);
+  function susanoo(f, dur, col, full) { const H = full ? 30 : 24; /* 11-14: 70/46 → GLB 스사노오(캐릭터 1.5배)에 맞춤 */ during(dur, .03, el => { const fw = fwdOf(f), rt = V3(-fw.z, 0, fw.x), base = f.pos.clone().addScaledVector(fw, -4), grow = Math.min(1, el * 2.5);
       const P = (x, y, z) => base.clone().addScaledVector(rt, x).addScaledVector(fw, z).add(V3(0, y, 0)); const pts = [];
       for (let i = 0; i < 6; i++) { const y = H * (.35 + i * .07); pts.push(P(0, y, -3)); for (const s of [-1, 1]) for (let j = 1; j <= 3; j++) { const a = j / 3; pts.push(P(s * H * .2 * Math.sin(a * 1.6), y - a * 2, Math.cos(a * 1.6) * H * .12 - 3)); } } // 등뼈 + 갈비뼈
       for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28; pts.push(P(Math.cos(a) * H * .1, H * .86 + Math.sin(a) * H * .1, 2)); } // 해골

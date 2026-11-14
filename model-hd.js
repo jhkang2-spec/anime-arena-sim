@@ -13,7 +13,7 @@
 
   // ═══ 1. 몸: 분할 수를 늘린 도형으로 한 번 더 짓기 ═══
   const ULTRA = (() => { try { const a = localStorage.getItem('arenaUltra'); if (a !== null) return a === '1'; return !/Mobi|Android|iPhone/i.test(navigator.userAgent); } catch (e) { return false; } })(); // 11-07 라운드D: AAA와 동일한 기본값(데스크톱 켬) — 저장 안 한 첫 방문에도 고해상도
-  const KS = ULTRA ? 3.3 : 2.3, KR = ULTRA ? 3.8 : 2.5; /* 11-10 라운드M: 인물 모델링 소폭 다운그레이드(오너 지시: 모델은 조금 낮추고 나머지는 고도화) — 4.2/4.8→3.3/3.8, 근접 LOD 유지로 매끄러움 유지 */
+  const KS = ULTRA ? 2.2 : 1.7, KR = ULTRA ? 2.5 : 1.9; /* 11-14 소유자 지시(교전 최적화: 이펙트·파티클 유지, 캐릭터·배경 폴리곤 감축): 3.3/3.8→2.2/2.5 */ /* 11-10 라운드M: 인물 모델링 소폭 다운그레이드(오너 지시: 모델은 조금 낮추고 나머지는 고도화) — 4.2/4.8→3.3/3.8, 근접 LOD 유지로 매끄러움 유지 */
   const G0 = { S: THREE.SphereGeometry, C: THREE.CylinderGeometry, L: THREE.LatheGeometry, T: THREE.TorusGeometry, K: THREE.ConeGeometry };
   class HS extends G0.S { constructor(r = 1, w = 8, h = 6, ...a) { super(r, Math.min(ULTRA ? 176 : 88, Math.round(w * KS)), Math.min(ULTRA ? 128 : 56, Math.round(h * KS)), ...a); } }
   class HC extends G0.C { constructor(t = 1, b = 1, h = 1, rs = 8, hs = 1, ...a) { super(t, b, h, Math.min(ULTRA ? 56 : 52, Math.round(rs * KR)), hs * 2, ...a); } }

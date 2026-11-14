@@ -81,17 +81,17 @@
 
   // ── ④ 실사 소품(경기장 밖) ──
   const PROPS = [ // [파일, 배율, 개수(낮음·중간·높음), 반지름 범위, 땅에 묻는 깊이 비율]
-    ['namaqualand_boulder_02', 22, [2, 4, 6], [135, 300], .18],
-    ['boulder_01', 26, [2, 4, 6], [140, 320], .15],
+    ['namaqualand_boulder_02', 22, [2, 4, 4], [135, 300], .18],
+    ['boulder_01', 26, [2, 4, 4], [140, 320], .15],
     ['namaqualand_boulder_02', 38, [1, 3, 4], [250, 330], .22], /* rock_face_01 은 한쪽 면만 있는 스캔이라 종이처럼 보여 뺌(소유자 지적 11-05) */
-    ['namaqualand_stones_01', 20, [2, 5, 8], [118, 260], .05],
+    ['namaqualand_stones_01', 20, [2, 4, 5], [118, 260], .05],
     ['dead_tree_trunk', 20, [1, 2, 3], [150, 300], .02],
     ['dry_branches_medium_01', 20, [1, 3, 5], [120, 280], .02],
-    ['shrub_01', 20, [2, 5, 8], [120, 300], .02],
+    ['shrub_01', 20, [2, 5, 6], [120, 300], .02],
   ];
   function rnd(a, b) { return a + Math.random() * (b - a); }
   /* 원경 LOD(11-06 장면 비용 절감): 정점 묶음(격자 군집)으로 면 수를 약 1/4~1/6 로 줄인 판을 멀리서 씀. UV 이음매는 UV 도 열쇠에 넣어 지킴 */
-  const LOD_FAR = 150, lowCache = new Map();
+  const LOD_FAR = 110, LOD_MID = 60, lowCache = new Map(), midCache = new Map(); /* 11-14 소유자 지시(배경 폴리곤 감축): 150 → 원본/중간(60~)/저해상도(110~) 3단계 */
   function cluster(geo, res) {
     const g = geo.index ? geo : geo; const pos = g.attributes.position, uv = g.attributes.uv, idx = g.index ? g.index.array : null, n = idx ? idx.length : pos.count;
     g.computeBoundingBox(); const bb = g.boundingBox, cell = Math.max(bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z) / res;
@@ -102,6 +102,7 @@
     const I = []; for (let t = 0; t + 2 < n; t += 3) { const a = vid[idx ? idx[t] : t], b = vid[idx ? idx[t + 1] : t + 1], c = vid[idx ? idx[t + 2] : t + 2]; if (a !== b && b !== c && a !== c) I.push(a, b, c); }
     const o = new THREE.BufferGeometry(); o.setAttribute('position', new THREE.BufferAttribute(P, 3)); if (UV) o.setAttribute('uv', new THREE.BufferAttribute(UV, 2)); o.setIndex(I); o.computeVertexNormals(); o.userData.lodTri = I.length / 3; return o; }
   function lowOf(src) { const lo = src.clone(true); lo.traverse(c => { if (!c.isMesh) return; const key = c.geometry.uuid; let g2 = lowCache.get(key); if (!g2) { const tri = (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; g2 = tri > 1500 ? cluster(c.geometry, tri > 12000 ? 22 : 16) : c.geometry; lowCache.set(key, g2); } c.geometry = g2; c.castShadow = false; }); return lo; }
+  function midOf(src) { const m = src.clone(true); m.traverse(c => { if (!c.isMesh) return; const key = c.geometry.uuid; let g2 = midCache.get(key); if (!g2) { const tri = (c.geometry.index ? c.geometry.index.count : c.geometry.attributes.position.count) / 3; g2 = tri > 2500 ? cluster(c.geometry, tri > 12000 ? 40 : 30) : c.geometry; midCache.set(key, g2); } c.geometry = g2; }); return m; }
   EA.lowCache = lowCache;
   function placeProps() {
     if (!THREE.GLTFLoader) return false;
@@ -118,7 +119,7 @@
         for (let i = 0; i < n; i++) { const p = spot(rr[0], rr[1]); if (!p) break;
           const s = sc * rnd(.75, 1.35), r0 = Math.hypot(p[0], p[1] + 20), hi = src.clone(true), lo = lowOf(src), lod = new THREE.LOD();
           hi.traverse(c => { if (c.isMesh) c.castShadow = qi > 0 && r0 < 175; }); /* 그림자는 그림자 범위 안(경기장 가까이)만 */
-          lod.addLevel(hi, 0); lod.addLevel(lo, LOD_FAR * s / sc); lod.scale.setScalar(s); lod.rotation.y = rnd(0, Math.PI * 2);
+          lod.addLevel(hi, 0); lod.addLevel(midOf(src), LOD_MID * s / sc); lod.addLevel(lo, LOD_FAR * s / sc); lod.scale.setScalar(s); lod.rotation.y = rnd(0, Math.PI * 2);
           lod.position.set(p[0], -box.min.y * s - h * s * sink, p[1]); grp.add(lod); EA.props++; }
       }, undefined, e => console.warn('[env-assets] ' + f, e));
     });

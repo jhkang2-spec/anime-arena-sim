@@ -4,7 +4,7 @@
 // 60fps 원칙: 매 화면 새 객체를 만들지 않도록 벡터는 미리 만들어 재사용한다.
 (function () {
   if (typeof camUpdate !== 'function' || typeof camera === 'undefined') return;
-  const V = { mode: 'act', key: null, f: null, init: false, hid: [], hidModel: null };
+  const V = { mode: 'act', key: null, f: null, init: false, hid: [], hidModel: null }; window.CAMVIEW = V; // camclamp 근접 제한이 1인칭은 건너뜀
   try { const s = JSON.parse(localStorage.getItem('arenaView') || 'null'); if (s && ['act', 'quarter', 'tp', 'fp', 'free'].includes(s.mode)) { V.mode = s.mode; V.key = s.key || null; } } catch (e) {}
   const save = () => { try { localStorage.setItem('arenaView', JSON.stringify({ mode: V.mode, key: V.key })); } catch (e) {} };
   const sPos = new THREE.Vector3(), sLook = new THREE.Vector3(), want = new THREE.Vector3(), look = new THREE.Vector3(), dir = new THREE.Vector3(), eye = new THREE.Vector3(), shk = new THREE.Vector3();
