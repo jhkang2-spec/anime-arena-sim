@@ -213,5 +213,5 @@
   function tone_unused() { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.18;
     scene3.traverse(o => { const m = o.material; if (!m || Array.isArray(m)) return; if (!(m.isMeshStandardMaterial && !isFx(m))) { if (m.toneMapped !== false && !m.userData.mtTone) { m.userData.mtTone = 1; m.toneMapped = false; m.needsUpdate = true; } } }); }
   window.setMatUp = on => { MT.on = !!on; try { localStorage.setItem('arenaMatUp', on ? '1' : '0'); } catch (e) { } location.reload(); };
-  if (MT.on) { skyEnv(); setInterval(() => { try { scan(); } catch (e) { console.warn('[matup]', e); } }, 1000); setTimeout(() => { try { scan(); } catch (e) { } }, 300); }
+  if (MT.on) { (function goEnv() { if (window.PMREM_WARM && !PMREM_WARM.ready) return setTimeout(goEnv, 120); skyEnv(); })(); /* 11-14: PMREM 선행 링크 끝난 뒤(초반 렉) */ setInterval(() => { try { scan(); } catch (e) { console.warn('[matup]', e); } }, 1000); setTimeout(() => { try { scan(); } catch (e) { } }, 300); }
 })();

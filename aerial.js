@@ -65,7 +65,7 @@
     const c = colOf(f), H = R2(36, 56), sgn = Math.random() < .5 ? 1 : -1, base = Math.atan2(f.pos.z - b.pos.z, f.pos.x - b.pos.x), R0 = R2(55, 75);
     const kind = f.ch.key === 'vision' ? '마인드 스톤 광선' : f.ch.key === 'thor' ? '번개 낙뢰' : '리펄서';
     const q = [step(.5, [[f, { pose: 'flipAir', face: b, to: () => aroundOf(b.pos, R0, base + sgn * .7, 0), vy: 220, tilt: sgn * 1.0, ghost: 1 }]], () => { airHold(f, H, 5); trail(f, c, 10); })];
-    const shots = 3 + (Math.random() < .5 ? 2 : 0);
+    const shots = 2 + (Math.random() < .4 ? 1 : 0); // 밸런스: 비행 인물 과강(실측 920 vs 18) → 연사 2~3발
     for (let i = 0; i < shots; i++) { const ang = base + sgn * (1.0 + i * .55);
       q.push(step(.24, [[f, { pose: 'point', face: b, to: () => aroundOf(b.pos, R0, ang, 0), tilt: sgn * 1.2, ghost: 1, aura: 1, elem: ekOf(f) }]],
         () => { airHold(f, H + R2(-6, 6), 3); trail(f, c, 4); try { proj(f, b, f.ch.key === 'thor' ? 'BOLT' : 'BEAM', 'hit', { c: '#' + c.getHexString(), ek: ekOf(f), nm: kind, v: 520, size: 1.2, homing: .8 }); } catch (e) { }
@@ -73,9 +73,9 @@
     }
     q.push(step(.32, [[f, { pose: 'flipAir', face: b, to: () => pos3(b.pos.x, 0, b.pos.z), vy: 160, spin: 7 * sgn, ghost: 1 }]], () => { airHold(f, H + 18, 1); try { S() && S().riser(chestP(f), .4); } catch (e) { } }));
     q.push(step(.42, [[f, { pose: 'seriousPunch', face: b, to: () => pos3(b.pos.x, 0, b.pos.z), aura: 1, elem: ekOf(f) }], [b, { pose: 'guard', face: f }]],
-      () => { dive(f, .5); try { resolve(f, b, ekOf(f), 'hit', f.ch.key === 'ironman' ? '스러스터 다이브 펀치!' : f.ch.key === 'thor' ? '묠니르 강하!' : '고밀도 강하!', 1.7); } catch (e) { }
+      () => { dive(f, .5); try { resolve(f, b, ekOf(f), 'hit', f.ch.key === 'ironman' ? '스러스터 다이브 펀치!' : f.ch.key === 'thor' ? '묠니르 강하!' : '고밀도 강하!', 1.35); } catch (e) { }
         hitFx(chestP(b), c, true); const g = pos3(b.pos.x, 0, b.pos.z); try { explode(g, ekOf(f), 1.4); } catch (e) { } ring(g, c, 26, true); if (typeof shake !== 'undefined') shake = Math.max(shake, 8); }));
-    queue([f], q); f._aeAt = now() + R2(6000, 9000);
+    queue([f], q); f._aeAt = now() + R2(10000, 14000); // 밸런스: 기총소사 빈도↓
   }
   // ③ 순보 난격
   function blitz(f, b) { AE.st.blitz++;

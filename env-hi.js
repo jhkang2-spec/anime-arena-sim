@@ -1,3 +1,7 @@
+// 11-14 초반 렉: 환경맵이 여러 곳(env-hi 절차 하늘·env-assets HDRI·materials 절차 하늘)에서 교체될 때 인코딩이 다르면
+//   three r128 셰이더 키(envMapEncoding)가 바뀌어 표준 재질 전부 재컴파일(실측 11~13개 × 2회, 각 2~3초 멈춤). 처음 걸린 인코딩으로 통일.
+(function () { if (typeof scene3 === 'undefined' || scene3.__envGuard) return; scene3.__envGuard = 1; let cur = scene3.environment || null, enc = cur ? cur.encoding : null;
+  Object.defineProperty(scene3, 'environment', { configurable: true, get() { return cur; }, set(t) { if (t && t.isTexture) { if (enc === null) enc = t.encoding; else if (t.encoding !== enc) t.encoding = enc; } const changed = t !== cur; cur = t; if (changed && window.__envChanged) try { window.__envChanged(); } catch (e) { } } }); })(); /* 환경맵 교체 → warmup 이 표준 재질 재컴파일을 백그라운드로 */
 // ═══ 환경 고도화: 하늘 기반 조명(IBL) + 태양 반사 + PBR 재질 부스트 ═══
 // (1) 하늘 equirect env 맵을 만들고 scene.environment로 걸어 PBR 바닥·바위·금속이 하늘빛을 받고(연한 필) 태양 디스크를 반사한다.
 // (2) env 맵의 태양 위치/색은 day cycle(world-sky.js)과 연동 — 해가 뜨면 바닥·바위·물체에 하이글라이트가 함께 돈다.
@@ -15,7 +19,7 @@
   const skyTex = new THREE.CanvasTexture(cv);
   skyTex.mapping = THREE.EquirectangularReflectionMapping;
   let pmrem = null, envRT = null;
-  try { pmrem = new THREE.PMREMGenerator(renderer); if (pmrem.compileEquirectangularShader) pmrem.compileEquirectangularShader(); } catch (e) { pmrem = null; }
+  try { pmrem = new THREE.PMREMGenerator(renderer); /* 11-14: 로드 시 동기 컴파일 제거 — warmup-early.js 가 백그라운드 선행 링크 */ } catch (e) { pmrem = null; }
 
   function paintSky() {
     const bg = scene3.background && scene3.background.isColor ? scene3.background : new THREE.Color('#0b1322');
@@ -43,6 +47,7 @@
       g2.beginPath(); g2.arc(u, v, rad, 0, 6.2832); g2.fill(); g2.globalCompositeOperation = 'source-over';
     }
     skyTex.needsUpdate = true;
+    if (pmrem && (window.PMREM_WARM && !PMREM_WARM.ready)) { setTimeout(paintSky, 150); return; } /* 선행 링크 대기 */
     if (pmrem) { try { if (envRT) envRT.dispose(); envRT = pmrem.fromEquirectangular(skyTex); scene3.environment = envRT.texture; return; } catch (e) { } }
     scene3.environment = skyTex; // PMREM 없으면 equirect 직접(조금은Sharp지만 동작)
   }

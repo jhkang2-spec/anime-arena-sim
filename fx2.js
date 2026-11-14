@@ -198,7 +198,7 @@
     hc.clearRect(0, 0, HW, HH);
     if (whiteout > .01) { hc.fillStyle = `rgba(${flashC},${Math.min(whiteout, FLASH_MAX)})`; hc.fillRect(0, 0, HW, HH); whiteout *= .8; }
     // 충격 프레임(1~3프레임): 어두운 테두리 + 타격점에서 뻗는 속도선 — 화면을 하얗게 덮지 않음
-    st.imp = st.imp.filter(im => im.n-- > 0); st.imp.forEach(im => {
+    st.imp = st.imp.filter(im => im.n-- > 0 && isFinite(im.x) && isFinite(im.y)); st.imp.forEach(im => { /* 11-14: 초기 카메라 투영 NaN 방어 */
       const vg = hc.createRadialGradient(im.x, im.y, 20, im.x, im.y, HW * .75); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, `rgba(0,0,0,${im.big ? .38 : .22})`); hc.fillStyle = vg; hc.fillRect(0, 0, HW, HH);
       hc.save(); hc.globalAlpha = im.big ? .55 : .35; hc.strokeStyle = mix(im.c, '#ffffff', .5); for (let i = 0; i < (im.big ? 26 : 14); i++) { const a = Math.random() * Math.PI * 2, r0 = rr(24, 60), r1 = r0 + rr(60, im.big ? 260 : 150); hc.lineWidth = rr(.6, im.big ? 2.4 : 1.4); hc.beginPath(); hc.moveTo(im.x + Math.cos(a) * r0, im.y + Math.sin(a) * r0); hc.lineTo(im.x + Math.cos(a) * r1, im.y + Math.sin(a) * r1); hc.stroke(); } hc.restore(); });
     const txt = (s, x, y, font, color, w = 3, stroke = '#000') => { hc.font = font; hc.lineJoin = 'round'; hc.lineWidth = w; hc.strokeStyle = stroke; hc.strokeText(s, x, y); hc.fillStyle = color; hc.fillText(s, x, y); };

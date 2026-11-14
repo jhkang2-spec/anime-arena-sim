@@ -72,7 +72,7 @@
   function swapSky() {
     let dome = null; scene3.traverse(o => { if (!dome && o.isMesh && o.material && o.material.isShaderMaterial && o.material.uniforms && o.material.uniforms.uTop && o.geometry && o.geometry.type === 'SphereGeometry') dome = o; });
     if (!dome) return false;
-    const skyT = TL.load(D + 'sky_2k.jpg', t => {
+    const skyT = TL.load(D + 'sky_2k.jpg', function envT(t) { if (window.PMREM_WARM && !PMREM_WARM.ready) return setTimeout(() => envT(t), 150); /* 11-14: PMREM 선행 링크 대기 */
       try { const pm = new THREE.PMREMGenerator(renderer); const rt = pm.fromEquirectangular(t); scene3.environment = rt.texture; pm.dispose(); EA.envOk = 1; } catch (e) { console.warn('[env-assets] pmrem', e); }
     });
     dome.material = new THREE.MeshBasicMaterial({ map: skyT, side: THREE.BackSide, depthWrite: false, fog: false });

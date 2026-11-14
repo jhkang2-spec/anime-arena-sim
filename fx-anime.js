@@ -243,6 +243,5 @@
     b.onclick = tog; bar.appendChild(b); sync();
     window.addEventListener('keydown', e => { if (e.repeat || e.ctrlKey || e.altKey || e.metaKey || (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName))) return; if (e.key === 'a' || e.key === 'A') tog(); }); }
 
-  // 예열: 지도 밑에서 한 번씩 → 첫 사용 컴파일 멈춤 없음(프로그램은 warmup ⓪이 고정)
-  setTimeout(() => { try { const z = V(0, -3000, 0), c = new THREE.Color('#ffffff'); const on = AF.on; AF.on = true; slash(z, V(1, 0, 0), c, 1, .05); burst(z, c, 1, .05); smoke(z, 1, .05); star(z, c, 1, .05); ring(z, c, 1, .05, true); ring(z, c, 1, .05); AF.on = on; SG[0].m.position.copy(z); SG[0].m.visible = true; if (typeof renderer !== 'undefined') renderer.compile(scene3, camera); SG[0].m.visible = false; } catch (e) { } }, 2600);
+  // 예열: 풀 메시는 warmup.js 스위퍼(ⓢ)가 숨김 상태에서도 메시 단위로 나눠 컴파일 → 별도 전체 컴파일 없음(초반 렉 원인 제거)
 })();
