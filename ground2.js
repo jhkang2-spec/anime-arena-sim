@@ -40,7 +40,7 @@
     const d = decals.find(x => !x.on) || decals.reduce((a, b) => (a.born < b.born ? a : b)); // 가장 오래된 것 재사용
     const tx = pick(TEX[kind]); d.dark.material.alphaMap = tx; d.glow.material.alphaMap = tx; d.dark.material.needsUpdate = d.glow.material.needsUpdate = true;
     d.glow.material.color.set(col || '#ff8a3a'); d.g.position.set(p.x, 0, p.z); d.g.rotation.y = yaw; d.g.scale.set(w, 1, l); d.g.visible = true;
-    Object.assign(d, { on: true, t: 0, life: R(14, 22), glowT: glowT || 1.4, born: performance.now() });
+    Object.assign(d, { on: true, t: 0, life: R(2.6, 3), /* 11-14 소유자 지시: 기술 잔재 3초 후 자동 소멸(사양) */ glowT: glowT || 1.4, born: performance.now() });
   }
 
   // ── 틈에서 새는 먼지·빛 ──

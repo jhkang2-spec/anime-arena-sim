@@ -41,7 +41,7 @@
   let TEX_S = null, TEX_C = null;
   const GEO = new THREE.CircleGeometry(1, 26);
   const pool = [];
-  function decalAt(p, r, life, glow) {
+  function decalAt(p, r, life, glow) { life = Math.min(3, life || 3); /* 11-14: 잔재 3초 상한 */
     if (!p || !gate()) return;
     if (!TEX_S) { TEX_S = scorchTex(); TEX_C = crackTex(); }
     let d = pool.find(o => o.life <= 0);

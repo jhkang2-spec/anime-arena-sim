@@ -73,14 +73,14 @@
     const d = decals.find(x => !x.on) || decals.reduce((a, b) => (a.born < b.born ? a : b)); const E = EL[el];
     d.dark.material.alphaMap = d.glow.material.alphaMap = texture; d.dark.material.needsUpdate = d.glow.material.needsUpdate = true;
     d.dark.material.color.set(E.dark); d.glow.material.color.set(E.glow); d.g.position.set(p.x, 0, p.z); d.g.rotation.y = yaw; d.g.scale.set(w, 1, l); d.g.visible = true;
-    Object.assign(d, { on: true, t: 0, life: R(14, 24) * E.life, glowT: E.glowT * glowMul, born: performance.now(), flick: !!E.flicker, darkOp }); return d; }
+    Object.assign(d, { on: true, t: 0, life: Math.min(3, R(14, 24) * E.life), /* 11-14 소유자 지시: 기술 잔재 3초 후 자동 소멸(사양) */ glowT: E.glowT * glowMul, born: performance.now(), flick: !!E.flicker, darkOp }); return d; }
 
   // ── 속성 소품: 결정(얼음·빛) · 물웅덩이 ──
   const crystM = new THREE.InstancedMesh(new THREE.OctahedronGeometry(1, 0), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .15, metalness: .1, transparent: true, opacity: .88 }), 80); crystM.count = 0; crystM.frustumCulled = false; scene3.add(crystM);
   const crystals = []; const M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), E3 = new THREE.Euler(), S3 = new THREE.Vector3(), CC = new THREE.Color();
-  function crystal(p, n, rad, h, col) { for (let i = 0; i < n; i++) { if (crystals.length >= 80) crystals.shift(); const a = R(0, 6.28), d = rad * Math.sqrt(R(0, 1)); crystals.push({ p: V3(p.x + Math.cos(a) * d, 0, p.z + Math.sin(a) * d), h: h * R(.4, 1.2), w: R(.8, 2), rx: R(-.5, .5), rz: R(-.5, .5), ry: R(0, 6), t: -R(0, .2), life: R(6, 10), c: new THREE.Color(col).multiplyScalar(R(.85, 1.1)) }); } }
+  function crystal(p, n, rad, h, col) { for (let i = 0; i < n; i++) { if (crystals.length >= 80) crystals.shift(); const a = R(0, 6.28), d = rad * Math.sqrt(R(0, 1)); crystals.push({ p: V3(p.x + Math.cos(a) * d, 0, p.z + Math.sin(a) * d), h: h * R(.4, 1.2), w: R(.8, 2), rx: R(-.5, .5), rz: R(-.5, .5), ry: R(0, 6), t: -R(0, .2), life: R(2.4, 3), c: new THREE.Color(col).multiplyScalar(R(.85, 1.1)) }); } }
   const puddles = Array.from({ length: 6 }, () => { const m = new THREE.Mesh(new THREE.CircleGeometry(1, 28), new THREE.MeshStandardMaterial({ color: '#4a6a78', roughness: .08, metalness: .35, transparent: true, opacity: 0 })); m.rotation.x = -Math.PI / 2; m.position.y = .2; m.visible = false; scene3.add(m); return { m, t: 0, life: 0, on: false }; });
-  function puddle(p, r) { const u = puddles.find(x => !x.on) || puddles[0]; u.m.position.set(p.x, .2, p.z); u.m.scale.set(r * R(.8, 1.2), r * R(.6, 1), 1); u.m.rotation.z = R(0, 6); u.m.visible = true; Object.assign(u, { on: true, t: 0, life: R(10, 16) }); }
+  function puddle(p, r) { const u = puddles.find(x => !x.on) || puddles[0]; u.m.position.set(p.x, .2, p.z); u.m.scale.set(r * R(.8, 1.2), r * R(.6, 1), 1); u.m.rotation.z = R(0, 6); u.m.visible = true; Object.assign(u, { on: true, t: 0, life: R(2.4, 3) }); }
 
   const puffs = (p, n, cols, up, spread, size, grav) => { for (let i = 0; i < n; i++) { const a = R(0, 6.28), d = R(0, spread); parts.push({ p: V3(p.x + Math.cos(a) * d, R(.5, 3), p.z + Math.sin(a) * d), v: V3(Math.cos(a) * R(10, 50), R(up * .5, up), Math.sin(a) * R(10, 50)), life: R(.8, 1.8), c: pick(cols), g: grav, s: size, n: true }); } };
   function elemExtras(p, s, el) { const E = EL[el];
@@ -126,7 +126,7 @@
 
   // 지면 문양(원인별): 필살=영역전개 문양, 투사체 큰 착탄=술식 원진, 나루토 계열(차크라)·바람=차크라 문양
   function glyph(p, s, el, cause, ek) { const kind = /chakra|kurama|wind|rasengan/.test(ek || '') ? 'chakra' : cause === 'ult' ? 'domain' : 'seal';
-    const d = decal(p, glyphTex(kind, R(0, 3) | 0), s * 46, s * 46, R(0, 6.3), el, .55, 2.4); d.life *= .7; GG.glyphSeen.add(kind + '|' + el); }
+    const d = decal(p, glyphTex(kind, R(0, 3) | 0), s * 46, s * 46, R(0, 6.3), el, .55, 2.4); d.life = Math.min(d.life, 3); GG.glyphSeen.add(kind + '|' + el); }
 
   // ── 생성: 세기·속성·원인 → 모양 1~3개 + 속성 소품 + (큰 충격) 지면 문양 ──
   G.gen = function (p, level, ek, dir, cause, src) {

@@ -319,10 +319,10 @@
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), m); mesh.rotation.x = -Math.PI / 2; mesh.position.y = .09 + i * .012; mesh.visible = false; mesh.renderOrder = 2; root.add(mesh); return { mesh, m, on: false, t: 0, dur: 6, grow: .3, glowT: 1.2 }; });
   const GLOW = { fire: '#ff5a10', sun: '#ff5a10', kurama: '#ff6a10', blood: '#ff2a50', steam: '#ff6a40', bolt: '#9ad0ff', light: '#fff2a0', getsuga: '#8ac8ff', dark: '#a040ff', hollow: '#ff2020', psychic: '#40ff90', ice: '#a0e8ff', water: '#3a6a90', sound: '#ffb030' };
   function crack(p, r, ek, o = {}) { const d = decals.reduce((a, b) => (!a.on ? a : !b.on ? b : a.t / a.dur > b.t / b.dur ? a : b));
-    d.on = true; d.t = 0; d.dur = o.dur || 7; d.grow = o.grow || (.18 + r * .004); d.glowT = o.glowT || 1.4; d.mesh.visible = true; d.mesh.position.x = p.x; d.mesh.position.z = p.z; d.mesh.rotation.z = rr(0, 6.28); d.mesh.scale.set(r * 2, r * 2, 1);
+    d.on = true; d.t = 0; d.dur = Math.min(3, o.dur || 3); /* 11-14 소유자 지시: 기술 잔재 3초 후 자동 소멸(사양) */ d.grow = o.grow || (.18 + r * .004); d.glowT = o.glowT || 1.4; d.mesh.visible = true; d.mesh.position.x = p.x; d.mesh.position.z = p.z; d.mesh.rotation.z = rr(0, 6.28); d.mesh.scale.set(r * 2, r * 2, 1);
     d.m.uniforms.uGC.value.set(o.glow || GLOW[ek] || '#ff7a30'); d.glowAmt = o.glow === null ? 0 : (GLOW[ek] ? 1 : .55); return d; }
   function decalsUpdate(dt) { decals.forEach(d => { if (!d.on) return; d.t += dt; const u = d.m.uniforms; u.uRev.value = Math.min(1.08, Math.pow(d.t / d.grow, .6) * 1.08);
-      u.uGlow.value = d.glowAmt * Math.max(0, 1 - d.t / d.glowT) * (.85 + Math.random() * .15); u.uFade.value = Math.min(1, (d.dur - d.t) / 1.6); if (d.t >= d.dur) { d.on = false; d.mesh.visible = false; } }); }
+      u.uGlow.value = d.glowAmt * Math.max(0, 1 - d.t / d.glowT) * (.85 + Math.random() * .15); u.uFade.value = Math.min(1, (d.dur - d.t) / 1.); if (d.t >= d.dur) { d.on = false; d.mesh.visible = false; } }); }
 
   // 떠오르는 바위(기를 모으면 주변 돌이 떠오름) — 미리 만든 묶음 그림 하나로
   const ROCKN = 90, rockM = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1, 0), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .95, metalness: 0, flatShading: true }), ROCKN); for (let i = 0; i < ROCKN; i++) rockM.setColorAt(i, new THREE.Color('#7a6650')); rockM.castShadow = true;

@@ -53,7 +53,7 @@
       flare(b, L.c, a && a.mode > 0 ? 6 : 4.6, .24); /* 11-14: 3.5→4.6(각성 6) 더 빛나게 */
       /* 11-14 소유자 요청 '요소를 다양하게': 공격 속성별 파생 효과(불=불씨·연기 / 번개=방전 아크 / 물=물보라 / 얼음=파편 / 어둠=검은 불꽃 …) — 예산·부하 게이트 안에서만 */
       const ek2 = ek || (a && a.elem) || (a && a.ch && a.ch.sig && a.ch.sig.elem) || v.elem;
-      if (ek2 && X.elemBurst && EP.budget > 120 && Math.random() < .6) { try { X.elemBurst(b.clone(), ek2, .32 * half()); EP.budget -= 6; EP.elem = (EP.elem || 0) + 1; } catch (e2) { } }
+      if (ek2 && X.elemBurst && EP.budget > 120 && Math.random() < (/bolt|light|getsuga|sound/.test(ek2) ? .18 : .35)) { try { X.elemBurst(b.clone(), ek2, .22 * half()); /* 번개류는 화면을 덮어 빈도 낮춤 */ EP.budget -= 6; EP.elem = (EP.elem || 0) + 1; } catch (e2) { } }
       if (Math.random() < .35) { const sp = Math.round(6 * half()); for (let i = 0; i < sp; i++) X.emit(b.clone().add(V3(rr(-2, 2), rr(-1, 3), rr(-2, 2))), V3(rr(-30, 30), rr(20, 90), rr(-30, 30)), rr(.35, .7), rr(.8, 1.6), 5, i & 1 ? '#ffffff' : L.c, 80); } /* 반짝이는 불티 */
       ring(b, 1.7, L.c, false, .38, 4.4);
       EP.budget -= 4; EP.hits++;
