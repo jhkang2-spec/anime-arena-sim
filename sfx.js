@@ -80,12 +80,12 @@
   const COMBO = {
     swordSword: [{ s: 'clangHeavy', g: .85, rate: .74, lp: 6000 }, { s: 'slash', g: .5, rate: .86, d: [0, .008] }, { s: 'thud', g: .45, d: [0, .006] }], /* 11-15: 가벼운 clang·종 같은 ring 제거(소유자 지적) */
     swordSwordBig: [{ s: 'clangHeavy', g: 1, rate: .66 }, { s: 'slash', g: .6, rate: .78, d: [0, .01] }, { s: 'thud', g: .7, d: [0, .01] }, { s: 'heavy', g: .4, rate: .7, d: [.005, .015] }],
-    swordFlesh: [{ s: 'slash', g: 1 }, { s: 'thud', g: .55, d: [0, .012] }, { s: 'cloth', g: .8, d: [.01, .03], p: .6 }],
+    swordFlesh: [{ s: 'slash', g: 1 }, { s: 'swish', g: .5, rate: 1.15, d: [0, .004] }, { s: 'thud', g: .22, d: [0, .012] }, { s: 'cloth', g: .8, d: [.01, .03], p: .6 }],
     swordGuard: [{ s: 'clangHeavy', g: .7, rate: .8, lp: 5000 }, { s: 'block', g: .5, lp: 1800, d: [0, .01] }, { s: 'thud', g: .4, d: [0, .01] }],
-    fistFlesh: [{ s: 'punch', g: 1 }, { s: 'thud', g: .6, d: [0, .01] }, { s: 'cloth', g: .7, d: [.005, .025], p: .55 }],
-    fistHeavy: [{ s: 'heavy', g: 1 }, { s: 'thud', g: .8, d: [0, .012] }, { s: 'cloth', g: .8, d: [.01, .03], p: .6 }],
+    fistFlesh: [{ s: 'punch', g: 1 }, { s: 'thud', g: .28, d: [0, .01] }, { s: 'cloth', g: .7, d: [.005, .025], p: .55 }],
+    fistHeavy: [{ s: 'heavy', g: 1 }, { s: 'thud', g: .4, d: [0, .012] }, { s: 'cloth', g: .8, d: [.01, .03], p: .6 }],
     fistGuard: [{ s: 'block', g: 1 }, { s: 'thud', g: .45, lp: 600, d: [0, .01] }, { s: 'cloth', g: 1, d: [0, .02], p: .7 }],
-    kick: [{ s: 'heavy', g: 1, rate: .92 }, { s: 'thud', g: .75, d: [0, .01] }, { s: 'flap', g: .6, d: [0, .01] }, { s: 'cloth', g: .8, d: [.01, .03], p: .6 }],
+    kick: [{ s: 'heavy', g: 1, rate: .92 }, { s: 'thud', g: .4, d: [0, .01] }, { s: 'flap', g: .6, d: [0, .01] }, { s: 'cloth', g: .8, d: [.01, .03], p: .6 }],
   };
 
   const ELEM_SND = { fire: 'fire', flame: 'fire', sun: 'fire', lava: 'fire', bolt: 'thunder', thunder: 'thunder', lightning: 'thunder', water: 'water', ice: 'ice', frost: 'ice', snow: 'ice', wind: 'wind', air: 'wind', dark: 'dark', hollow: 'dark', shadow: 'dark', void: 'dark', curse: 'dark', light: 'spell', chakra: 'spell', kurama: 'spell', petal: 'wind', sand: 'earth', earth: 'earth', rock: 'earth', stone: 'earth', metal: 'clang', slash: 'slash' };
@@ -142,7 +142,7 @@
     verb = ctx.createConvolver(); verb.normalize = true; verb.buffer = makeIR(); const vOut = ctx.createGain(); vOut.gain.value = .55;
     verbIn.connect(pre); pre.connect(verb); verb.connect(vOut); vOut.connect(sfxMaster);
     musicBus = ctx.createGain(); musicBus.gain.value = SFX.music ? SFX.musicVol : 0; musicBus.connect(glue);
-    SFX.rbus = normal; // 실감 합성 레이어(sfx-real.js)가 공용 버스(덕킹·볼륨·압축 공유)로 연결할 수 있게 노출
+    SFX.rbus = normal; SFX.verbIn = verbIn; // 실감 합성 레이어(sfx-real.js)가 공용 버스(덕킹·볼륨·압축 공유)로 연결할 수 있게 노출
     DECODE.forEach(p => fetch(B + p).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then(a => ctx.decodeAudioData(a)).then(d => { buf[p] = d; SFX.decN = (SFX.decN || 0) + 1; measure(p, d); SFX.loaded++; if (SFX.loaded === SFX.total) ambStart(); }).catch(() => { SFX.errors++; SFX.loaded++; if (SFX.loaded === SFX.total) ambStart(); }));
     musicStart();
     if (hint.remove) hint.remove();
@@ -294,7 +294,7 @@
   function duck(sec) { if (!ctx) return; const t = ctx.currentTime; [[duckG.gain, .4], [musicBus.gain, (SFX.music ? SFX.musicVol : 0) * .35]].forEach(([g, lo]) => { const hi = g === duckG.gain ? 1 : (SFX.music ? SFX.musicVol : 0); g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(lo, t + .08); g.setValueAtTime(lo, t + sec); g.linearRampToValueAtTime(hi, t + sec + .6); }); }
   SFX.duck = duck;
   const posOf = f => f && f.pos ? { x: f.pos.x, y: (f.pos.y || 0) + 10, z: f.pos.z } : null;
-  const sword = f => !!(f && f.model && f.model.swd && f.model.swd.grp && f.model.swd.grp.visible);
+  const sword = f => { const w = window.SFX_WEAPON ? SFX_WEAPON(f) : null; if (w) return w === 'blade' || w === 'chainsaw'; return !!(f && f.model && f.model.swd && f.model.swd.grp && f.model.swd.grp.visible); }; /* 11-15: 검 쓰는 인물 명단 기반(칼이 안 보이는 순간에도 검 소리) */
   const kicking = (f, text) => { try { if (typeof POSE !== 'undefined' && f && f.tgt && (f.tgt === POSE.kick || f.tgt === POSE.highKick)) return true; } catch (e) { } return /차기|킥|발차|kick/i.test(String(text || '')); };
   const ekOf = (f, ek) => ek || (f && (f.elem || (f.ch && f.ch.sig && f.ch.sig.elem))) || '';
   const DOMAIN_RE = /영역\s*전개|무량공처|복마어주자|감옥|영역/;

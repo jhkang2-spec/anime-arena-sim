@@ -11,6 +11,14 @@
   const SI = window.SFX_IMPACT = { on: true, st: { hit: 0, clash: 0, boom: 0, riser: 0, drop: 0 } };
   try { if (localStorage.getItem('arenaSfxImpact') === '0') SI.on = false; } catch (e) { }
   const R = (a, b) => a + Math.random() * (b - a);
+  // ── 무기 분류(11-15 소유자 지시: "교전이 전부 둔탁하다 → 주먹은 주먹 소리, 검·칼 캐릭터는 검 소리로 리얼하게") ──
+  // blade 검·칼·낫 / chainsaw 전기톱 / blunt 망치·철퇴·톤파·방패(금속 둔기) / fist 맨손(주먹·발)
+  const WPN = {
+    blade: /^(zoro|ichigo|byakuya|rukia|hitsugaya|kenpachi|aizen|tanjiro|zenitsu|inosuke|giyu|rengoku|shinobu|uzui|mitsuri|muichiro|sanemi|obanai|mikasa|levi|armin|aki|kishibe|nanami|yamamoto|sukuna|mukuro)$/,
+    chainsaw: /^(denji)$/, blunt: /^(himejima|thor|captain|power|hibari)$/,
+  };
+  const weaponOf = f => { if (!f || !f.ch) return 'fist'; const k = f.ch.key || ''; for (const w in WPN) if (WPN[w].test(k)) return w; try { if (f.model && f.model.swd && f.model.swd.grp && f.model.swd.grp.visible) return 'blade'; } catch (e) { } return 'fist'; };
+  window.SFX_WEAPON = weaponOf;
   let ctx = null, out = null, drive = null, verb = null, verbIn = null, white = null, brown = null, voices = 0;
   const MAXV = 28, last = {};
   function ready() {
@@ -24,8 +32,8 @@
     ctx = c;
     const dest = SFX.rbus || ctx.destination;
     out = ctx.createGain(); out.gain.value = .9;
-    drive = ctx.createWaveShaper(); drive.curve = curve(2.2); drive.oversample = '2x';
-    const tone = ctx.createBiquadFilter(); tone.type = 'lowshelf'; tone.frequency.value = 120; tone.gain.value = 4; // 저역 무게
+    drive = ctx.createWaveShaper(); drive.curve = curve(1.35); drive.oversample = '2x'; // 11-15: 2.2 는 저역을 뭉개 '둔탁'의 원인 → 가볍게
+    const tone = ctx.createBiquadFilter(); tone.type = 'lowshelf'; tone.frequency.value = 110; tone.gain.value = 1.5; // 저역 무게(과하면 먹먹)
     out.connect(drive); drive.connect(tone); tone.connect(dest);
     verbIn = ctx.createGain(); verb = ctx.createConvolver(); verb.buffer = ir(2.2, 2.6); const vh = ctx.createBiquadFilter(); vh.type = 'highpass'; vh.frequency.value = 150; const vo = ctx.createGain(); vo.gain.value = .5;
     verbIn.connect(vh); vh.connect(verb); verb.connect(vo); vo.connect(dest);
@@ -48,14 +56,36 @@
 
   // ── 타격 ──
   const FLAV = { fire: 'fire', kurama: 'fire', sun: 'fire', blood: 'fire', lava: 'fire', bolt: 'bolt', light: 'bolt', getsuga: 'bolt', sound: 'bolt', bflash: 'bolt', ice: 'ice', water: 'water', mist: 'water', dark: 'dark', hollow: 'dark', cursed: 'dark', shadow: 'dark', earth: 'earth', sand: 'earth', gamma: 'earth', wind: 'wind', petal: 'wind', psychic: 'wind', metal: 'metal', slash: 'blade', odm: 'blade' };
-  function hit(pos, pw = 1, ek) {
+  const P0 = () => window.SFX && SFX.play && SFX.play.__orig;
+  function hit(pos, pw = 1, ek, a) {
     if (!ready() || busy() || gap('hit', 38)) { SI.st.drop++; return; } SI.st.hit++;
-    const t = ctx.currentTime + .002, k = Math.max(.6, Math.min(2.6, pw)), sp = place(pos), d = chain(sp, .18 + .06 * k), fl = FLAV[ek] || 'metal';
-    sub(d, t, R(105, 135), R(38, 48), .16 + .09 * k, .95 * Math.pow(k, .6));                         // 서브 쿵
-    nz(d, t, 'lowpass', R(900, 1500), .9, .07 + .05 * k, .85 * Math.pow(k, .5));                       // 몸통 펀치
-    nz(d, t + .001, 'bandpass', R(1800, 2600), 1.3, .045, .45);                                         // 살 파열(슬랩)
-    nz(d, t, 'highpass', R(2800, 4200), .7, .018, .5);                                                   // 트랜지언트 크랙
-    if (k > 1.5) { sub(d, t + .01, 70, 32, .45, .5); nz(d, t + .02, 'lowpass', 500, .7, .4, .35, { brown: true }); } // 큰 타격: 꼬리 무게
+    const t = ctx.currentTime + .002, k = Math.max(.6, Math.min(2.6, pw)), sp = place(pos), w = weaponOf(a), d = chain(sp, (w === 'blade' ? .22 : .14) + .06 * k), fl = FLAV[ek] || 'metal';
+    SI.st['hit_' + w] = (SI.st['hit_' + w] || 0) + 1;
+    if (w === 'blade' || w === 'chainsaw') {
+      // 칼이 살·옷을 가르는 소리: 날 끝 '칭'(초고역 순간) → 위에서 아래로 쓸리는 '샥'(5k→1.8k) → 옷·살 결(중역) → 가벼운 몸통(무겁게 뭉개지 않음)
+      nz(d, t, 'highpass', R(4200, 5200), .7, .007, .55);
+      nz(d, t + .001, 'bandpass', R(4800, 6200), 1.3, .09 + .02 * k, .6, { f1: R(1600, 2100), sweep: .09 });
+      nz(d, t + .004, 'bandpass', R(1100, 1500), .8, .06, .32);
+      nz(d, t + .002, 'bandpass', R(6800, 8200), 7, .05, .14);                                         // 날의 짧은 쇳결(울리지 않게 0.05초)
+      sub(d, t, R(85, 100), 42, .1 + .04 * k, .38 * Math.pow(k, .5));
+      try { const P = P0(); if (P) P.call(SFX, 'slash', pos, { rate: R(.92, 1.08), gain: .55 + .1 * k, gap: 0 }); } catch (e) { }
+      if (w === 'chainsaw') { tone(d, t, 'sawtooth', R(88, 104), 70, .32, .2); nz(d, t, 'bandpass', 2400, 1, .3, .4, { f1: 1200 }); for (let i = 0; i < 6; i++) nz(d, t + i * .035, 'bandpass', R(900, 1600), 2, .02, .25); } // 체인 톱날 갈림
+      if (k > 1.5) { sub(d, t + .01, 70, 34, .3, .45); nz(d, t + .01, 'bandpass', 3000, .9, .25, .3, { f1: 700 }); }
+    } else if (w === 'blunt') {
+      // 금속 둔기(망치·철퇴·톤파·방패): 쇠가 몸에 박히는 묵직한 '퍽'+짧은 쇳소리
+      nz(d, t, 'highpass', R(2600, 3400), .7, .012, .55); nz(d, t, 'bandpass', R(240, 320), 1.1, .1, .8); sub(d, t, R(95, 115), 36, .16 + .07 * k, .85 * Math.pow(k, .55));
+      nz(d, t + .002, 'bandpass', R(2800, 3600), 5, .07, .22);
+      try { const P = P0(); if (P) P.call(SFX, 'clangHeavy', pos, { rate: R(.55, .65), gain: .45, gap: 0, lp: 3000 }); } catch (e) { }
+    } else {
+      // 맨손 타격 '퍽!': 짧고 단단하게 — 살갗 스냅(1.6~2.4k) + 주먹이 몸에 꽂히는 노크(220~320Hz) + 짧은 서브(길게 끌지 않음 = 둔탁함 제거)
+      const kick = /kick|차기|킥/.test(String(ek || ''));
+      nz(d, t, 'highpass', R(2600, 3600), .7, .012, .6);                                                 // 순간 크랙
+      nz(d, t + .001, 'bandpass', R(1600, 2400), 1.1, .05, .7);                                          // 살갗 스냅
+      nz(d, t, 'bandpass', kick ? R(170, 230) : R(230, 320), 1.2, .075 + .02 * k, .75 * Math.pow(k, .5)); // 몸통 노크
+      sub(d, t, kick ? R(85, 100) : R(100, 120), 44, .085 + .05 * k, .6 * Math.pow(k, .55));
+      try { const P = P0(); if (P) P.call(SFX, k > 1.4 ? 'heavy' : 'punch', pos, { rate: R(.95, 1.1), gain: .5, gap: 0 }); } catch (e) { }
+      if (k > 1.5) { nz(d, t + .004, 'highpass', 2000, .7, .02, .5); nz(d, t + .01, 'lowpass', 600, .7, .2, .35, { brown: true }); sub(d, t + .005, 75, 34, .26, .4); } // 강타: 공기 파열 + 짧은 무게
+    }
     switch (fl) {
       case 'fire': for (let i = 0; i < 10; i++) nz(d, t + R(.02, .4), 'highpass', R(2500, 6000), 1, R(.006, .016), R(.15, .35)); nz(d, t, 'bandpass', 700, .6, .35, .3, { f1: 2400, a: .03 }); break;
       case 'bolt': tone(d, t, 'sawtooth', R(2200, 3000), 260, .16, .22); nz(d, t, 'highpass', 4500, .8, .09, .4); for (let i = 0; i < 4; i++) nz(d, t + R(0, .15), 'bandpass', R(3000, 7000), 4, .01, .3); break;
@@ -70,9 +100,19 @@
   }
   // ── 칼·주먹 맞부딪힘(막기) ──
   const RATIO = [1, 2.76, 5.4, 8.93, 13.34];
-  function clashS(pos, big) {
+  function clashS(pos, big, a, b) {
     if (!ready() || busy() || gap('clash', 70)) { SI.st.drop++; return; } SI.st.clash++;
     const t = ctx.currentTime + .002, sp = place(pos), d = chain(sp, big ? .6 : .42), f = R(430, 640) * (big ? .8 : 1), L = big ? 1.6 : 1;
+    const wa = weaponOf(a), wb = weaponOf(b), steelA = wa !== 'fist', steelB = wb !== 'fist';
+    if (a && b && !steelA && !steelB) { // 맨손 막기: 팔뚝·손바닥끼리 '팍' + 옷 스침(쇳소리 없음)
+      SI.st.clash_fist = (SI.st.clash_fist || 0) + 1;
+      nz(d, t, 'highpass', 2400, .7, .01, .55); nz(d, t + .001, 'bandpass', R(1300, 1900), 1.2, .045, .6); nz(d, t, 'bandpass', R(260, 340), 1.2, .07, .7); sub(d, t, 120, 50, .09, .5 * L);
+      nz(d, t + .015, 'bandpass', 3200, .8, .08, .18, { f1: 1500 }); try { const P = P0(); if (P) P.call(SFX, 'block', pos, { rate: R(.9, 1.05), gain: .5, gap: 0 }); } catch (e) { } return; }
+    if (a && b && steelA !== steelB) { // 칼 ↔ 맨손(팔 보호대·기 두른 팔): 짧고 둔한 쇳소리 + 팔 막는 퍽
+      SI.st.clash_mixed = (SI.st.clash_mixed || 0) + 1;
+      nz(d, t, 'highpass', 2000, .5, .008, .8); nz(d, t + .001, 'bandpass', R(2400, 3000), 5, .07, .4); nz(d, t, 'bandpass', 300, 1.1, .08, .6); sub(d, t, 130, 50, .1, .55 * L);
+      try { const P = P0(); if (P) P.call(SFX, 'clangHeavy', pos, { rate: R(.7, .8), gain: .5, gap: 0, lp: 4000 }); } catch (e) { } return; }
+    SI.st.clash_steel = (SI.st.clash_steel || 0) + 1;
     /* 11-15 소유자 지적 '부딪힐 때 종·벨 소리 — 짜친다': 비조화 사인 배음(1초 이상 울림)=종소리였음 → 제거.
        실제 칼 맞부딪힘: ① 날끼리 닿는 날카로운 충돌(광대역 잡음 8ms) ② 짧은 금속 '챙'(좁은 대역 잡음 2.5~5.5kHz, 0.12초 — 사인 아님) ③ 날이 미끄러지며 긁힘(고역→중역 스윕)
        ④ 손목에 전해지는 둔탁한 저음 ⑤ CC0 녹음(Kenney 묵직한 금속음·베기음)을 낮은 음높이로 겹침 */
@@ -121,11 +161,11 @@
   const ekOf = (a, ek) => ek || (a && a.elem) || (a && a.ch && a.ch.sig && a.ch.sig.elem) || 'metal';
   let lastRes = 0;
   if (typeof resolve === 'function') { const _r = resolve; resolve = function (a, b, ek, o, nm, pw, at) { const r = _r.apply(this, arguments);
-    try { if (!b || !b.pos || o === 'miss' || o === 'dodge') return r; if (o === 'block' || o === 'counter') clashS(chestOf(b), (pw || 1) >= 1.6); else { hit(chestOf(b), pw || 1, ekOf(a, ek)); lastRes = performance.now(); } } catch (e) { } return r; }; }
+    try { if (!b || !b.pos || o === 'miss' || o === 'dodge') return r; if (o === 'block' || o === 'counter') clashS(chestOf(b), (pw || 1) >= 1.6, a, b); else { hit(chestOf(b), pw || 1, ekOf(a, ek), a); lastRes = performance.now(); } } catch (e) { } return r; }; }
   if (typeof wound === 'function') { const _w = wound; wound = function (v, a, text, ek) { const r = _w.apply(this, arguments);
-    try { if (v && v.pos && performance.now() - lastRes > 60) hit(chestOf(v), .9, ekOf(a, ek)); } catch (e) { } return r; }; }
+    try { if (v && v.pos && performance.now() - lastRes > 60) hit(chestOf(v), .9, ekOf(a, ek), a); } catch (e) { } return r; }; }
   if (typeof clash === 'function') { const _k = clash; clash = function (a, b, text, big) { const r = _k.apply(this, arguments);
-    try { if (a && b && a.pos && b.pos) clashS(chestOf(a).add(chestOf(b)).multiplyScalar(.5), !!big); } catch (e) { } return r; }; }
+    try { if (a && b && a.pos && b.pos) clashS(chestOf(a).add(chestOf(b)).multiplyScalar(.5), !!big, a, b); } catch (e) { } return r; }; }
   if (typeof explode === 'function') { const _e = explode; explode = function (p, ek, pw = 1) { const r = _e.apply(this, arguments); try { boom(p, pw, false); } catch (e) { } return r; }; }
   if (typeof ultBlast === 'function') { const _u = ultBlast; ultBlast = function (p, ek, rad, owner, nm) { const r = _u.apply(this, arguments); try { boom(p, (rad || 40) / 30, true); } catch (e) { } return r; }; }
   if (typeof callout === 'function') { const _c = callout; callout = function (f, text, ult) { const r = _c.apply(this, arguments); try { if (ult && f) riser(chestOf(f), .85); } catch (e) { } return r; }; }
