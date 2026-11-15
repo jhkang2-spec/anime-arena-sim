@@ -73,10 +73,14 @@
   function clashS(pos, big) {
     if (!ready() || busy() || gap('clash', 70)) { SI.st.drop++; return; } SI.st.clash++;
     const t = ctx.currentTime + .002, sp = place(pos), d = chain(sp, big ? .6 : .42), f = R(430, 640) * (big ? .8 : 1), L = big ? 1.6 : 1;
-    RATIO.forEach((r, i) => tone(d, t, 'sine', f * r * R(.995, 1.005), 0, [1.1, .75, .5, .32, .2][i] * L, [.28, .2, .14, .09, .06][i], .001)); // 묵직한 강철 울림
-    nz(d, t, 'bandpass', 3200, 1.4, .03, .7);                                                          // 맞닿는 순간
-    nz(d, t + .005, 'bandpass', 4800, 2.5, .22 * L, .25, { f1: 1600 });                               // 긁힘 스윕
-    sub(d, t, 120, 50, .2, .7); nz(d, t, 'lowpass', 900, .8, .08, .55);                               // 몸 무게
+    /* 11-15 소유자 지적 '부딪힐 때 종·벨 소리 — 짜친다': 비조화 사인 배음(1초 이상 울림)=종소리였음 → 제거.
+       실제 칼 맞부딪힘: ① 날끼리 닿는 날카로운 충돌(광대역 잡음 8ms) ② 짧은 금속 '챙'(좁은 대역 잡음 2.5~5.5kHz, 0.12초 — 사인 아님) ③ 날이 미끄러지며 긁힘(고역→중역 스윕)
+       ④ 손목에 전해지는 둔탁한 저음 ⑤ CC0 녹음(Kenney 묵직한 금속음·베기음)을 낮은 음높이로 겹침 */
+    nz(d, t, 'highpass', 1800, .5, .008, 1.0);                                                         // ① 충돌 순간
+    nz(d, t + .001, 'bandpass', R(2600, 3400), 6, .11 * L, .55); nz(d, t + .002, 'bandpass', R(4400, 5600), 7, .08 * L, .38); // ② 금속 '챙'(잡음 기반, 짧게)
+    nz(d, t + .012, 'bandpass', R(5200, 6400), 3.5, .2 * L, .3, { f1: R(1500, 2100), sweep: .2 * L });  // ③ 긁힘
+    sub(d, t, 150, 55, .14, .75); nz(d, t, 'lowpass', 700, .8, .06, .6);                               // ④ 둔탁한 무게
+    try { const P = window.SFX && SFX.play && SFX.play.__orig; if (P) { P.call(SFX, 'clangHeavy', pos, { rate: R(.66, .78) * (big ? .9 : 1), gain: big ? 1.1 : .85, gap: 0 }); P.call(SFX, 'slash', pos, { rate: R(.8, .95), gain: .55, gap: 0, delay: .01 }); } } catch (e) { } // ⑤ CC0 녹음 층
   }
   // ── 폭발·필살기 ──
   function boom(pos, size = 1, ult = false) {
@@ -104,11 +108,11 @@
   Object.assign(SI, { hit, clash: clashS, boom, riser });
 
   // ── 가벼운 금속 샘플 정리: 음량↓·피치↓(합성 층이 주인공) ──
-  const THIN = { clang: [.35, .78], ring: [.3, .75], block: [.4, .8], parry: [.45, .82], scrape: [.5, .85], bell: [.4, .8], ui: [.5, 1], cloth: [.55, .9] };
+  const THIN = { clang: [.3, .72], ring: [0, 1], block: [.4, .8], parry: [.45, .82], scrape: [.5, .85], bell: [0, 1], gong: [0, 1], ui: [.5, 1], cloth: [.55, .9] }; // 종·벨·공 계열은 교전에서 무음(소유자 지적)
   (function wrapPlay(tries) {
     if (!window.SFX || !SFX.play) { if (tries < 40) setTimeout(() => wrapPlay(tries + 1), 250); return; }
     if (SFX.play.__si) return; const P = SFX.play;
-    SFX.play = function (name, pos, o) { const k = SI.on && THIN[name]; if (k) { o = Object.assign({}, o || {}); o.gain = (o.gain ?? 1) * k[0]; o.rate = (o.rate || 1) * k[1]; } return P.call(this, name, pos, o); };
+    SFX.play = function (name, pos, o) { const k = SI.on && THIN[name]; if (k) { if (k[0] === 0) return null; o = Object.assign({}, o || {}); o.gain = (o.gain ?? 1) * k[0]; o.rate = (o.rate || 1) * k[1]; } return P.call(this, name, pos, o); }; SFX.play.__orig = P;
     SFX.play.__si = true;
   })(0);
 

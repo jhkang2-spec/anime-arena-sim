@@ -78,10 +78,10 @@
   };
   // 타격 조합: 초기 충격음 + 본체 + 꼬리(확률). 층마다 파일·속도·지연을 무작위로 골라 같은 소리 반복을 막는다.
   const COMBO = {
-    swordSword: [{ s: 'clang', g: 1 }, { s: 'clangHeavy', g: .45, lp: 2600, rate: .8, d: [0, .006] }, { s: 'ring', g: .8, d: [.012, .04], p: .75 }],
-    swordSwordBig: [{ s: 'clangHeavy', g: 1 }, { s: 'clang', g: .6, rate: .85, d: [0, .008] }, { s: 'ring', g: 1, d: [.015, .05] }, { s: 'thud', g: .5, d: [0, .01] }],
+    swordSword: [{ s: 'clangHeavy', g: .85, rate: .74, lp: 6000 }, { s: 'slash', g: .5, rate: .86, d: [0, .008] }, { s: 'thud', g: .45, d: [0, .006] }], /* 11-15: 가벼운 clang·종 같은 ring 제거(소유자 지적) */
+    swordSwordBig: [{ s: 'clangHeavy', g: 1, rate: .66 }, { s: 'slash', g: .6, rate: .78, d: [0, .01] }, { s: 'thud', g: .7, d: [0, .01] }, { s: 'heavy', g: .4, rate: .7, d: [.005, .015] }],
     swordFlesh: [{ s: 'slash', g: 1 }, { s: 'thud', g: .55, d: [0, .012] }, { s: 'cloth', g: .8, d: [.01, .03], p: .6 }],
-    swordGuard: [{ s: 'parry', g: 1 }, { s: 'block', g: .5, lp: 1800, d: [0, .01] }, { s: 'ring', g: .5, d: [.02, .05], p: .5 }],
+    swordGuard: [{ s: 'clangHeavy', g: .7, rate: .8, lp: 5000 }, { s: 'block', g: .5, lp: 1800, d: [0, .01] }, { s: 'thud', g: .4, d: [0, .01] }],
     fistFlesh: [{ s: 'punch', g: 1 }, { s: 'thud', g: .6, d: [0, .01] }, { s: 'cloth', g: .7, d: [.005, .025], p: .55 }],
     fistHeavy: [{ s: 'heavy', g: 1 }, { s: 'thud', g: .8, d: [0, .012] }, { s: 'cloth', g: .8, d: [.01, .03], p: .6 }],
     fistGuard: [{ s: 'block', g: 1 }, { s: 'thud', g: .45, lp: 600, d: [0, .01] }, { s: 'cloth', g: 1, d: [0, .02], p: .7 }],
@@ -419,13 +419,13 @@
       if (W.embed > (pw.embed || 0) || W.break > (pw.break || 0)) { const br = W.break > (pw.break || 0); play('bodyfall', wp, { gap: .1, gain: 1.1, rate: .75 }); play('debris', wp, { gap: .1, delay: .02, gain: br ? 1 : .6 }); play('rubble', wp, { gap: .1, delay: .08, gain: br ? 1 : .6 }); if (br) { for (let i = 0; i < 4; i++) play('gravel', wp, { gap: 0, gain: R2(.4, .7), delay: R2(.25, 1.2) }); sub(wp, .9, .6); } }
       if (W.kick > (pw.kick || 0)) { play('landX', wp, { gap: .1, gain: .9 }); play('gravel', wp, { gap: .1, gain: .5, delay: .03 }); play('flap', wp, { gap: .1, delay: .08 }); }
       if (W.slide > (pw.slide || 0)) play('gravel', wp, { gap: .1, dur: 1.1, rate: .65, lp: 2600, gain: .9 });
-      if (W.sword > (pw.sword || 0)) { play('scrape', wp, { gap: .1, dur: 1, rate: .8 }); play('ring', wp, { gap: .1, delay: .05 }); play('gravel', wp, { gap: .1, gain: .5, dur: .9, rate: .7 }); }
+      if (W.sword > (pw.sword || 0)) { play('scrape', wp, { gap: .1, dur: 1, rate: .8 });  play('gravel', wp, { gap: .1, gain: .5, dur: .9, rate: .7 }); }
       if (W.chakra > (pw.chakra || 0)) { play('spell', wp, { gap: .1 }); play('wind', wp, { gap: .1, gain: .7 }); }
       prev.wall = Object.assign({}, W); }
     if (KN) { if (KN.launched > prev.launched) { play('swishBig', camP, { gap: .2 }); play('flap', camP, { gap: .2, gain: .8 }); } prev.launched = KN.launched; }
     if (GG && !(window.GROUND2 && window.GROUND2.gen)) { if (GG.events > prev.gg) ground(camP, 1.5); prev.gg = GG.events; }
     if (typeof F !== 'undefined') {
-      const names = F.map(f => f.ch && f.ch.key).join(','); if (prev.names && names !== prev.names) { play('cloth', camP, { gap: .3 }); play('bell', camP, { rate: 1.2, gain: .6, gap: .3 }); } prev.names = names;
+      const names = F.map(f => f.ch && f.ch.key).join(','); if (prev.names && names !== prev.names) { play('cloth', camP, { gap: .3 });  } prev.names = names;
       for (const f of F) {
         if (!f.pos) continue; let s = fst.get(f); if (!s || s.x === undefined) { s = Object.assign(s || {}, { x: f.pos.x, z: f.pos.z, acc: 0, air: !!f.air, mk: null, slideT: 0, flapT: 0 }); fst.set(f, s); }
         const d = Math.hypot(f.pos.x - s.x, f.pos.z - s.z), sp = d / dt; s.x = f.pos.x; s.z = f.pos.z;
