@@ -23,7 +23,7 @@
     try { return S0.apply(this, arguments); }
     finally {
       if (q) { gl.endQuery(ext.TIME_ELAPSED_EXT); pend.push(q); }
-      for (let i = pend.length - 1; i >= 0; i--) { const p = pend[i]; if (gl.getQueryParameter(p, gl.QUERY_RESULT_AVAILABLE)) { if (!gl.getParameter(ext.GPU_DISJOINT_EXT)) samp.push(gl.getQueryParameter(p, gl.QUERY_RESULT) / 1e6); gl.deleteQuery(p); pend.splice(i, 1); } }
+      for (let i = pend.length - 1; i >= 0; i--) { const p = pend[i]; if (gl.getQueryParameter(p, gl.QUERY_RESULT_AVAILABLE)) { if (!gl.getParameter(ext.GPU_DISJOINT_EXT) && !document.getElementById('bootVeil')) { const ms = gl.getQueryParameter(p, gl.QUERY_RESULT) / 1e6; if (ms < 80) samp.push(ms); } /* 로딩 화면 중·셰이더 컴파일 프레임(80ms+)은 판단에서 제외 */ if (0) samp.push(gl.getQueryParameter(p, gl.QUERY_RESULT) / 1e6); gl.deleteQuery(p); pend.splice(i, 1); } }
       if (samp.length > 40) samp.splice(0, samp.length - 40);
       const now = performance.now();
       if (now - lastCheck > 1000 && samp.length >= 8) { lastCheck = now; decide(); }
