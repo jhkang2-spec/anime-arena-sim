@@ -5,8 +5,15 @@
   ['getProgramParameter', 'getProgramInfoLog', 'getShaderParameter', 'getUniformLocation', 'getActiveUniform'].forEach(n => { const f = GL[n]; GL[n] = function () { const t = performance.now(); const r = f.apply(GL, arguments); const d = performance.now() - t; if (d > 40) { const pr = renderer.info.programs, last = pr[pr.length - 1]; P.comp.push([+(t / 1000).toFixed(2), Math.round(d), last ? last.name : '?', (last && String(last.cacheKey).slice(0, 60).replace(/\s+/g, ' ')) || '', window.__curScene || '', where()]); } return r; }; });
   { const R0 = renderer.render; renderer.render = function (s, c) { const prev = window.__curScene; window.__curScene = (typeof scene3 !== 'undefined' && s === scene3) ? 'scene3' : (s && (s.name || s.type + ':' + s.children.length)) || '?'; try { return R0.apply(this, arguments); } finally { window.__curScene = prev; } };
     const C0 = renderer.compile; renderer.compile = function () { const prev = window.__curScene; window.__curScene = 'compile'; try { return C0.apply(this, arguments); } finally { window.__curScene = prev; } }; }
+  // 긴 콜백 귀속: setTimeout/setInterval/rAF 콜백 중 120ms 넘는 것을 함수 이름·첫 줄과 함께 기록(P.cb)
+  P.cb = []; const tag = f => (f && (f.name || String(f).replace(/\s+/g, ' ').slice(0, 90))) || '?';
+  const wrapCb = (kind, f) => typeof f !== 'function' ? f : function () { const t = performance.now(), c0 = P.comp.length; try { return f.apply(this, arguments); } finally { const d = performance.now() - t; if (d > 120) P.cb.push([+(t / 1000).toFixed(2), Math.round(d), kind, tag(f), P.comp.slice(c0).map(c => c[2] + ':' + c[1]).join(',')]); } };
+  { const sT = window.setTimeout, sI = window.setInterval, rA = window.requestAnimationFrame;
+    window.setTimeout = function (f, ms) { const a = Array.prototype.slice.call(arguments); a[0] = wrapCb('to', f); return sT.apply(window, a); };
+    window.setInterval = function (f, ms) { const a = Array.prototype.slice.call(arguments); a[0] = wrapCb('iv', f); return sI.apply(window, a); };
+    window.requestAnimationFrame = function (f) { return rA.call(window, wrapCb('raf', f)); }; }
   try { new PerformanceObserver(l => { for (const e of l.getEntries()) if (e.duration > 150) P.lt.push([+(e.startTime / 1000).toFixed(2), Math.round(e.duration)]); }).observe({ type: 'longtask', buffered: true }); } catch (e) { }
-  window.__perfSum = () => { const by = {}; P.comp.forEach(c => { const k = c[4] + ' | ' + c[2] + ' | ' + c[3].slice(0, 40); by[k] = (by[k] || 0) + c[1]; }); return { lt: P.lt, compTotal: P.comp.reduce((a, c) => a + c[1], 0), compN: P.comp.length, topWhere: Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 12), comp: P.comp.slice(0, 40) }; };
+  window.__perfSum = () => { const by = {}; P.comp.forEach(c => { const k = c[4] + ' | ' + c[2] + ' | ' + c[3].slice(0, 40); by[k] = (by[k] || 0) + c[1]; }); return { cb: P.cb, lt: P.lt, compTotal: P.comp.reduce((a, c) => a + c[1], 0), compN: P.comp.length, topWhere: Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 12), comp: P.comp.slice(0, 40) }; };
 })();
 // warmup-early.js — 접속 직후(arena.js 바로 다음) 실행: 환경맵(PMREM) 블러 셰이더를 GPU 백그라운드에서 미리 링크(11-14 초반 렉).
 // 실측: materials.js·env-hi.js·env-assets.js 의 첫 환경맵 생성 순간 2.3~2.6초 멈춤(D3D11 에서 PMREM 블러 셰이더 컴파일이 매우 무거움).
