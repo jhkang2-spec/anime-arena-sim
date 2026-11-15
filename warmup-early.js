@@ -1,3 +1,11 @@
+// ?perf=1 : 실기기 진단 기록기(셰이더 컴파일 대기·긴 작업·호출 위치). 결과: window.__perf / __perfSum()
+(function () { if (!/[?&]perf=1/.test(location.search) || typeof renderer === 'undefined') return;
+  const P = window.__perf = { comp: [], lt: [], t0: performance.now() }, GL = renderer.getContext();
+  const where = () => new Error().stack.split('\n').slice(3, 14).map(l => { const m = l.match(/at (\S+) .*\/([\w\-.]+\.js):(\d+)/); return m && !/three\.min/.test(m[2]) ? m[1] + '@' + m[2] + ':' + m[3] : ''; }).filter(Boolean).slice(0, 4).join(' < ');
+  ['getProgramParameter', 'getProgramInfoLog', 'getShaderParameter', 'getUniformLocation', 'getActiveUniform'].forEach(n => { const f = GL[n]; GL[n] = function () { const t = performance.now(); const r = f.apply(GL, arguments); const d = performance.now() - t; if (d > 40) P.comp.push([+(t / 1000).toFixed(2), Math.round(d), n, where()]); return r; }; });
+  try { new PerformanceObserver(l => { for (const e of l.getEntries()) if (e.duration > 150) P.lt.push([+(e.startTime / 1000).toFixed(2), Math.round(e.duration)]); }).observe({ type: 'longtask', buffered: true }); } catch (e) { }
+  window.__perfSum = () => { const by = {}; P.comp.forEach(c => { const k = c[3] || '(?)'; by[k] = (by[k] || 0) + c[1]; }); return { lt: P.lt, compTotal: P.comp.reduce((a, c) => a + c[1], 0), compN: P.comp.length, topWhere: Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 12), comp: P.comp.slice(0, 40) }; };
+})();
 // warmup-early.js — 접속 직후(arena.js 바로 다음) 실행: 환경맵(PMREM) 블러 셰이더를 GPU 백그라운드에서 미리 링크(11-14 초반 렉).
 // 실측: materials.js·env-hi.js·env-assets.js 의 첫 환경맵 생성 순간 2.3~2.6초 멈춤(D3D11 에서 PMREM 블러 셰이더 컴파일이 매우 무거움).
 // 방법: 버리는 생성기로 three 가 만들 셰이더 소스를 '모의 컴파일'(GL 호출 가로채기, 실제 컴파일 없음)로 얻고 → 같은 소스를
