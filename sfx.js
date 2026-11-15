@@ -148,6 +148,11 @@
     if (hint.remove) hint.remove();
   }
   ['pointerdown', 'keydown', 'touchstart'].forEach(ev => addEventListener(ev, start, { passive: true }));
+  // 11-15: 탭을 숨기거나(다른 탭·최소화) 닫을 때 소리·음악을 멈춤 — 안 보이는데 계속 소리 나던 문제 + 숨은 탭의 오디오 처리(CPU) 절약. 다시 보이면 이어서 재생.
+  function hideAudio() { try { if (mEl && !mEl.paused) { mEl.pause(); mEl.__hid = 1; } if (ctx && ctx.state === 'running') ctx.suspend(); } catch (e) { } }
+  function showAudio() { try { if (ctx && ctx.state === 'suspended') ctx.resume(); if (mEl && mEl.__hid) { mEl.__hid = 0; if (SFX.music) mEl.play().catch(() => { }); } } catch (e) { } }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) hideAudio(); else showAudio(); });
+  addEventListener('pagehide', () => { hideAudio(); try { if (mEl) { mEl.pause(); mEl.removeAttribute('src'); mEl.load(); } if (ctx) ctx.close(); } catch (e) { } });
 
   const LP = { x: 0, y: 0, z: 0 };
   function syncListener() {
