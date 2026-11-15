@@ -47,6 +47,7 @@
     sc.traverse(o => { if (o.material && needs(o)) { need = true; if (!qPend.has(o)) { qPend.add(o); defq.push({ o, list: [o], hid: [] }); st.quadDefer = (st.quadDefer || 0) + 1; } } }); return need; }
   function compileOne(o) { const saved = scene3.children, vis = o.visible, L = lightsNow(); st.inCompile = 1; try { o.visible = true; scene3.children = L.concat([o]); R3.compile(scene3, camera); } catch (e) { } finally { scene3.children = saved; o.visible = vis; st.inCompile = 0; } }
   let sweepT = 0; st.swept = 0;
+  let skipCache = null, skipAt = 0; const skipRoots = () => { const n = performance.now(); if (skipCache && n - skipAt < 5000) return skipCache; skipCache = new Set(); try { Object.values(CH).forEach(c => { if (c.model && c.model.root && !c.model.root.visible) skipCache.add(c.model.root); }); } catch (e) { } skipAt = n; return skipCache; };
   // ⓓ 지연 공개(초반 렉의 나머지 원인: 배경 GLB·지형 등 자산이 로딩되자마자 '보이는 채로' 추가 → 다음 본 렌더에서 재질 수십 개 동시 컴파일, 2~3초 멈춤).
   //   접속 후 25초·교전 전에 씬에 붙는 객체 중 컴파일이 필요한 것은 잠깐 숨김 → 스위퍼가 메시 단위로 컴파일 → 다 되면 공개.
   const DEFER_UNTIL = 25000, defq = []; st.deferred = 0;
@@ -105,9 +106,9 @@
   let B = null;
   function sweepDeferred() {
     const t0 = performance.now(), combat = typeof F !== 'undefined' && F.length >= 2;
-    if (!B && !scene3.environment && t0 < 7000) return true; // 환경맵 확정 전엔 시작하지 않음(확정 뒤 키가 바뀌어 다시 컴파일되는 경쟁 방지)
+    if (!B && !scene3.environment && t0 < 4000) return true; // 환경맵 확정 전엔 시작하지 않음(확정 뒤 키가 바뀌어 다시 컴파일되는 경쟁 방지)
     if (!B) { if (!defq.length) return false; const items = defq.splice(0, defq.length); B = { items, todo: [], pairs: [], seen: new Set(), ph: PAR ? 1 : 3, all: [] }; items.forEach(d => d.list.forEach(x => { B.todo.push(x); B.all.push(x); })); }
-    if (B.ph < 3 && performance.now() - (B.tS || (B.tS = performance.now())) > 7000) B.ph = 3; // 안전장치: 7초 넘게 걸리면 마무리
+    if (B.ph < 3 && performance.now() - (B.tS || (B.tS = performance.now())) > 2500) B.ph = 3; // 11-15 실기기: 배경을 오래 숨기면 '텍스처가 깨져' 보임 → 묶음당 최대 2.5초
     if (B.ph === 1) { while (B.todo.length && performance.now() - t0 < 8) { const x = B.todo.shift(); if (!needs(x)) continue; captureSrc(x).forEach(pr => { const k = pr[0].length + ':' + pr[1].length + ':' + pr[1].slice(-240); if (!B.seen.has(k)) { B.seen.add(k); B.pairs.push(pr); } }); }
       if (!B.todo.length) { B.links = prelink(B.pairs); st.prelinked += B.links.length; B.ph = 2; B.t2 = performance.now(); } return true; }
     if (B.ph === 2) { if (B.links.length && !ready(B.links) && performance.now() - B.t2 < 9000) return true; B.ph = 3; B.todo = B.all.slice(); }
@@ -127,7 +128,8 @@
       const combat = typeof F !== 'undefined' && F.length >= 2, ft = typeof ftAvg !== 'undefined' ? ftAvg : 16;
       if (!document.hidden && !(!PAR && combat && (ft > 18 || performance.now() < sweepT))) {
         const t0 = performance.now(), n0 = progs ? progs.length : 0; let made = false; const batch = [];
-        scene3.traverse(o => { if (made || !o.material || allDone(o) || performance.now() - t0 > 6) return; if (!needs(o)) { markDone(o); return; }
+        const skipR = skipRoots(); const visit = fn => { for (const top of scene3.children) { if (skipR.has(top)) continue; top.traverse(fn); } }; // 화면에 안 쓰는 옛 원본 모델(1만3천여 메시)은 순회 제외
+        visit(o => { if (made || !o.material || allDone(o) || performance.now() - t0 > 6) return; if (!needs(o)) { markDone(o); return; }
           st.swept++; markDone(o); /* 재질당 한 번만 시도 */ if (PAR) { batch.push(o); if (batch.length >= 24) made = true; } else { compileOne(o); clean(o); if (progs && progs.length !== n0) made = true; } });
         if (batch.length) { defq.push({ o: null, list: batch.slice(), hid: [] }); batch.length = 0; } // 비동기 파이프라인(소스 수집→백그라운드 링크→컴파일)으로
         if (made && combat) sweepT = performance.now() + 1500; // 교전 중엔 새 프로그램 1개/1.5초
@@ -194,5 +196,12 @@
     };
     tick();
   }, 3800);
+  // ⓛ 로딩 화면: 접속 직후 무대를 가리고(배경 조립·셰이더 준비·초반 끊김이 뒤에서 처리) 준비되면 걷음 — 최대 10초
+  (function veil() { const stage = document.getElementById('stage'); if (!stage) return; const v = document.createElement('div'); v.id = 'bootVeil';
+    v.style.cssText = 'position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:radial-gradient(circle at 50% 40%,#2a2030,#0c0a10);color:#ffe9a8;font:700 15px "Noto Sans KR",sans-serif;transition:opacity .6s;pointer-events:none';
+    v.innerHTML = '<div>전장 준비 중…</div><div style="width:60%;max-width:280px;height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden"><div id="bootBar" style="height:100%;width:5%;background:linear-gradient(90deg,#ff9a1a,#ffe9a8);transition:width .3s"></div></div>'; stage.appendChild(v);
+    const t0 = performance.now(), bar = v.querySelector('#bootBar'); let gone = false;
+    const tick = () => { if (gone) return; const el = performance.now() - t0, ready = (typeof MOCAP === 'undefined' || MOCAP.ready) && !!scene3.environment && !defq.length && !B && el > 2500;
+      bar.style.width = Math.min(98, 5 + el / 100) + '%'; if (ready || el > 10000) { gone = true; bar.style.width = '100%'; v.style.opacity = '0'; setTimeout(() => v.remove(), 700); st.veil = Math.round(el); return; } setTimeout(tick, 150); }; tick(); })();
   window.__warmStats =() => Object.assign({}, st);
 })();
