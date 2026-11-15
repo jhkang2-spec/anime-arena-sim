@@ -35,7 +35,8 @@
   const needs = o => { if (!o.isMesh && !o.isPoints && !o.isLine && !o.isSprite) return false; const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) { if (!m || m.visible === false) continue; const p = props.get(m); if (!p || !p.currentProgram || dirty.has(m)) return true; } return false; }; // r128: 재질 속성의 프로그램 = currentProgram
   const hasDirty = o => { const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) if (m && dirty.has(m)) return true; return false; };
   // 환경맵이 바뀌면 three 가 표준 재질 셰이더 키를 스스로 바꿈(needsUpdate 없음) → 더러움 표시해 지연·비동기 경로로
-  window.__envChanged = () => { scene3.traverse(o => { if (!o.isMesh || !o.material) return; (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m && m.isMeshStandardMaterial) { dirty.add(m); dirtyNow.add(m); } }); }); };
+  const envDirty = new WeakSet(); // 환경맵 교체로 생긴 재컴파일은 접속 시 한 번 — 교전 중이어도 지연
+  window.__envChanged = () => { scene3.traverse(o => { if (!o.isMesh || !o.material) return; (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m && m.isMeshStandardMaterial) { dirty.add(m); dirtyNow.add(m); envDirty.add(m); } }); }); };
   const doneM = new WeakSet(); // 완료 기록은 재질 단위(다른 파일이 재질을 새 인스턴스로 교체해도 다시 잡음)
   const allDone = o => { const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) if (m && (!doneM.has(m) || dirty.has(m))) return false; return true; };
   const markDone = o => { (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m) doneM.add(m); }); };
@@ -62,7 +63,7 @@
           if (list.length >= 2) pushDefer(o, list); } } } catch (e) { }
       return r; }; })();
   function deferDirty() { const boot = performance.now() < DEFER_UNTIL && !(typeof F !== 'undefined' && F.length >= 2); // 교전 중엔 인물 모형 재질만(이펙트는 숨기지 않음)
-    const S = dirtyNow; scene3.traverse(o => { if (!o.isMesh || o.__dm !== undefined) return; const ms = Array.isArray(o.material) ? o.material : [o.material]; if (!ms.some(m => S.has(m))) return; if (!boot) { let rig = false; for (let p = o; p; p = p.parent) if (p.userData && p.userData.mcRig) { rig = true; break; } if (!rig) return; } pushDefer(o, [o]); }); S.clear(); }
+    const S = dirtyNow; scene3.traverse(o => { if (!o.isMesh || o.__dm !== undefined) return; const ms = Array.isArray(o.material) ? o.material : [o.material]; if (!ms.some(m => S.has(m))) return; if (!boot && !ms.some(m => envDirty.has(m))) { let rig = false; for (let p = o; p; p = p.parent) if (p.userData && p.userData.mcRig) { rig = true; break; } if (!rig) return; } pushDefer(o, [o]); }); S.clear(); }
   // ⓐ 비동기 선행 링크: 무거운 셰이더 1개 = 0.6초 멈춤(실측) → three 가 만들 소스를 '모의 컴파일'로 얻어 GPU 백그라운드 스레드에서
   //   병렬 컴파일(KHR_parallel_shader_compile, 메인 스레드는 완료 여부만 확인) → 끝난 뒤 three 컴파일은 ANGLE 프로그램 캐시 적중.
   const GL = R3.getContext(), PAR = (() => { try { return GL.getExtension('KHR_parallel_shader_compile'); } catch (e) { return null; } })(), COMPL = PAR ? PAR.COMPLETION_STATUS_KHR : 0;
