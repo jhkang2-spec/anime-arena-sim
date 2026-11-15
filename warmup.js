@@ -129,11 +129,11 @@
       var busy = sweepDeferred(); // 일괄 파이프라인 진행(있으면) — 일반 스캔도 같은 틱에 계속(굶지 않게)
       const combat = typeof F !== 'undefined' && F.length >= 2, ft = typeof ftAvg !== 'undefined' ? ftAvg : 16;
       if (!document.hidden && !(!PAR && combat && (ft > 18 || performance.now() < sweepT))) {
-        const t0 = performance.now(), n0 = progs ? progs.length : 0; let made = false; const batch = [];
+        const t0 = performance.now(), n0 = progs ? progs.length : 0; let made = false, cut = false; const batch = [];
         const skipR = skipRoots(); const visit = fn => { for (const top of scene3.children) { if (skipR.has(top)) continue; top.traverse(fn); } }; // 화면에 안 쓰는 옛 원본 모델(1만3천여 메시)은 순회 제외
-        visit(o => { if (made || !o.material || allDone(o) || performance.now() - t0 > (veilUp() ? 40 : 6)) return; if (!needs(o)) { markDone(o); return; }
+        visit(o => { if (made || !o.material || allDone(o) || performance.now() - t0 > (veilUp() ? 40 : 6)) { cut = true; return; } if (!needs(o)) { markDone(o); return; }
           st.swept++; markDone(o); /* 재질당 한 번만 시도 */ if (PAR) { batch.push(o); if (batch.length >= (veilUp() ? 400 : 24)) made = true; } else { compileOne(o); clean(o); if (progs && progs.length !== n0) made = true; } });
-        if (batch.length) { defq.push({ o: null, list: batch.slice(), hid: [] }); batch.length = 0; } // 비동기 파이프라인(소스 수집→백그라운드 링크→컴파일)으로
+        st.sweepIdle = !made && !cut && !batch.length; if (batch.length) { defq.push({ o: null, list: batch.slice(), hid: [] }); batch.length = 0; } // 비동기 파이프라인(소스 수집→백그라운드 링크→컴파일)으로
         if (made && combat) sweepT = performance.now() + 1500; // 교전 중엔 새 프로그램 1개/1.5초
       }
     } catch (e) { }
@@ -202,8 +202,8 @@
   (function veil() { const stage = document.getElementById('stage'); if (!stage) return; const v = document.createElement('div'); v.id = 'bootVeil';
     v.style.cssText = 'position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:radial-gradient(circle at 50% 40%,#2a2030,#0c0a10);color:#ffe9a8;font:700 15px "Noto Sans KR",sans-serif;transition:opacity .6s;pointer-events:none';
     v.innerHTML = '<div>전장 준비 중…</div><div style="width:60%;max-width:280px;height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden"><div id="bootBar" style="height:100%;width:5%;background:linear-gradient(90deg,#ff9a1a,#ffe9a8);transition:width .3s"></div></div>'; stage.appendChild(v);
-    const t0 = performance.now(), bar = v.querySelector('#bootBar'); let gone = false;
-    const tick = () => { if (gone) return; const el = performance.now() - t0, ready = (typeof MOCAP === 'undefined' || MOCAP.ready) && !!scene3.environment && !defq.length && !B && el > 2500;
+    const t0 = performance.now(), bar = v.querySelector('#bootBar'); let gone = false, lastN = -1, stableAt = 0;
+    const tick = () => { if (gone) return; const el = performance.now() - t0, np = progs ? progs.length : 0; if (np !== lastN) { lastN = np; stableAt = el; } const ready = (typeof MOCAP === 'undefined' || MOCAP.ready) && !!scene3.environment && !defq.length && !B && st.sweepIdle && el - stableAt > 1200 && el > 2500; /* 새 셰이더 프로그램이 1.2초간 안 생기고 스위퍼가 한 바퀴를 빈손으로 돌 때만 */
       bar.style.width = Math.min(98, 5 + el / 100) + '%'; if (ready || el > 10000) { gone = true; bar.style.width = '100%'; v.style.opacity = '0'; setTimeout(() => v.remove(), 700); st.veil = Math.round(el); return; } setTimeout(tick, 150); }; tick(); })();
   window.__warmStats =() => Object.assign({}, st);
 })();
