@@ -18,9 +18,10 @@
   const rgba = (c, a) => { const [r, g, b] = cHex(c); return `rgba(${r},${g},${b},${Math.max(0, Math.min(1, a))})`; };
 
   // ═══ 1) 점광원 풀 ═══
-  const NPOOL = 8, POOL = [];
+  /* 11-15 근본 최적화: 점광원은 세기 0이어도 모든 조명 재질이 화소마다 계산 → 장면에 13개 상주가 GPU 시간의 약 40%(실측 12.3→7.6ms). 품질별 고정 개수로(바꾸면 셰이더 재컴파일이라 시작 때 결정) */
+  const NPOOL = (q => q === 'low' ? 0 : q === 'mid' ? 2 : q === 'high' ? 3 : 4)(Q()), POOL = [];
   for (let i = 0; i < NPOOL; i++) { const l = new THREE.PointLight('#ffffff', 0, 120, 2); scene3.add(l); POOL.push({ l, t: 9, dur: 0, peak: 0, kind: 'other', rise: 0, p: new THREE.Vector3() }); }
-  const capN = () => { const q = Q(); return q === 'low' ? 2 : q === 'mid' ? 4 : (window.AAA && AAA.ultra) ? 8 : 6; };
+  const capN = () => { const q = Q(); return Math.min(NPOOL, q === 'low' ? 2 : q === 'mid' ? 4 : (window.AAA && AAA.ultra) ? 8 : 6); };
   function light(p, col, peak, dur, rad, kind, rise) {
     if (!LF.on || !p) return;
     const cap = capN(); let best = null;

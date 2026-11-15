@@ -1569,7 +1569,9 @@ function scene(now, q, extra) {
   wkAvg += (performance.now() - w0 - wkAvg) * .05; // 이 장면 계산·그리기 제출에 실제로 든 시간
 }
 window.startScene = getState => {
+  let lastR = 0; /* 11-15: 화면 갱신 최대 약 75fps — 144Hz 등 고주사율 모니터에서 GPU 가 2배 일하며 포화되는 것 방지 */
   const loop = now => {
+    if (lastR && now - lastR < 12.5) { requestAnimationFrame(loop); return; } lastR = now;
     const st = getState(), run = st ? st.quests.filter(q => q.status === 'run') : [];
     const doneN = st ? st.quests.filter(q => q.status === 'done').length : 0;
     try { scene(now, run[0], run[0] ? { lv: 10 + doneN * 5, more: run.length - 1 } : (st ? '모든 임무 완료! 수련 중' : '현황 불러오는 중…')); }

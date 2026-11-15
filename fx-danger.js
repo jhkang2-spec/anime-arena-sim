@@ -16,7 +16,9 @@
   if (stage) stage.appendChild(el);
   // ── 전용 오라 점광원 풀(고정 3개, 세기·위치만 변경) ──
   const POOL = [];
-  for (let i = 0; i < 3; i++) { const l = new THREE.PointLight('#ff3a24', 0, 60, 2); scene3.add(l); POOL.push({ l, f: null }); }
+  /* 11-15: 상주 점광원이 화소 비용을 키움 → 낮음·중간 0개(화면 가장자리 붉은 경고는 그대로), 높음 1·울트라 2 */
+  const NDL = (q => q === 'high' ? 1 : q === 'ultra' ? 2 : 0)(typeof getQuality === 'function' ? getQuality() : 'mid');
+  for (let i = 0; i < NDL; i++) { const l = new THREE.PointLight('#ff3a24', 0, 60, 2); scene3.add(l); POOL.push({ l, f: null }); }
   let LS_OFF = false;
   setInterval(() => { // 0.25초마다: 위험 인물(HP<25%·비다운·비KO·장면 내)을 풀에 배정
     if (!D.on || typeof F === 'undefined') { POOL.forEach(s => { s.f = null; }); return; }
