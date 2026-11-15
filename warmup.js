@@ -42,7 +42,7 @@
   const clean = o => { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach(m => { if (m) dirty.delete(m); }); };
   // 후처리(화면 사각형) 씬: 초반·교전 전엔 미컴파일 재질이 있으면 그 패스를 건너뛰고 비동기 경로에 넣음
   const qPend = new WeakSet();
-  function quadGate(sc) { if (!PAR || performance.now() > DEFER_UNTIL || (typeof F !== 'undefined' && F.length >= 2)) return false; let need = false;
+  function quadGate(sc) { if (!PAR || performance.now() > DEFER_UNTIL) return false; let need = false;
     sc.traverse(o => { if (o.material && needs(o)) { need = true; if (!qPend.has(o)) { qPend.add(o); defq.push({ o, list: [o], hid: [] }); st.quadDefer = (st.quadDefer || 0) + 1; } } }); return need; }
   function compileOne(o) { const saved = scene3.children, vis = o.visible, L = lightsNow(); st.inCompile = 1; try { o.visible = true; scene3.children = L.concat([o]); R3.compile(scene3, camera); } catch (e) { } finally { scene3.children = saved; o.visible = vis; st.inCompile = 0; } }
   let sweepT = 0; st.swept = 0;
@@ -56,13 +56,13 @@
   const pushDefer = (o, list) => { const hid = hideL(list); if (!hid.length) return; defq.push({ o, list: list.slice(), hid }); st.deferred++; };
   (function hookAdd() { const P = THREE.Object3D.prototype, _add = P.add;
     P.add = function () { const r = _add.apply(this, arguments);
-      try { if (performance.now() < DEFER_UNTIL && !(typeof F !== 'undefined' && F.length >= 2)) {
+      try { const boot = performance.now() < DEFER_UNTIL && !(typeof F !== 'undefined' && F.length >= 2); { /* 11-15 실기기: 저장 팀 복원으로 접속 즉시 교전 → 교전 중에도 적용. 초반 이후엔 인물 모형(스킨 메시)만 */
         let attached = false; for (let p = this; p; p = p.parent) if (p === scene3) { attached = true; break; }
-        if (attached) for (let i = 0; i < arguments.length; i++) { const o = arguments[i]; if (!o || !o.visible || o.userData.mcRig) continue; const list = []; o.traverse(x => { if (needs(x)) list.push(x); });
+        if (attached) for (let i = 0; i < arguments.length; i++) { const o = arguments[i]; if (!o || !o.visible) continue; let skin = false; const list = []; o.traverse(x => { if (x.isSkinnedMesh) skin = true; if (needs(x)) list.push(x); }); if (!boot && !skin) continue;
           if (list.length >= 2) pushDefer(o, list); } } } catch (e) { }
       return r; }; })();
-  function deferDirty() { const boot = performance.now() < DEFER_UNTIL && !(typeof F !== 'undefined' && F.length >= 2); if (!boot) { dirtyNow.clear(); return; }
-    const S = dirtyNow; scene3.traverse(o => { if (!o.isMesh || o.__dm !== undefined) return; const ms = Array.isArray(o.material) ? o.material : [o.material]; if (!ms.some(m => S.has(m))) return; for (let p = o; p; p = p.parent) if (p.userData && p.userData.mcRig) return; pushDefer(o, [o]); }); S.clear(); }
+  function deferDirty() { const boot = performance.now() < DEFER_UNTIL && !(typeof F !== 'undefined' && F.length >= 2); // 교전 중엔 인물 모형 재질만(이펙트는 숨기지 않음)
+    const S = dirtyNow; scene3.traverse(o => { if (!o.isMesh || o.__dm !== undefined) return; const ms = Array.isArray(o.material) ? o.material : [o.material]; if (!ms.some(m => S.has(m))) return; if (!boot) { let rig = false; for (let p = o; p; p = p.parent) if (p.userData && p.userData.mcRig) { rig = true; break; } if (!rig) return; } pushDefer(o, [o]); }); S.clear(); }
   // ⓐ 비동기 선행 링크: 무거운 셰이더 1개 = 0.6초 멈춤(실측) → three 가 만들 소스를 '모의 컴파일'로 얻어 GPU 백그라운드 스레드에서
   //   병렬 컴파일(KHR_parallel_shader_compile, 메인 스레드는 완료 여부만 확인) → 끝난 뒤 three 컴파일은 ANGLE 프로그램 캐시 적중.
   const GL = R3.getContext(), PAR = (() => { try { return GL.getExtension('KHR_parallel_shader_compile'); } catch (e) { return null; } })(), COMPL = PAR ? PAR.COMPLETION_STATUS_KHR : 0;
@@ -104,9 +104,9 @@
   let B = null;
   function sweepDeferred() {
     const t0 = performance.now(), combat = typeof F !== 'undefined' && F.length >= 2;
-    if (!B && !scene3.environment && t0 < 7000 && !combat) return true; // 환경맵 확정 전엔 시작하지 않음(확정 뒤 키가 바뀌어 다시 컴파일되는 경쟁 방지)
+    if (!B && !scene3.environment && t0 < 7000) return true; // 환경맵 확정 전엔 시작하지 않음(확정 뒤 키가 바뀌어 다시 컴파일되는 경쟁 방지)
     if (!B) { if (!defq.length) return false; const items = defq.splice(0, defq.length); B = { items, todo: [], pairs: [], seen: new Set(), ph: PAR ? 1 : 3, all: [] }; items.forEach(d => d.list.forEach(x => { B.todo.push(x); B.all.push(x); })); }
-    if (combat && B.ph < 3) B.ph = 3; // 교전 시작: 기다리지 않고 바로 마무리
+    if (B.ph < 3 && performance.now() - (B.tS || (B.tS = performance.now())) > 7000) B.ph = 3; // 안전장치: 7초 넘게 걸리면 마무리
     if (B.ph === 1) { while (B.todo.length && performance.now() - t0 < 8) { const x = B.todo.shift(); if (!needs(x)) continue; captureSrc(x).forEach(pr => { const k = pr[0].length + ':' + pr[1].length + ':' + pr[1].slice(-240); if (!B.seen.has(k)) { B.seen.add(k); B.pairs.push(pr); } }); }
       if (!B.todo.length) { B.links = prelink(B.pairs); st.prelinked += B.links.length; B.ph = 2; B.t2 = performance.now(); } return true; }
     if (B.ph === 2) { if (B.links.length && !ready(B.links) && performance.now() - B.t2 < 9000) return true; B.ph = 3; B.todo = B.all.slice(); }
@@ -115,7 +115,7 @@
       if (!B.todo.length) { if (B.links) freeL(B.links); B.items.forEach(d => showL(d.hid)); B = null; } return true; }
     return true; }
   // 교전이 시작되면 남은 지연 객체는 즉시 공개(전투 화면에 빠진 물체가 없게)
-  setInterval(() => { if (typeof F !== 'undefined' && F.length >= 2 && defq.length) { const items = defq.splice(0, defq.length); items.forEach(d => { d.list.forEach(x => { done.add(x); }); showL(d.hid); }); } }, 300);
+  // (교전 시작 즉시 공개하던 타이머 제거 — 실기기에서 교전 중 동기 컴파일 멈춤의 원인)
   // 25초가 지났는데 남은 지연 객체는 그냥 공개(안전장치)
   setTimeout(() => { while (defq.length) { const d = defq.shift(); showL(d.hid); } }, DEFER_UNTIL + 8000);
   // 초기 씬도 지연: 본 장면이 처음 완전히 그려지는 프레임에 재질 ~30개가 몰려 2.3초 멈춤(실측) → 지금 있는 객체부터 백그라운드 링크 후 공개
@@ -124,7 +124,7 @@
     try {
       var busy = sweepDeferred(); // 일괄 파이프라인 진행(있으면) — 일반 스캔도 같은 틱에 계속(굶지 않게)
       const combat = typeof F !== 'undefined' && F.length >= 2, ft = typeof ftAvg !== 'undefined' ? ftAvg : 16;
-      if (!document.hidden && !(combat && (ft > 18 || performance.now() < sweepT))) {
+      if (!document.hidden && !(!PAR && combat && (ft > 18 || performance.now() < sweepT))) {
         const t0 = performance.now(), n0 = progs ? progs.length : 0; let made = false; const batch = [];
         scene3.traverse(o => { if (made || !o.material || allDone(o) || performance.now() - t0 > 6) return; if (!needs(o)) { markDone(o); return; }
           st.swept++; markDone(o); /* 재질당 한 번만 시도 */ if (PAR) { batch.push(o); if (batch.length >= 24) made = true; } else { compileOne(o); clean(o); if (progs && progs.length !== n0) made = true; } });
